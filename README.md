@@ -27,4 +27,4 @@ from this folder; when the repo is cloned elsewhere, set `HM_BRAIN` to the brain
 ## Publish
 
 GitHub → repository Settings → Pages → Source: *Deploy from a branch*, branch `main`, folder `/ (root)`.
-The site is then `https://<owner>.github.io/hm-leveldesign-tool/`.
+The site is then `https://thangtd-hm.github.io/hmldtool/`.
