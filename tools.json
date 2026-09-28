@@ -1,0 +1,33 @@
+{
+  "title": "HM Level Design Tools",
+  "lede": "Browser tools for designing, checking and reading levels of HM Games projects. Open a tool from its card; each one runs on its own, nothing to install.",
+  "tools": [
+    {
+      "id": "valley-smash-level-editor",
+      "name": "Valley Smash level editor",
+      "game": "Valley Smash",
+      "status": "planned",
+      "summary": "Edit shooter levels on a board with the game's real art in 2D and 3D views, load a level folder, save back in place.",
+      "since": "2026-09-09",
+      "source": "01-projects/valley-smash/level-editor/level_editor.html"
+    },
+    {
+      "id": "fish-sort-blocker-report",
+      "name": "Fish Sort blocker report",
+      "game": "Fish Sort",
+      "status": "planned",
+      "summary": "Where each blocker mechanic appears across levels 1 to N, as charts and a level table, from the level data.",
+      "since": "2026-09-21",
+      "source": "01-projects/fish-sort/tools/blocker-report.template.html"
+    },
+    {
+      "id": "valley-smash-level-dashboard",
+      "name": "Valley Smash level dashboard",
+      "game": "Valley Smash",
+      "status": "planned",
+      "summary": "Per-level win rate, churn and ammo surplus from BigQuery exports, with walls flagged.",
+      "since": "2026-09-21",
+      "source": "01-projects/valley-smash/BANGIAO-Data-OBS-ValleySmash/tools/dashboard-v2-template.html"
+    }
+  ]
+}

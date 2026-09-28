@@ -1,0 +1,7 @@
+node_modules/
+.claude/settings.local.json
+Thumbs.db
+.DS_Store
+*.log
+# Baked art packs of the level editors are regenerated from Unity; only the baked page is tracked.
+tools/*/art/
