@@ -6,10 +6,10 @@
       "id": "valley-smash-level-editor",
       "name": "Valley Smash level editor",
       "game": "Valley Smash",
-      "status": "planned",
+      "status": "live",
       "summary": "Edit shooter levels on a board with the game's real art in 2D and 3D views, load a level folder, save back in place.",
       "since": "2026-09-09",
-      "source": "01-projects/valley-smash/level-editor/level_editor.html"
+      "source": "block-shot-2 exporter → art/ → inline_art.py (pipeline in the tool folder)"
     },
     {
       "id": "fish-sort-blocker-report",
