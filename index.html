@@ -115,10 +115,17 @@ article:last-of-type{border-bottom:0}
 .ds-panel.wide,.ds-figure.wide{grid-column:1/-1}
 .ds-fig-head{display:flex;align-items:baseline;gap:var(--sp2)}
 .ds-fig-head h4{margin:0;font:600 14px/1.35 var(--sans);color:var(--ink)}
+.ds-icon{width:40px;height:40px;flex:0 0 auto;border-radius:22%;object-fit:cover;vertical-align:middle;box-shadow:0 0 0 1px var(--line)}
+.ds-icon.sm{width:24px;height:24px;border-radius:24%}
+.ds-fig-head .ds-icon{align-self:center}
+h2 .ds-icon,h3 .ds-icon{margin-right:var(--sp2);vertical-align:-0.2em}
 .ds-fig-tbl{margin-left:auto;border:1px solid var(--line);background:none;color:var(--muted);font:500 11px/1 var(--sans);border-radius:var(--r-pill);padding:4px 8px;cursor:pointer}
 .ds-fig-tbl[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .ds-fig-sub{margin:2px 0 var(--sp2);font-size:var(--fs-caption);color:var(--muted)}
 .ds-fig-cap{margin:var(--sp2) 0 0;font-size:11px;color:var(--muted)}
+.ds-illus-body{overflow-x:auto}
+.ds-illus-body svg{display:block;width:100%;height:auto;min-width:560px}
+.ds-art .ds-illus-body img{display:block;max-width:100%;height:auto;margin:0 auto}
 .ds-chart svg{display:block;overflow:visible}
 .ds-chart figure{margin:0}
 .ds-chart [class*="-swatches"]{font:12px var(--sans);color:var(--ink-2)}
@@ -156,20 +163,62 @@ article:last-of-type{border-bottom:0}
 .ds-filters button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .ds-fold{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);padding:var(--sp2) var(--sp4);margin:var(--sp4) 0}
 .ds-fold summary{cursor:pointer;font-weight:600;color:var(--ink-2)}
+.ds-diff{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);margin:var(--sp3) 0;scroll-margin-top:72px}
+.ds-diff summary{cursor:pointer;display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp2);padding:var(--sp2) var(--sp3);font:500 13px/1.4 var(--sans);color:var(--ink)}
+.ds-diff[open] summary{border-bottom:1px solid var(--line)}
+.ds-diff-path{font-family:var(--mono);font-size:12.5px;word-break:break-all;flex:1 1 20ch}
+.ds-diff-from{color:var(--muted)}
+.ds-diff-status{font:600 11px/1 var(--sans);text-transform:uppercase;letter-spacing:.04em;padding:4px 7px;border-radius:var(--r-pill);background:var(--ok-bg);color:var(--ink-2)}
+.ds-diff-status.added{background:var(--good-bg);color:var(--good)}.ds-diff-status.deleted{background:var(--crit-bg);color:var(--crit)}
+.ds-diff-status.renamed,.ds-diff-status.binary{background:var(--warn-bg);color:var(--warn-ink)}
+.ds-diff-n{font:600 12px/1 var(--mono);white-space:nowrap}.ds-diff-n .add{color:var(--good)}.ds-diff-n .del{color:var(--crit)}
+.ds-diff-note{margin:var(--sp2) var(--sp3);color:var(--muted);font-size:var(--fs-caption)}
+.ds-diff-scroll{overflow-x:auto}
+.ds-diff-body{border-collapse:collapse;width:100%;font:12.5px/1.5 var(--mono);table-layout:fixed}
+.ds-diff-body td{padding:0 var(--sp2);vertical-align:top;border:0}
+.ds-diff-body col.ln{width:3.6em}
+.ds-diff-body td.ln{text-align:right;color:var(--muted);user-select:none;font-size:11.5px}
+.ds-diff-body td.code{white-space:pre-wrap;word-break:break-word;color:var(--ink)}
+.ds-diff-body .sign{display:inline-block;width:1.4ch;user-select:none;font-weight:700}
+.ds-diff-body tr.add td{background:var(--good-bg)}.ds-diff-body tr.add .sign{color:var(--good)}
+.ds-diff-body tr.del td{background:var(--crit-bg)}.ds-diff-body tr.del .sign{color:var(--crit)}
+.ds-diff-body tr.add td.ln{box-shadow:inset 3px 0 0 var(--good)}.ds-diff-body tr.del td.ln{box-shadow:inset 3px 0 0 var(--crit)}
+.ds-diff-body tr.add td.ln+td.ln,.ds-diff-body tr.del td.ln+td.ln{box-shadow:none}
+.ds-diff-body tr.hunk td{background:var(--ok-bg);color:var(--muted);font-size:11.5px;padding:3px var(--sp3)}
+.ds-diff-body tr.meta td{color:var(--muted);font-style:italic}
+.ds-diff-cut{color:var(--muted);font-family:var(--sans);font-style:italic}
+.ds-diff-view{padding:var(--sp3) var(--sp4) var(--sp4);border-bottom:1px solid var(--line);background:var(--paper)}
+.ds-diff-view.all-add{box-shadow:inset 4px 0 0 var(--good)}.ds-diff-view.all-del{box-shadow:inset 4px 0 0 var(--crit)}
+.ds-diff-legend{margin:0 0 var(--sp3);font:500 12px/1.4 var(--sans);color:var(--muted)}
+.ds-diff-view>h3:first-of-type,.ds-diff-view>h3:first-child{margin-top:var(--sp2)}
+.ds-diff-view iframe{display:block;width:100%;height:620px;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff}
+.ds-diff-lines{border-top:1px solid var(--line)}
+.ds-diff-lines>summary{cursor:pointer;padding:var(--sp2) var(--sp3);font:500 12.5px/1.4 var(--sans);color:var(--ink-2)}
+ins.ds-rd-ins{background:var(--good-bg);color:inherit;text-decoration:none;border-radius:2px;box-shadow:0 0 0 1px color-mix(in srgb,var(--good) 30%,transparent)}
+del.ds-rd-del{background:var(--crit-bg);color:var(--ink-2);text-decoration:line-through;text-decoration-color:var(--crit);border-radius:2px}
+.ds-table tr.rd-add td,.ds-table tr.rd-add th{background-color:var(--good-bg)}
+.ds-table tr.rd-add td:first-child,.ds-table tr.rd-add th:first-child{box-shadow:inset 3px 0 0 var(--good)}
+.ds-table tr.rd-del td,.ds-table tr.rd-del th{background-color:var(--crit-bg);text-decoration:line-through;text-decoration-color:var(--crit)}
+.ds-table tr.rd-del td:first-child,.ds-table tr.rd-del th:first-child{box-shadow:inset 3px 0 0 var(--crit)}
+.ds-rd-fm th{font-family:var(--mono);font-size:12px;white-space:nowrap;width:1%}
+.ds-rd-flag{font:600 12px/1.4 var(--sans);color:var(--warn-ink);background:var(--warn-bg);display:inline-block;padding:3px 8px;border-radius:var(--r-pill)}
+@media (max-width:640px){.ds-diff-body col.ln{width:2.8em}.ds-diff-body td.ln{font-size:10.5px;padding:0 4px}}
 @media print{
   .ds-bar,.ds-rail,.ds-fig-tbl,.ds-filters{display:none}
   .has-rail .ds-wrap{display:block}
   .ds-scroll{max-height:none;overflow:visible}
   .ds-figure,.ds-kpi,.ds-callout{break-inside:avoid}
+  .ds-diff-body tr{break-inside:avoid}
 }
 </style>
 </head>
 <body class="">
-<header class="ds-bar"><a class="ds-bar-title" href="#top">HM Level Design Tools</a><nav class="ds-bar-links" aria-label="Sections"><a href="#valley-smash">Valley Smash</a><a href="#fish-sort">Fish Sort</a><a href="#add-a-tool">Add a tool</a></nav><button class="ds-menu" type="button" aria-label="Sections" aria-expanded="false">&#9776;</button><div class="ds-theme" role="group" aria-label="Theme"><button type="button" data-theme-set="light">Light</button><button type="button" data-theme-set="dark">Dark</button></div></header>
+<header class="ds-bar"><a class="ds-bar-title" href="#top">HM Level Design Tools</a><nav class="ds-bar-links" aria-label="Sections"><a href="#pool-sort">Pool Sort</a><a href="#valley-smash">Valley Smash</a><a href="#fish-sort">Fish Sort</a><a href="#add-a-tool">Add a tool</a></nav><button class="ds-menu" type="button" aria-label="Sections" aria-expanded="false">&#9776;</button><div class="ds-theme" role="group" aria-label="Theme"><button type="button" data-theme-set="light">Light</button><button type="button" data-theme-set="dark">Dark</button></div></header>
 <div class="ds-wrap"><main class="ds-main" id="top">
-<header class="ds-head"><p class="ds-eyebrow">HM Games</p><h1>HM Level Design Tools</h1><p class="ds-lede">Browser tools for designing, checking and reading levels of HM Games projects. Open a tool from its card; each one runs on its own, nothing to install.</p><p class="ds-meta">Built 2026-09-28 · 3 tools</p></header>
-<div class="ds-chips"><span class="ds-chip OK">live 1</span><span class="ds-chip PENDING">planned 2</span></div>
-<h2 id="valley-smash">Valley Smash</h2><div class="ds-grid"><section class="ds-panel"><div class="ds-fig-head"><h4><a href="tools/valley-smash-level-editor/">Valley Smash level editor</a></h4><span class="ds-chip OK">live</span></div><p class="ds-fig-sub">Valley Smash · since 2026-09-09</p><p>Edit shooter levels on a board with the game's real art in 2D and 3D views, load a level folder, save back in place.</p><p class="ds-fig-cap"><a href="tools/valley-smash-level-editor/">Open the tool</a></p></section><section class="ds-panel"><div class="ds-fig-head"><h4>Valley Smash level dashboard</h4><span class="ds-chip PENDING">planned</span></div><p class="ds-fig-sub">Valley Smash · since 2026-09-21</p><p>Per-level win rate, churn and ammo surplus from BigQuery exports, with walls flagged.</p><p class="ds-fig-cap">Not moved in yet; lives at <code>01-projects/valley-smash/BANGIAO-Data-OBS-ValleySmash/tools/dashboard-v2-template.html</code>.</p></section></div>
+<header class="ds-head"><p class="ds-eyebrow">HM Games</p><h1>HM Level Design Tools</h1><p class="ds-lede">Browser tools for designing, checking and reading levels of HM Games projects. Open a tool from its card; each one runs on its own, nothing to install.</p><p class="ds-meta">Built 2026-10-01 · 4 tools</p></header>
+<div class="ds-chips"><span class="ds-chip OK">live 2</span><span class="ds-chip PENDING">planned 2</span></div>
+<h2 id="pool-sort"><img class="ds-icon sm" src="icons/pool-sort.webp" alt="" width="24" height="24" loading="lazy" decoding="async">Pool Sort</h2><div class="ds-grid"><section class="ds-panel"><div class="ds-fig-head"><img class="ds-icon" src="icons/pool-sort.webp" alt="Pool Sort" width="40" height="40" loading="lazy" decoding="async"><h4><a href="tools/pool-sort-level-editor/">Pool Sort level editor</a></h4><span class="ds-chip OK">live</span></div><p class="ds-fig-sub">Pool Sort · since 2026-10-01</p><p>Edit Pool Sort levels as floats drawn with the game’s art: items on every slot, every mechanic, level settings, save in place. Playtest with the game’s own rules, spawn and pool physics.</p><p class="ds-fig-cap"><a href="tools/pool-sort-level-editor/">Open the tool</a></p></section></div>
+<h2 id="valley-smash"><img class="ds-icon sm" src="icons/valley-smash.webp" alt="" width="24" height="24" loading="lazy" decoding="async">Valley Smash</h2><div class="ds-grid"><section class="ds-panel"><div class="ds-fig-head"><img class="ds-icon" src="icons/valley-smash.webp" alt="Valley Smash" width="40" height="40" loading="lazy" decoding="async"><h4><a href="tools/valley-smash-level-editor/">Valley Smash level editor</a></h4><span class="ds-chip OK">live</span></div><p class="ds-fig-sub">Valley Smash · since 2026-09-09</p><p>Edit shooter levels on a board with the game's real art in 2D and 3D views, load a level folder, save back in place.</p><p class="ds-fig-cap"><a href="tools/valley-smash-level-editor/">Open the tool</a></p></section><section class="ds-panel"><div class="ds-fig-head"><img class="ds-icon" src="icons/valley-smash.webp" alt="Valley Smash" width="40" height="40" loading="lazy" decoding="async"><h4>Valley Smash level dashboard</h4><span class="ds-chip PENDING">planned</span></div><p class="ds-fig-sub">Valley Smash · since 2026-09-21</p><p>Per-level win rate, churn and ammo surplus from BigQuery exports, with walls flagged.</p><p class="ds-fig-cap">Not moved in yet; lives at <code>01-projects/valley-smash/BANGIAO-Data-OBS-ValleySmash/tools/dashboard-v2-template.html</code>.</p></section></div>
 <h2 id="fish-sort">Fish Sort</h2><div class="ds-grid"><section class="ds-panel"><div class="ds-fig-head"><h4>Fish Sort blocker report</h4><span class="ds-chip PENDING">planned</span></div><p class="ds-fig-sub">Fish Sort · since 2026-09-21</p><p>Where each blocker mechanic appears across levels 1 to N, as charts and a level table, from the level data.</p><p class="ds-fig-cap">Not moved in yet; lives at <code>01-projects/fish-sort/tools/blocker-report.template.html</code>.</p></section></div>
 <h2 id="add-a-tool">Add a tool</h2><div class="ds-callout note"><span class="ds-callout-label">Note</span><p>Put the page in <code>tools/&lt;id&gt;/index.html</code>, add an entry to <code>tools.json</code>, run <code>node build.js</code>, commit all three. The catalogue keeps the status honest: a card links only when its folder exists.</p></div>
 <footer class="ds-foot">HM Level Design Tools · generated from tools.json by build.js</footer>

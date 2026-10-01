@@ -1,6 +1,16 @@
 {
   "title": "HM Level Design Tools",
   "lede": "Browser tools for designing, checking and reading levels of HM Games projects. Open a tool from its card; each one runs on its own, nothing to install.",
+  "games": {
+    "Pool Sort": {
+      "icon": "icons/pool-sort.webp",
+      "source": "fish-sort-puzzle Player Settings app icon (Assets/_BaseCode/Image/_FSP/Artboard_1.png)"
+    },
+    "Valley Smash": {
+      "icon": "icons/valley-smash.webp",
+      "source": "block-shot-2 Player Settings app icon (Assets/_BaseCode/Image/_OBS2/Icon/Group_71.png)"
+    }
+  },
   "tools": [
     {
       "id": "valley-smash-level-editor",
@@ -10,6 +20,15 @@
       "summary": "Edit shooter levels on a board with the game's real art in 2D and 3D views, load a level folder, save back in place.",
       "since": "2026-09-09",
       "source": "block-shot-2 exporter → art/ → inline_art.py (pipeline in the tool folder)"
+    },
+    {
+      "id": "pool-sort-level-editor",
+      "name": "Pool Sort level editor",
+      "game": "Pool Sort",
+      "status": "live",
+      "summary": "Edit Pool Sort levels as floats drawn with the game’s art: items on every slot, every mechanic, level settings, save in place. Playtest with the game’s own rules, spawn and pool physics.",
+      "since": "2026-10-01",
+      "source": "fish-sort-puzzle prefabs and sprites → bake_art.py (in the tool folder)"
     },
     {
       "id": "fish-sort-blocker-report",

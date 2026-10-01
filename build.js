@@ -38,24 +38,33 @@ function validate(cat, repoDir) {
       errors.push(`tool ${t.id}: status live but tools/${t.id}/index.html is missing`);
     }
   }
+  // games: { "<game>": { icon: "icons/<slug>.webp", source } }; a game without an entry gets no icon
+  for (const [game, g] of Object.entries(cat.games || {})) {
+    if (!g || !g.icon) { errors.push(`game ${game}: missing "icon"`); continue; }
+    if (repoDir && !fs.existsSync(path.join(repoDir, g.icon))) errors.push(`game ${game}: icon ${g.icon} is missing`);
+  }
   return errors;
 }
 
 function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function slug(t) { return String(t).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, ''); }
 
-function card(t) {
+function card(t, ds, games) {
   const href = `tools/${encodeURIComponent(t.id)}/`;
   const title = t.status === 'live' ? `<a href="${href}">${esc(t.name)}</a>` : esc(t.name);
   const chip = `<span class="ds-chip ${STATUS[t.status]}">${esc(t.status)}</span>`;
   const meta = [t.game, t.since ? `since ${t.since}` : ''].filter(Boolean).map(esc).join(' · ');
+  const g = games[t.game];
+  const icon = g && ds.icon ? ds.icon(g.icon, { alt: t.game }) : '';
   const foot = t.status === 'live'
     ? `<p class="ds-fig-cap"><a href="${href}">Open the tool</a></p>`
     : `<p class="ds-fig-cap">Not moved in yet${t.source ? `; lives at <code>${esc(t.source)}</code>` : ''}.</p>`;
-  return `<section class="ds-panel"><div class="ds-fig-head"><h4>${title}</h4>${chip}</div><p class="ds-fig-sub">${meta}</p><p>${esc(t.summary)}</p>${foot}</section>`;
+  return `<section class="ds-panel"><div class="ds-fig-head">${icon}<h4>${title}</h4>${chip}</div><p class="ds-fig-sub">${meta}</p><p>${esc(t.summary)}</p>${foot}</section>`;
 }
 
 function render(cat, ds) {
+  const games = cat.games || {};
+  const gameIcon = (game) => (games[game] && ds.icon ? ds.icon(games[game].icon, { size: 'sm' }) : '');
   const tools = [...cat.tools].sort((a, b) => (a.status === b.status ? a.name.localeCompare(b.name) : a.status === 'live' ? -1 : 1));
   const counts = Object.keys(STATUS).map((s) => [s, tools.filter((t) => t.status === s).length]).filter(([, n]) => n > 0);
   const byGame = new Map();
@@ -64,7 +73,7 @@ function render(cat, ds) {
     'run <code>node build.js</code>, commit all three. The catalogue keeps the status honest: a card links only when its folder exists.</p>';
   const body = [
     `<div class="ds-chips">${counts.map(([s, n]) => `<span class="ds-chip ${STATUS[s]}">${esc(s)} ${n}</span>`).join('')}</div>`,
-    ...[...byGame.entries()].map(([game, list]) => `<h2 id="${esc(slug(game))}">${esc(game)}</h2>${ds.grid(list.map(card))}`),
+    ...[...byGame.entries()].map(([game, list]) => `<h2 id="${esc(slug(game))}">${gameIcon(game)}${esc(game)}</h2>${ds.grid(list.map((t) => card(t, ds, games)))}`),
     `<h2 id="add-a-tool">Add a tool</h2>${ds.callout('note', howTo)}`,
   ].join('\n');
   return ds.page({

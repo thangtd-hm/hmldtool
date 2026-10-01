@@ -43,3 +43,21 @@ test('build writes index.html from the repo catalogue', () => {
   assert.ok(r.tools >= 1);
   assert.ok(fs.existsSync(path.join(__dirname, 'index.html')));
 });
+
+test('game icons: validated against the repo, drawn on the card and the game heading', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hmld-'));
+  const cat = { tools: [tool()], games: { Game: { icon: 'icons/game.webp' } } };
+  assert.ok(validate(cat, dir).some((e) => /icon icons\/game\.webp is missing/.test(e)));
+  assert.ok(validate({ tools: [tool()], games: { Game: {} } }).some((e) => /missing "icon"/.test(e)));
+  fs.mkdirSync(path.join(dir, 'icons'));
+  fs.writeFileSync(path.join(dir, 'icons', 'game.webp'), '');
+  assert.deepEqual(validate(cat, dir), []);
+  fs.rmSync(dir, { recursive: true, force: true });
+  const brain = findBrain(__dirname);
+  if (!brain) return;
+  const ds = require(path.join(brain, '05-tools', 'lib', 'report-ds'));
+  const html = render({ title: 'Hub', ...cat, tools: [tool(), tool({ id: 't-two', game: 'Other' })] }, ds);
+  assert.ok(html.includes('<h2 id="game"><img class="ds-icon sm" src="icons/game.webp"'));
+  assert.ok(html.includes('<div class="ds-fig-head"><img class="ds-icon" src="icons/game.webp" alt="Game"'));
+  assert.ok(html.includes('<h2 id="other">Other</h2>'));
+});
