@@ -50,7 +50,9 @@ function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').
 function slug(t) { return String(t).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, ''); }
 
 function card(t, ds, games) {
-  const href = `tools/${encodeURIComponent(t.id)}/`;
+  // The page itself, not its folder: GitHub Pages serves a folder's index.html, but a hub opened from disk
+  // (file://) would show the folder listing instead.
+  const href = `tools/${encodeURIComponent(t.id)}/index.html`;
   const title = t.status === 'live' ? `<a href="${href}">${esc(t.name)}</a>` : esc(t.name);
   const chip = `<span class="ds-chip ${STATUS[t.status]}">${esc(t.status)}</span>`;
   const meta = [t.game, t.since ? `since ${t.since}` : ''].filter(Boolean).map(esc).join(' · ');

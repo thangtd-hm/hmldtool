@@ -30,8 +30,8 @@ test('render links live tools only and escapes text', () => {
   if (!brain) return; // outside the brain there is no report-ds to render with
   const ds = require(path.join(brain, '05-tools', 'lib', 'report-ds'));
   const html = render({ title: 'Hub', tools: [tool({ status: 'live' }), tool({ id: 't-two', name: 'Two <b>', game: 'Other' })] }, ds);
-  assert.ok(html.includes('href="tools/t-one/"'));
-  assert.ok(!html.includes('href="tools/t-two/"'));
+  assert.ok(html.includes('href="tools/t-one/index.html"'), 'links the page, so the hub also works from disk');
+  assert.ok(!html.includes('href="tools/t-two/'));
   assert.ok(html.includes('Two &lt;b&gt;'));
   assert.ok(html.includes('<h2 id="game">Game</h2>'));
   assert.ok(html.includes('data-theme-set="dark"'));

@@ -237,7 +237,11 @@ test('baked art manifest has every float size, overlay and toy', (t) => {
   assert.deepEqual(Object.keys(art.floats).sort(), ['1', '2', '3', '4', '5']);
   for (const s of ['1', '2', '3', '4', '5']) assert.equal(art.floats[s].slots.length, Number(s));
   for (const o of ['frozen', 'hidden', 'lock', 'net', 'obstacle2', 'key', 'portal']) assert.ok(art.images[art.overlays[o].img], o);
-  assert.equal(art.toys.length, 24);
+  // every toy_N.png of the team folder, when it is there (24 until 2026-10-02, 71 since the team's "+ New toys")
+  const toyDir = TEAM && path.join(TEAM, '..', '..', 'Resources', 'ToySort', 'Toy');
+  if (toyDir && fs.existsSync(toyDir)) assert.equal(art.toys.length, fs.readdirSync(toyDir).filter((n) => /^toy_\d+\.png$/.test(n)).length);
+  else assert.ok(art.toys.length >= 24);
+  for (const id of art.toys) assert.ok(art.images['toy_' + id], 'image for toy ' + id);
   assert.equal(art.obstacleScales.length, 6);
   for (const img of Object.values(art.images)) assert.match(img.src, /^data:image\/webp;base64,/);
 });
@@ -271,7 +275,7 @@ test('validate warns: two mechanics, stone with items, not run by the game, no a
   assert.ok(w(lvl(rec({ FloatieType: 4, ToyStr: '', Obstacle2Count: 12 }))).includes('notRun'));
   assert.ok(w(lvl(rec({ ToyStr: '1,1,1', BindToyStr: '1,1,0' }))).includes('notRun'));
   assert.ok(w(lvl(rec({ ToyStr: '1,1,1', MaskTargetToy: 1 }))).includes('notRun'));
-  assert.ok(w(lvl(rec({ ToyStr: '57,57,57' }))).includes('noArt'));
+  assert.ok(w(lvl(rec({ ToyStr: '157,157,157' }))).includes('noArt'));
   assert.ok(w(lvl(rec({ FloatieType: 0, ToyStr: '', IsObstacle: true }))).includes('type0'));
   assert.ok(w(lvl(rec({ ToyStr: '1,1,1', IceToyStr: '0,5' }))).includes('slotshort'));
 });

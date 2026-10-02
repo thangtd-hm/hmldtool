@@ -40,7 +40,8 @@ and `…-plan.md`.
    - pressure windows and Countdown marks, both drawn on one level-progress bar (drag them, or type exact numbers);
    - the odds of 0–3 windows being active.
 7. The bottom strip counts every item kind (red when a count is not a multiple of 3), keys against locks, and
-   each mechanic. It can also replace one item kind with another, or swap two.
+   each mechanic. It can also replace one item kind with another, or swap two. A and B are picked from grids of
+   item pictures with their ids: A from the kinds in the level (with counts), B from every id with art.
 
 ## Playtest ("▶ Chơi thử", key P)
 
@@ -66,15 +67,39 @@ or Esc) leaves the editor untouched. It opens only when the level passes the blo
   - 4 turns every window on;
   - 5 uses the DDA table. It needs `LevelDifficultyConfig.json`, which the editor reads when you open the Levels
     folder; otherwise the option is greyed out.
-- **On screen:** the 4 boxes (2 open), the 5-slot queue, the pool with the baked art, a progress bar with the
-  windows and Countdown marks, the stats, and a win or lose banner with the reason. A refused tap shakes the float
+- **On screen:** the game's own scene, in its camera frame (10.8 × 22.8 units, a 9:19 phone), so you can check
+  colours. Layers, back to front, placed as in `ToySortBoardView.prefab`:
+  - the pool tiles, scaled to the camera as `FitBackground` does;
+  - the floats;
+  - the tiles again over the floats above the shelf line;
+  - the soft top bands and the yellow shelf;
+  - the 4 boxes (the locked art when locked), each with its bubble showing the item it wants and the count;
+  - the 5 queue slots and the "Items x/y" counter.
+
+  Beside it: a progress bar with the windows and Countdown marks, the stats, and a win or lose banner with the
+  reason. A refused tap shakes the float
   and says why. R restarts.
+- **Level selector:** ◀ / ▶, a level number box, or PageUp / PageDown play another level without closing.
+  - The level open in the editor plays with its unsaved edits; any other level is read from the opened folder, with
+    its LevelConfig row.
+  - The editor itself stays on its level.
+  - A level with blocking errors, or not in the folder, is refused with the reason.
+  - After a win, the banner offers the next level.
+- **Box unlock:** press a locked box ("Mở khoá") to open it at once; the game asks for a rewarded ad or coins first.
+  As in the game (`ToySortBoard.RequestUnlock` → `ToySortGame.UnlockTank`):
+  - it counts as help used, so pressure stops in the window the level is in;
+  - the new box picks a demand, and matching items fly in from the queue;
+  - it is refused when no item kind is left to demand (the game's "not enough targets").
+  The stats and the end banner count the unlocks.
 - **Known gaps:**
-  - no boosters, box unlock, revive or tutorial;
-  - item art keeps the authored ids (the game shuffles art per entry);
+  - no boosters, revive or tutorial; box unlock is free;
+  - ids without art are swapped as the game does (`ToyArtRemapper.Apply`: a random unused id with art), and the
+    panel lists the swaps; the game's per-entry art shuffle is off, so the art you placed stays recognisable;
   - planck.js and Unity's Box2D differ slightly, so float positions do not match the game frame for frame;
   - the tap timing gates (a box still collecting, a queue slot still seating) are a model of the game's animation
-    times.
+    times;
+  - the water's moving light (caustics, ripple refraction and glints) is not drawn. The water shader keeps the
+    tiles' colours (its tint is white), so the colours on screen are the game's.
 
 ## Saving
 
@@ -121,10 +146,11 @@ up to 0.9, and level 136's Countdown has a malformed pair (`0,5,90`).
 
 ## Item ids and art
 
-Only ids 1–24 have art (`Resources/ToySort/Toy/toy_N.png`); the data uses ids up to 403. The editor draws other
-ids as numbered chips. In play, the game swaps every id without art for one with art, then **shuffles the art on
-every level entry** (`ToySortBoard.Build` → `ToyArtRemapper.Apply` / `Shuffle`). An id says which items belong
-together, never which picture a player sees.
+Ids 1–71 have art (`Resources/ToySort/Toy/toy_N.png`; 1–24 until the team's "+ New toys" on 2026-10-02); the data
+uses ids up to 403. The editor draws other ids as numbered chips. In play, the game first swaps every id without
+art for a **random** id with art that the level does not use yet; when none is left, it shares a type the level
+already has. It then **shuffles the art on every level entry** (`ToySortBoard.Build` → `ToyArtRemapper.Apply` /
+`Shuffle`). An id says which items belong together, never which picture a player sees.
 
 ## Refresh the art
 
@@ -145,10 +171,15 @@ python bake_art.py --repo <path to fish-sort-puzzle>
   0.675 on `Toy.prefab` sits on the root transform, which `FloatieView` overwrites with that toy scale, so it is
   not applied.
 - **UI art**: the box, clock and tier skulls from `_BaseCode/Image/_FSP/`.
+- **Scene** (`ART.scene`, for Playtest), from `ToySortBoardView.prefab`, `Tank.prefab` and `Slot.prefab`:
+  - the camera frame from `ToySortLayout` (`BaseOrthoSize`, `DesignAspect`);
+  - the background tiles with the `FitBackground` scale;
+  - the `TopCoverMask` edge, the `TopMask` bands, the `Table` shelf, the lane ropes and the items counter;
+  - the `Tank_0…3` positions with each box's dock slots, bubble (`InfoFrame`) and countdown badge;
+  - the queue slot positions and art.
 
 Every sprite renderer involved uses simple draw mode, so an image's world size is its pixels ÷ 100
-(`spritePixelsToUnits`). Last bake: team commit `6acef7a7f` (`gd-leveldesign`, after the team's float size fix),
-41 images, about 540 KB.
+(`spritePixelsToUnits`). Last bake: team commit `650c597ee` (`dev/main`, 2026-10-02, 71 items), 96 images, about 1 MB.
 
 The page also works without art (`window.ART = null`): floats and items fall back to plain circles and numbered
 chips.
@@ -158,7 +189,7 @@ chips.
 ```bash
 node --test tools/pool-sort-level-editor/editor.test.js   # 31: the editor core
 node --test tools/pool-sort-level-editor/game.test.js     # 159 (+6 skipped, as in C#): the Playtest core
-node --test tools/pool-sort-level-editor/board.test.js    # 22: the Playtest pool
+node --test tools/pool-sort-level-editor/board.test.js    # 28: the Playtest pool
 ```
 
 Each test file loads its script blocks out of `index.html`.
@@ -180,6 +211,8 @@ Each test file loads its script blocks out of `index.html`.
   - the refill gate and drop columns;
   - Hidden reveal and Frozen thaw driven by physics;
   - refusals;
+  - box unlock (opening, the "not enough targets" refusal, pressure stopping in the current window);
+  - the item art remap (random unused id with art, the shared-type fallback);
   - greedy play to a result;
   - difficulty 4 and 5.
 

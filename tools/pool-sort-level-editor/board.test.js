@@ -468,3 +468,79 @@ test('the board block reads planck and PSPGame at call time, not at load time', 
   }
   assert.ok(planck.World);
 });
+
+// ---------- box unlock (ToySortBoard.RequestUnlock + UnlockTank) ----------
+
+function kindsLevel(kinds, row) {
+  const records = [];
+  for (let k = 1; k <= kinds; k++) records.push({ FloatieID: k, FloatieType: 3, ToyStr: `${k},${k},${k}` });
+  return { records, row: Object.assign({ LevelID: 9002, LevelDataStr: 'LevelData_9002', LevelTime: 300, PointRangeStr: '', NoAdWeight: 1,
+    OneAdWeight: 0, TwoAdWeight: 0, ThreeAdWeight: 0, LevelDifficulty: 1, CountdownTargetProgress: '' }, row) };
+}
+
+test('unlock: a locked box opens with a demand, once, and is counted', () => {
+  const board = makeBoard(kindsLevel(4));
+  board.drainEvents();
+  const locked = board.game.tanks.findIndex((t) => !t.isUnlocked);
+  assert.ok(locked >= 0, 'the level starts with a locked box');
+  const r = board.requestUnlock(locked);
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.ok(board.game.tanks[locked].isUnlocked && board.game.tanks[locked].toyType > 0, 'opened with a demanded item');
+  assert.equal(board.unlockCount, 1);
+  assert.ok(board.drainEvents().some((e) => e.type === T.TankUnlocked && e.tankIndex === locked), 'TankUnlocked reaches the drain');
+  assert.equal(board.requestUnlock(locked).reason, 'unlocked');
+  assert.equal(board.requestUnlock(9).reason, 'unknown-tank');
+  assert.equal(board.unlockCount, 1);
+});
+
+test('unlock: refused when nothing is left to demand, as the game\'s "not enough targets"', () => {
+  const board = makeBoard(kindsLevel(2)); // the two open boxes already ask for both kinds
+  const locked = board.game.tanks.findIndex((t) => !t.isUnlocked);
+  const r = board.requestUnlock(locked);
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'no-demand');
+  assert.equal(board.game.tanks[locked].isUnlocked, false);
+  assert.equal(board.unlockCount, 0);
+});
+
+test('unlock: counts as help used, so pressure stops in the current window', () => {
+  const board = makeBoard(kindsLevel(4, { PointRangeStr: '0,1' }), { difficulty: 4 });
+  assert.equal(board.game.isPressureActive, true, 'progress 0 sits in the window 0..1, every window on');
+  assert.equal(board.requestUnlock(board.game.tanks.findIndex((t) => !t.isUnlocked)).ok, true);
+  assert.equal(board.game.helpUsedIn(0), 1);
+  assert.equal(board.game.isPressureActive, false);
+});
+
+// ---------- item art remap (ToyArtRemapper.Apply) ----------
+
+function remapLevel(strs) {
+  const records = strs.map((s, i) => ({ FloatieID: i + 1, FloatieType: 3, ToyStr: s }));
+  return { records, row: kindsLevel(0).row };
+}
+const idsOf = (board) => board.definition.floaties.flatMap((f) => [...f.visibleToy, ...f.extraToy]);
+
+test('art remap: ids without art take unused ids with art, one replacement each, counts kept', () => {
+  const level = remapLevel(['1,1,1', '2,2,2', '99,99,99', '150,150,150']);
+  const board = makeBoard(level, { artIds: new Set([1, 2, 3, 4, 5]) });
+  const map = board.artRemap;
+  assert.equal(map.size, 2);
+  const picks = [map.get(99), map.get(150)];
+  assert.ok(picks.every((v) => [3, 4, 5].includes(v)) && picks[0] !== picks[1], JSON.stringify([...map]));
+  const ids = idsOf(board);
+  assert.ok(ids.every((id) => [1, 2, 3, 4, 5].includes(id)), ids.join(','));
+  for (const v of picks) assert.equal(ids.filter((id) => id === v).length, 3);
+});
+
+test('art remap: with no free art left, a missing id shares a type the level has (round-robin)', () => {
+  const board = makeBoard(remapLevel(['1,1,1', '2,2,2', '99,99,99', '98,98,98']), { artIds: new Set([1, 2]) });
+  assert.deepEqual([...board.artRemap], [[98, 1], [99, 2]], 'C# walks the missing ids in sorted order');
+  assert.ok(idsOf(board).every((id) => id === 1 || id === 2));
+});
+
+test('art remap: off without artIds, and nothing to do when every id has art', () => {
+  const plain = makeBoard(remapLevel(['1,1,1', '99,99,99']));
+  assert.equal(plain.artRemap.size, 0);
+  assert.ok(idsOf(plain).includes(99));
+  const all = makeBoard(remapLevel(['1,1,1', '2,2,2']), { artIds: new Set([1, 2, 3]) });
+  assert.equal(all.artRemap.size, 0);
+});

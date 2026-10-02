@@ -45,6 +45,10 @@ function teamLevelsDir() {
 }
 const TEAM = teamLevelsDir();
 const NO_TEAM = !TEAM && 'team levels folder not found (set PSP_LEVELS)';
+// Two lines of level data live in the team repo, and the C# tests on each branch assert their own: gd-leveldesign
+// ships levels 1-200 with toy ids 1-24 (level 1 opens with 16,16,16); dev/main has the original 1,000 (1,1,1).
+const LINE = !TEAM ? null : fs.readdirSync(TEAM).filter((n) => /^LevelData_\d+\.json$/.test(n)).length === 200
+  ? { name: 'gd-leveldesign', levels: 200, level1: [16, 16, 16] } : { name: 'dev/main', levels: 1000, level1: [1, 1, 1] };
 
 const E = G.GameEventType;
 const R = G.GameResult;
@@ -257,11 +261,12 @@ describe('PortChecks', () => {
   test('LevelRepository.load wraps the level like WrapLevel and reads the file through the callback', { skip: NO_TEAM }, () => {
     const configs = G.LevelRepository.parseConfigs(fs.readFileSync(path.join(TEAM, 'LevelConfig.json'), 'utf8'));
     const read = (name) => fs.readFileSync(path.join(TEAM, name + '.json'), 'utf8');
-    assert.equal(G.LevelRepository.wrapLevel(201, configs.length), 1);
-    assert.equal(G.LevelRepository.wrapLevel(0, configs.length), 1);
-    assert.equal(G.LevelRepository.wrapLevel(450, configs.length), 50);
+    const n = configs.length; // 200 on gd-leveldesign, 1,000 on dev/main
+    assert.equal(G.LevelRepository.wrapLevel(n + 1, n), 1);
+    assert.equal(G.LevelRepository.wrapLevel(0, n), 1);
+    assert.equal(G.LevelRepository.wrapLevel(2 * n + 50, n), 50);
     assert.equal(G.LevelRepository.wrapLevel(7, 0), 1);
-    assert.equal(G.LevelRepository.load(203, configs, read).levelId, 3);
+    assert.equal(G.LevelRepository.load(n + 3, configs, read).levelId, 3);
     assert.equal(G.LevelRepository.getTier(3, configs), 2);
     assert.equal(G.LevelRepository.load(5, configs, () => null), null);
     const errors = [];
@@ -817,7 +822,7 @@ describe('LevelParserTests', () => {
     assert.equal(level.levelId, 1);
     assert.equal(level.timeSeconds, 300);
     assert.equal(level.floaties.length, 3);
-    assert.deepEqual(level.floaties[0].visibleToy, [16, 16, 16]);
+    assert.deepEqual(level.floaties[0].visibleToy, LINE.level1, LINE.name);
   });
 
   test('MissingFields_UseDefaults', () => {
@@ -874,7 +879,7 @@ describe('LevelParserTests', () => {
       for (const b of level.floaties) for (const f of b.visibleToy.concat(b.extraToy)) counts.set(f, (counts.get(f) || 0) + 1);
       if (Array.from(counts.values()).some((c) => c % G.ToySortRuleSet.Default.tankCapacity !== 0)) bad.push(entry.levelID);
     }
-    assert.equal(LevelJsonTestUtil.configs.length, 200);
+    assert.equal(LevelJsonTestUtil.configs.length, LINE.levels, LINE.name);
     assert.equal(bad.length, 0, 'Levels with per-type count not divisible by 3: ' + bad.join(','));
   });
 });

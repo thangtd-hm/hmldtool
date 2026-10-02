@@ -24,7 +24,7 @@ TOY = 'Assets/_Game/ToySort'
 FSP = 'Assets/_BaseCode/Image/_FSP'
 # FloatieMechanicType values used as catalogue keys (ToySort.Core.MechanicTypes)
 SKIN_TYPES = {1: 'frozen', 2: 'hidden', 3: 'lock', 8: 'net', 9: 'obstacle2'}
-MAX_PX = {'toy': 192, 'body': 384, 'overlay': 384, 'ui': 160}
+MAX_PX = {'toy': 192, 'body': 384, 'overlay': 384, 'ui': 160, 'scene': 1200, 'band': 512}
 GUID = r'\{fileID: -?\d+, guid: ([0-9a-f]{32})'
 
 
@@ -42,7 +42,7 @@ class Repo:
     def __init__(self, root):
         self.root = root
         self.guid = {}
-        for sub in (TOY, FSP):
+        for sub in (TOY, FSP, 'Assets/Material'):  # Material: the plain white sprite of the board's top mask
             for meta in glob.glob(os.path.join(root, sub, '**', '*.meta'), recursive=True):
                 with open(meta, encoding='utf-8', errors='ignore') as f:
                     m = re.search(r'guid: ([0-9a-f]{32})', f.read())
@@ -85,8 +85,9 @@ class Prefab:
             if c in ('4', '224') and 'm_GameObject' in b:
                 go = re.search(r'm_GameObject: \{fileID: (-?\d+)', b).group(1)
                 parent = re.search(r'm_Father: \{fileID: (-?\d+)', b)
+                sx, sy = vec(b, 'm_LocalScale')
                 self.tr[fid] = dict(name=names.get(go, '?'), pos=vec(b, 'm_LocalPosition'),
-                                    scale=vec(b, 'm_LocalScale')[0], parent=parent.group(1) if parent else '0')
+                                    scale=sx, scale_y=sy, parent=parent.group(1) if parent else '0')
         self.sprites = {}  # GameObject name -> png path
         for c, b in self.d.values():
             if c == '212':
@@ -146,6 +147,93 @@ class Images:
             self.out[name] = dict(src='data:image/webp;base64,' + base64.b64encode(buf.getvalue()).decode(),
                                   w=w, h=h, ppu=self.repo.ppu(png))
         return name
+
+
+def renderers(p, repo):
+    """GameObject name -> its SpriteRenderer: png path, draw mode, size field (units), whether the object is active."""
+    gos = {fid: (re.search(r'm_Name: (.*)', b).group(1).strip(), re.search(r'm_IsActive: (\d)', b).group(1) == '1')
+           for fid, (c, b) in p.d.items() if c == '1'}
+    out = {}
+    for c, b in p.d.values():
+        if c != '212':
+            continue
+        name, active = gos.get(re.search(r'm_GameObject: \{fileID: (-?\d+)', b).group(1), ('?', False))
+        g = re.search(r'm_Sprite: ' + GUID, b)
+        size = re.search(r'm_Size: \{x: ([^,]+), y: ([^}]+)\}', b)
+        out[name] = dict(png=repo.guid.get(g.group(1)) if g else None, mode=int(re.search(r'm_DrawMode: (\d)', b).group(1)),
+                         size=(float(size.group(1)), float(size.group(2))), active=active)
+    return out
+
+
+def scene(repo, imgs, layout_cs):
+    """The board's look around the floats, from ToySortBoardView.prefab, in board units (+y up), back to front:
+    pool tiles fitted to the design camera, lane ropes, the tiles again over everything above the top mask line,
+    the soft top bands, the shelf, the items counter, the boxes (Tank.prefab) and the queue slots (Slot.prefab)."""
+    ortho = float(re.search(r'BaseOrthoSize = ([\d.]+)f', layout_cs).group(1))
+    a = re.search(r'DesignAspect = ([\d.]+)f\s*/\s*([\d.]+)f', layout_cs)
+    half_w, half_h = ortho * float(a.group(1)) / float(a.group(2)), ortho
+    p = Prefab(repo.path(f'{TOY}/Prefabs/ToySortBoardView.prefab'), repo)
+    r = renderers(p, repo)
+
+    def native(png):
+        w, h = Image.open(png).size
+        ppu = repo.ppu(png)
+        return w / ppu, h / ppu
+
+    def rnd(*v):
+        return [round(x, 4) for x in v]
+
+    def art(name, key, kind):  # a simple-mode renderer at its pose
+        x, y, s = p.node(name)
+        w, h = native(r[name]['png'])
+        return dict(img=imgs.add(key, r[name]['png'], kind), x=round(x, 4), y=round(y, 4), w=round(w * s, 4), h=round(h * s, 4))
+
+    # ToySortBoardView.FitBackground: Background is scaled uniformly to cover the camera (the design view, centred on
+    # the origin); BG and TopCover are its children, so they take that scale times their own.
+    bw, bh = native(r['Background']['png'])
+    bx, by, bs = p.node('Background')
+    gx, gy, gs = p.node('BG')
+    fit = max(2 * half_h / bh, 2 * half_w / bw)
+    k = fit * gs / bs
+    bg = dict(img=imgs.add('scene_bg', r['BG']['png'], 'scene'),
+              x=round(bx + fit * (gx - bx) / bs, 4), y=round(by + fit * (gy - by) / bs, 4), w=round(bw * k, 4), h=round(bh * k, 4))
+    # TopCover shows the tiles inside the TopCoverMask sprite mask: everything above its bottom edge hides the floats.
+    mfid = next(f for f, t in p.tr.items() if t['name'] == 'TopCoverMask')
+    mt = p.tr[mfid]
+    mask_sprite = re.search(r'--- !u!331[\s\S]*?m_Sprite: ' + GUID, read(repo.path(f'{TOY}/Prefabs/ToySortBoardView.prefab'))).group(1)
+    _mw, mh = native(repo.guid[mask_sprite])
+    mx, my, _ms = p.world(mt['parent'], mt['pos'], 1.0)
+    cover_y = my - mh * mt['scale_y'] / 2
+    bands = []
+    for name in sorted(n for n in r if n.startswith('TopMask') and r[n]['active']):
+        x, y, s = p.node(name)
+        w, h = r[name]['size'] if r[name]['mode'] else native(r[name]['png'])
+        bands.append(dict(img=imgs.add('scene_band', r[name]['png'], 'band'), x=round(x, 4), y=round(y, 4), w=round(w * s, 4), h=round(h * s, 4)))
+    ropes = [art(n, 'scene_rope', 'scene') for n in sorted(r) if n.startswith('Day_phao') and r[n]['active']]
+
+    tank = Prefab(repo.path(f'{TOY}/Prefabs/Tank.prefab'), repo)
+    tr_ = renderers(tank, repo)
+    tw, th = native(tr_['Body']['png'])
+    ix, iy, _is = tank.node('InfoFrame')
+    iw, ih = native(tr_['InfoFrame']['png'])
+    tank_art = dict(body=imgs.add('tray', tr_['Body']['png'], 'ui'), lock=imgs.add('tray_lock', tr_['Lock']['png'], 'ui'),
+                    w=round(tw, 4), h=round(th, 4), docks=[rnd(*tank.node(f'DockSlot_{i}')[:2]) for i in range(3)],
+                    info=dict(img=imgs.add('tray_info', tr_['InfoFrame']['png'], 'ui'), x=round(ix, 4), y=round(iy, 4), w=round(iw, 4), h=round(ih, 4)),
+                    badge=rnd(*tank.node('CountdownBadge')[:2]))
+    tanks = [rnd(*p.world(i['parent'], i['pos'], i['scale'])[:2])
+             for i in sorted((i for i in p.instances if re.fullmatch(r'Tank_\d+', i['name'])), key=lambda i: int(i['name'][5:]))]
+    temp_fid = next(f for f, t in p.tr.items() if t['name'] == 'TempArea')
+    slot_pf = Prefab(repo.path(f'{TOY}/Prefabs/Slot.prefab'), repo)
+    sr = renderers(slot_pf, repo)
+    sw, sh = native(sr['Slot']['png'])
+    slots = []
+    for i in sorted((i for i in p.instances if i['parent'] == temp_fid and i['name'].startswith('Slot')), key=lambda i: i['pos'][0]):
+        x, y, s = p.world(i['parent'], i['pos'], i['scale'])
+        slots.append(dict(x=round(x, 4), y=round(y, 4), w=round(sw * s, 4), h=round(sh * s, 4)))
+    return dict(view=dict(left=-half_w, right=half_w, bottom=-half_h, top=half_h), bg=bg, coverY=round(cover_y, 4),
+                bands=bands, ropes=ropes, shelf=art('Table', 'scene_shelf', 'scene'),
+                counter=art('ToyCounterView', 'scene_counter', 'ui'), tank=tank_art, tanks=tanks,
+                slot=imgs.add('scene_slot', sr['Slot']['png'], 'ui'), slots=slots)
 
 
 def bake(repo_root):
@@ -213,7 +301,7 @@ def bake(repo_root):
                 obstacleScales=obstacle_scales, floats=floats, stone=stone, overlays=overlays,
                 toyArt=dict(ice=imgs.add('toy_ice', toy.sprites['Ice'], 'toy'),
                             mystery=imgs.add('mystery', mystery_png, 'toy'), link=imgs.add('link', link_png, 'toy')),
-                ui=ui, toys=toys, images=imgs.out)
+                ui=ui, toys=toys, scene=scene(repo, imgs, layout_cs), images=imgs.out)
 
 
 def main():
