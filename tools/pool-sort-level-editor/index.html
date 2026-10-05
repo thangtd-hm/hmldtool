@@ -2206,6 +2206,13 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     window.pspState = S; // for the browser console and headless smoke tests
     loadPrefs();
     prepArt();
+    // The game's static background layer (BG_gachthang, ART.scene.bg) behind the cards, fitted the way
+    // ToySortBoardView.FitBackground fits the camera: one copy, uniformly scaled to cover the area, centred. The art
+    // has a lighting gradient, so it is never tiled. Water ripples and caustics are not drawn; the cards scroll over it.
+    if (ART && ART.scene && IMG[ART.scene.bg.img]) {
+      $('#center').style.background = `#2a2f63 url("${IMG[ART.scene.bg.img]}") center / cover no-repeat`;
+      $('#center').classList.add('game-bg');
+    }
     // What the Playtest block borrows from the editor: the art (blob URLs), item drawing, messages, the checks.
     window.PSPUI = { IMG, art: () => ART, hasArt, itemBox, imgEl, el, toast, chipColor, render, levelIds, playLevel,
       errors: () => (S.level ? PSP.validate(S.level, S.row, artIds()).filter((x) => x.sev === 'error') : []) };

@@ -1,7 +1,8 @@
 # Pool Sort level editor
 
 Edit Pool Sort levels as the game draws them. Every float has its real body at its size, items sit on the
-prefab's slots, and each mechanic shows the game's own overlay. Every field of `LevelData_N.json` and the
+prefab's slots, and each mechanic shows the game's own overlay. The cards sit on the game's pool floor: its static background layer
+(`BG_gachthang`), one copy scaled to cover the area as `FitBackground` does, without the water's ripples or caustics. Every field of `LevelData_N.json` and the
 level's row in `LevelConfig.json` can be edited on screen. The page is a single self-contained `index.html`:
 open it by double-clicking, or from the hub site
 (`https://thangtd-hm.github.io/hmldtool/tools/pool-sort-level-editor/`). Nothing to install. The UI is in
