@@ -3,7 +3,8 @@
 Reads YAML prefabs, the mechanic catalogue and PNG sprites straight from disk (no Unity), and rewrites only the
 region between <!--ART:BEGIN--> and <!--ART:END--> in index.html with  window.ART = {...};
 
-Usage:  python bake_art.py [--repo <fish-sort-puzzle>] [--html index.html] [--check]
+Usage:  python bake_art.py [--repo <fish-sort-puzzle>] [--html index.html] [--check] [--commit <sha>]
+--commit labels the bake when --repo is a tree exported with `git archive` (no .git to ask).
 The repo defaults to <brain>/01-projects/pool-sort/fish-sort-puzzle, found by walking up from this folder.
 """
 import argparse
@@ -236,7 +237,7 @@ def scene(repo, imgs, layout_cs):
                 slot=imgs.add('scene_slot', sr['Slot']['png'], 'ui'), slots=slots)
 
 
-def bake(repo_root):
+def bake(repo_root, commit=None):
     repo = Repo(repo_root)
     imgs = Images(repo)
     layout_cs = read(repo.path(TOY + '/Scripts/Runtime/Config/ToySortLayout.cs'))
@@ -294,8 +295,8 @@ def bake(repo_root):
     ui = {k: imgs.add(k, repo.path(f'{FSP}/{rel}'), 'ui') for k, rel in [
         ('tray', 'Gameplay/Tray.png'), ('clock', 'Mechanic/i_time.png'), ('timeFrame', 'Mechanic/Time_fr.png'),
         ('hard', 'level difficulty/i_Warning_hard.png'), ('superhard', 'level difficulty/i_Warning_sphard.png')]}
-    commit = subprocess.run(['git', '-C', repo_root, 'rev-parse', '--short', 'HEAD'],
-                            capture_output=True, text=True).stdout.strip()
+    commit = commit or subprocess.run(['git', '-C', repo_root, 'rev-parse', '--short', 'HEAD'],
+                                      capture_output=True, text=True).stdout.strip()
     return dict(generated=datetime.datetime.now().isoformat(timespec='seconds'), repoCommit=commit,
                 floatArtRadius=art_radius, toyScale=round(toy_scale, 5), iceScale=round(ice_scale, 5),
                 obstacleScales=obstacle_scales, floats=floats, stone=stone, overlays=overlays,
@@ -309,8 +310,9 @@ def main():
     ap.add_argument('--repo', default=None)
     ap.add_argument('--html', default=os.path.join(HERE, 'index.html'))
     ap.add_argument('--check', action='store_true', help='print the manifest summary, write nothing')
+    ap.add_argument('--commit', default=None, help='team commit to record, for a --repo exported with git archive')
     a = ap.parse_args()
-    art = bake(a.repo or find_repo())
+    art = bake(a.repo or find_repo(), a.commit)
     payload = json.dumps(art, separators=(',', ':'))
     summary = {k: v for k, v in art.items() if k != 'images'}
     print(json.dumps(summary, indent=1))

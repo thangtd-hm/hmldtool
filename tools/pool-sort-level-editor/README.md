@@ -147,7 +147,8 @@ up to 0.9, and level 136's Countdown has a malformed pair (`0,5,90`).
 
 ## Item ids and art
 
-Ids 1–71 have art (`Resources/ToySort/Toy/toy_N.png`; 1–24 until the team's "+ New toys" on 2026-10-02); the data
+Ids 1–79 have art (`Resources/ToySort/Toy/toy_N.png`; 1–24 until the team's "+ New toys" on 2026-10-02, 1–71 until
+"+ New items 6/10"); the data
 uses ids up to 403. The editor draws other ids as numbered chips. In play, the game first swaps every id without
 art for a **random** id with art that the level does not use yet; when none is left, it shares a type the level
 already has. It then **shuffles the art on every level entry** (`ToySortBoard.Build` → `ToyArtRemapper.Apply` /
@@ -159,6 +160,9 @@ already has. It then **shuffles the art on every level entry** (`ToySortBoard.Bu
 python bake_art.py            # needs Pillow; reads ../../../../pool-sort/fish-sort-puzzle by walking up to the brain
 python bake_art.py --check    # print the manifest, write nothing
 python bake_art.py --repo <path to fish-sort-puzzle>
+# bake a newer commit without touching the team folder: export it, then label the bake with it
+git -C <fish-sort-puzzle> archive origin/dev/main Assets/_Game/ToySort Assets/_BaseCode/Image/_FSP Assets/Material | tar -x -C <dir>
+python bake_art.py --repo <dir> --commit <sha>
 ```
 
 `bake_art.py` reads the Unity YAML and sprites straight from disk (no Unity) and rewrites only the region between
@@ -180,7 +184,7 @@ python bake_art.py --repo <path to fish-sort-puzzle>
   - the queue slot positions and art.
 
 Every sprite renderer involved uses simple draw mode, so an image's world size is its pixels ÷ 100
-(`spritePixelsToUnits`). Last bake: team commit `650c597ee` (`dev/main`, 2026-10-02, 71 items), 96 images, about 1 MB.
+(`spritePixelsToUnits`). Last bake: team commit `e6e9c7e1e` (`dev/main`, 2026-10-07, 79 items), 104 images, about 1 MB.
 
 The page also works without art (`window.ART = null`): floats and items fall back to plain circles and numbered
 chips.
