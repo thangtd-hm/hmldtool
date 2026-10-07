@@ -43,6 +43,19 @@ and `…-plan.md`.
 7. The bottom strip counts every item kind (red when a count is not a multiple of 3), keys against locks, and
    each mechanic. It can also replace one item kind with another, or swap two. A and B are picked from grids of
    item pictures with their ids: A from the kinds in the level (with counts), B from every id with art.
+8. **Hộp đòi đồ chơi** (box targets, top of the level panel) chooses which item each box asks for, in place of the
+   game's auto-pick (`UseCustomTarget`, `CustomTargetStr`):
+   - Switch it on, and the list fills itself with a valid order: each kind is listed when its third item has dropped.
+   - Each chip is one box, in the order boxes open. Chips 1–2 (blue number) are the two boxes open from the start;
+     every box opened later (after a box is done, or when one is unlocked) takes the next chip.
+   - Click a chip to change its item from a grid of the level's kinds (each shows listed / needed boxes). Drag a
+     chip to reorder it, × removes it, ＋ adds one at the end. **↺ Tự điền** (auto-fill) restores a valid order,
+     and the `CustomTargetStr` field edits the raw list.
+   - The tally under the chips shows, per kind, the boxes listed against the boxes needed (items ÷ 3). Red means
+     wrong, and saving stays blocked until every kind is right.
+   - **▶ Kiểm tra chơi được** (playable check) lets the game's bot play this order on Playtest's engine, first
+     without unlocking boxes, then unlocking when stuck. It says whether the bot wins, needs unlocks, or loses. The
+     bot is greedy rather than perfect, so a loss means "probably stuck", not proof.
 
 ## Playtest ("▶ Chơi thử", key P)
 
@@ -92,6 +105,9 @@ or Esc) leaves the editor untouched. It opens only when the level passes the blo
   - the new box picks a demand, and matching items fly in from the queue;
   - it is refused when no item kind is left to demand (the game's "not enough targets").
   The stats and the end banner count the unlocks.
+- **Box targets:** a level with custom box targets plays them: every box that opens asks for the next listed item,
+  and the panel shows how many boxes have opened. The team's game does not have this yet, so this behaviour is the
+  editor's own reading of the owner's rule (2026-10-07).
 - **Known gaps:**
   - no boosters, revive or tutorial; box unlock is free;
   - ids without art are swapped as the game does (`ToyArtRemapper.Apply`: a random unused id with art), and the
@@ -116,6 +132,12 @@ or Esc) leaves the editor untouched. It opens only when the level passes the blo
   `LevelConfig` row; the file is created on save, and Unity adds the `.meta` on import. To rename or delete a
   level, use Unity or Explorer.
 - `FloatieID` is renumbered 1…n after a reorder. The game never reads it.
+- **Two file forms.** The list form (a bare array of floats, every level before 2026-10) and the object form
+  `{ "UseCustomTarget": …, "CustomTargetStr": "…", "Floaties": [ … ] }`, which carries custom box targets. A level
+  keeps the form it was read in, with its own key order. A list-form level is written in the object form only when
+  box targets are switched on; switched off again before saving, it is written unchanged. **The game's
+  `LevelParser` (dev/main `e6e9c7e1e`) still reads only the list form**, so object-form files need the team's
+  updated parser before they can ship. The checks warn about this on every object-form level.
 
 ## Checks ("Soát lỗi")
 
@@ -128,7 +150,9 @@ These block saving:
 - a float with fewer items than slots;
 - a per-slot list longer than the float;
 - a float size above 5;
-- an empty level.
+- an empty level;
+- with box targets on: an entry that is not an id, an empty list, an item the level does not hold, a kind listed
+  more or fewer times than its items ÷ 3, or a list length other than all items ÷ 3.
 
 These warn but still save:
 
@@ -139,7 +163,8 @@ These warn but still save:
 - item ids without art;
 - window odds that don't add up to 1;
 - window or Countdown values out of range, or malformed pairs;
-- float size 0.
+- float size 0;
+- the object file form, which today's game cannot read yet.
 
 No shipped level has an error, on either line of level data. `dev/main` (checked at `d6f5067f8`) has 1,000 levels;
 `gd-leveldesign` has 200 levels that use only ids 1–24. The warnings that matter, on both lines: level 12's odds add
@@ -184,7 +209,7 @@ python bake_art.py --repo <dir> --commit <sha>
   - the queue slot positions and art.
 
 Every sprite renderer involved uses simple draw mode, so an image's world size is its pixels ÷ 100
-(`spritePixelsToUnits`). Last bake: team commit `e6e9c7e1e` (`dev/main`, 2026-10-07, 79 items), 104 images, about 1 MB.
+(`spritePixelsToUnits`). Last bake: team commit `dbb0183b9` (`dev/main`, 2026-10-07, 79 items), 104 images, about 1 MB.
 
 The page also works without art (`window.ART = null`): floats and items fall back to plain circles and numbered
 chips.
@@ -192,9 +217,9 @@ chips.
 ## Tests
 
 ```bash
-node --test tools/pool-sort-level-editor/editor.test.js   # 31: the editor core
+node --test tools/pool-sort-level-editor/editor.test.js   # 36: the editor core
 node --test tools/pool-sort-level-editor/game.test.js     # 159 (+6 skipped, as in C#): the Playtest core
-node --test tools/pool-sort-level-editor/board.test.js    # 28: the Playtest pool
+node --test tools/pool-sort-level-editor/board.test.js    # 30: the Playtest pool
 ```
 
 Each test file loads its script blocks out of `index.html`.

@@ -544,3 +544,42 @@ test('art remap: off without artIds, and nothing to do when every id has art', (
   const all = makeBoard(remapLevel(['1,1,1', '2,2,2']), { artIds: new Set([1, 2, 3]) });
   assert.equal(all.artRemap.size, 0);
 });
+
+
+// ---------- custom box targets (the editor's definition until the team's C# ships it) ----------
+
+test('custom targets: boxes open with the listed items in order, unlocks take the next, then nothing is left', () => {
+  const level = remapLevel(['1,1,1', '2,2,2', '3,3,3', '4,4,4']);
+  const board = makeBoard(level, { customTargets: [3, 1, 4, 2] });
+  const g = board.game, open = () => g.tanks.filter((t) => t.isUnlocked).map((t) => t.toyType);
+  assert.deepEqual(open(), [3, 1], 'the two open boxes take entries 1-2');
+  assert.equal(g.customTargetsUsed, 2);
+  const locked = g.tanks.findIndex((t) => !t.isUnlocked);
+  assert.equal(board.requestUnlock(locked).ok, true);
+  assert.equal(g.tanks[locked].toyType, 4, 'an unlocked box takes the next entry');
+  const other = g.tanks.findIndex((t) => !t.isUnlocked);
+  assert.equal(board.requestUnlock(other).ok, true);
+  assert.equal(g.tanks[other].toyType, 2);
+  assert.equal(g.canOpenTank, false, 'the list is used up');
+  const auto = makeBoard(level);
+  assert.equal(auto.game.customTargets, null, 'no list: the game\'s auto-pick');
+});
+
+test('custom targets: a completed box asks for the next listed item', () => {
+  const board = makeBoard(remapLevel(['2,2,2', '1,1,1', '3,3,3']), { customTargets: [1, 3, 2] });
+  const g = board.game;
+  settle(board, 8);
+  const tapAll = (kind) => {
+    for (const f of board.floats) {
+      for (let s = 0; s < f.state.slots.length; s++) {
+        if (f.state.slots[s] !== kind) continue;
+        for (let k = 0; k < 400 && !board.canTap(f.id, s).ok; k++) board.step(0.05);
+        assert.equal(board.tap(f.id, s).ok, true);
+      }
+    }
+  };
+  tapAll(1);
+  for (let k = 0; k < 60; k++) board.step(0.05);
+  assert.ok(g.tanks.some((t) => t.isUnlocked && t.toyType === 2), 'box 1 done: the next box asks for 2');
+  assert.equal(g.customTargetsUsed, 3);
+});

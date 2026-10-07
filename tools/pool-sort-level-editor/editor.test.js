@@ -325,3 +325,76 @@ test('getRow, newRow and setRowField', () => {
   assert.match(PSP.serializeConfig(cfg), /"LevelTime": 240\.0/);
   assert.equal(PSP.getRow(cfg, 9), null);
 });
+
+
+// ---------- custom box targets: the object form, the list rules, the checks ----------
+
+// The same shape as the owner's example LevelData_201.json (synthetic ids, written the way the team writes files).
+const OBJ = (on, str, floats) => JSON.stringify({ UseCustomTarget: on, CustomTargetStr: str, Floaties: floats }, null, 2).replace(/\n/g, '\r\n');
+const F3 = (id, toys) => ({ FloatieID: id, FloatieType: 3, ToyStr: toys });
+const THREE = [F3(1, '16,16,16'), F3(2, '14,14,14'), F3(3, '1,1,1')];
+
+test('object form: parsed with its custom targets and written back byte for byte', () => {
+  const text = OBJ(true, '1,14,16', THREE);
+  const L = PSP.parseLevel(text);
+  assert.equal(PSP.levelForm(L), 'object');
+  assert.deepEqual(L.custom, { on: true, str: '1,14,16' });
+  assert.equal(L.floats.length, 3);
+  assert.equal(PSP.serializeLevel(L), text);
+  assert.equal(PSP.serializeLevel(PSP.cloneLevel(L)), text, 'a clone keeps the form and the targets');
+  const off = PSP.parseLevel(OBJ(false, '', THREE));
+  assert.equal(PSP.levelForm(off), 'object', 'an object-form file stays an object when custom targets are off');
+  assert.equal(PSP.serializeLevel(off), OBJ(false, '', THREE));
+});
+
+test('object form keeps keys it does not know, in their place; a missing key goes before Floaties', () => {
+  const text = JSON.stringify({ Note: 'x', UseCustomTarget: true, Floaties: THREE, Tail: 2 }, null, 2).replace(/\n/g, '\r\n');
+  const L = PSP.parseLevel(text);
+  PSP.setTargets(L, [16, 14, 1]);
+  assert.deepEqual(Object.keys(JSON.parse(PSP.serializeLevel(L))), ['Note', 'UseCustomTarget', 'CustomTargetStr', 'Floaties', 'Tail']);
+  assert.throws(() => PSP.parseLevel('{"UseCustomTarget":true}'), /Floaties/);
+});
+
+test('list form stays a list until custom targets are on; on writes the object form, off again goes back', () => {
+  const text = JSON.stringify(THREE, null, 2).replace(/\n/g, '\r\n');
+  const L = PSP.parseLevel(text);
+  assert.equal(PSP.levelForm(L), 'list');
+  assert.equal(PSP.serializeLevel(L), text);
+  PSP.setCustomOn(L, true);
+  PSP.setTargets(L, [16, 14, 1]);
+  assert.equal(PSP.serializeLevel(L), OBJ(true, '16,14,1', THREE));
+  PSP.setCustomOn(L, false);
+  assert.equal(PSP.serializeLevel(L), text, 'switched off before saving: the file is unchanged');
+});
+
+test('parseTargets, autoTargets and targetStats', () => {
+  assert.deepEqual(PSP.parseTargets('1, 14,16'), { ids: [1, 14, 16], bad: 0 });
+  assert.deepEqual(PSP.parseTargets(''), { ids: [], bad: 0 });
+  assert.deepEqual(PSP.parseTargets('1,,x,0,-2,3'), { ids: [1, 3], bad: 4 });
+  // items in drop order: a kind is listed each time its running count reaches another 3
+  const L = { floats: [F3(1, '5,5,7'), F3(2, '5,7,7'), F3(3, '5,5,5'), { FloatieID: 4, FloatieType: 2, ToyStr: '9,9,9', IsMore: true }] };
+  assert.deepEqual(PSP.autoTargets(L), [5, 7, 5, 9]);
+  PSP.setCustomOn(L, true);
+  PSP.setTargets(L, [5, 5, 7, 12]);
+  const t = PSP.targetStats(L);
+  assert.equal(t.boxes, 4);
+  assert.deepEqual(t.kinds.map((k) => [k.id, k.items, k.need, k.listed]), [[5, 6, 2, 2], [7, 3, 1, 1], [9, 3, 1, 0]]);
+  assert.deepEqual(t.unknown, [12]);
+});
+
+test('validate: every rule of the custom list, and none when it is right', () => {
+  const L = PSP.parseLevel(OBJ(true, '1,14,16', THREE));
+  const codes = (lv) => PSP.validate(lv).map((x) => x.code);
+  assert.deepEqual(codes(L), ['newForm'], 'the owner\'s example is correct; only the game-support warning');
+  const set = (str) => { const c = PSP.cloneLevel(L); c.custom.str = str; return codes(c); };
+  assert.ok(set('').includes('ctEmpty'));
+  assert.ok(set('1,14,x').includes('ctBad'));
+  assert.ok(set('1,14,99').includes('ctUnknown'));
+  assert.ok(set('1,14,14').includes('ctCount'), 'kind 14 twice, kind 16 never');
+  assert.ok(set('1,14,16,16').includes('ctLength'));
+  assert.ok(!set('16,1,14').some((c) => c.startsWith('ct')), 'any order of the right kinds is valid');
+  const off = PSP.cloneLevel(L); off.custom.on = false; off.custom.str = 'junk';
+  assert.ok(!codes(off).some((c) => c.startsWith('ct')), 'a switched-off list is not checked');
+  const list = PSP.parseLevel(JSON.stringify(THREE));
+  assert.ok(!codes(list).includes('newForm'));
+});
