@@ -43,6 +43,7 @@ and `…-plan.md`.
 7. The bottom strip counts every item kind (red when a count is not a multiple of 3), keys against locks, and
    each mechanic. It can also replace one item kind with another, or swap two. A and B are picked from grids of
    item pictures with their ids: A from the kinds in the level (with counts), B from every id with art.
+   Both also rewrite the box targets (item 8), so a valid list stays valid.
 8. **Hộp đòi đồ chơi** (box targets, top of the level panel) chooses which item each box asks for, in place of the
    game's auto-pick (`UseCustomTarget`, `CustomTargetStr`):
    - Switch it on, and the list fills itself with a valid order: each kind is listed when its third item has dropped.

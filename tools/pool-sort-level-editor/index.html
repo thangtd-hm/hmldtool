@@ -686,6 +686,19 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
       const m = r.MaskTargetToy | 0;
       if (m > 0 && fn(m) !== m) { setField(r, 'MaskTargetToy', fn(m)); n++; }
     }
+    // The box targets name kinds too: each entry follows its kind (whether the list is on or off), so a valid list
+    // stays valid. A token that is not an id is left as it is.
+    const c = level.custom;
+    if (c && c.str) {
+      const out = String(c.str).split(',').map((t) => {
+        const v = t.trim();
+        if (!/^\d+$/.test(v) || +v <= 0) return t;
+        const to = fn(+v);
+        if (to !== +v) n++;
+        return String(to);
+      }).join(',');
+      if (out !== c.str) level.custom = Object.assign({}, c, { str: out });
+    }
     return n;
   }
   function replaceKind(level, a, b) { return mapKinds(level, (id) => (id === a ? b : id)); }
@@ -1939,9 +1952,9 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     const inLevel = [...c.items.keys()].filter((x) => Number.isInteger(x) && x > 0);
     const a = itemPicker('A', inLevel, first, c.items, 'Loại đồ chơi A: chỉ các loại đang có trong level');
     const b = itemPicker('B', opts, S.brush, c.items, 'Loại đồ chơi B: mọi id có hình, và các id đang có trong level');
-    const r1 = el('button', 'tb', 'Thay A → B'); r1.title = 'Đổi mọi đồ chơi A trong level thành B (cả nạp lại và Mask)';
+    const r1 = el('button', 'tb', 'Thay A → B'); r1.title = 'Đổi mọi đồ chơi A trong level thành B (cả nạp lại, Mask và danh sách hộp đòi)';
     r1.onclick = () => { const x = +a.value, y = +b.value; if (x !== y) edit(() => PSP.replaceKind(S.level, x, y)); };
-    const r2 = el('button', 'tb', 'Đổi A ↔ B'); r2.title = 'Hoán đổi hai loại đồ chơi trong level';
+    const r2 = el('button', 'tb', 'Đổi A ↔ B'); r2.title = 'Hoán đổi hai loại đồ chơi trong level (cả nạp lại, Mask và danh sách hộp đòi)';
     r2.onclick = () => { const x = +a.value, y = +b.value; if (x !== y) edit(() => PSP.swapKinds(S.level, x, y)); };
     rep.append(el('span', 'stat', 'A'), a, el('span', 'stat', 'B'), b, r1, r2);
     f.appendChild(rep);

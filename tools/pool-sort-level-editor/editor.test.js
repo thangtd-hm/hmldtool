@@ -398,3 +398,21 @@ test('validate: every rule of the custom list, and none when it is right', () =>
   const list = PSP.parseLevel(JSON.stringify(THREE));
   assert.ok(!codes(list).includes('newForm'));
 });
+
+
+test('replace and swap also rewrite the box targets, so a valid list stays valid', () => {
+  const L = PSP.parseLevel(OBJ(true, '1,14,16,1', [F3(1, '16,16,16'), F3(2, '14,14,14'), F3(3, '1,1,1'), F3(4, '1,1,1')]));
+  assert.ok(!PSP.validate(L).some((x) => x.code.startsWith('ct')));
+  PSP.swapKinds(L, 1, 16);
+  assert.equal(L.custom.str, '16,14,1,16');
+  assert.ok(!PSP.validate(L).some((x) => x.code.startsWith('ct')), 'still valid after a swap');
+  PSP.replaceKind(L, 14, 1); // merge 14 into 1: 1 now has 6 items and 2 boxes
+  assert.equal(L.custom.str, '16,1,1,16');
+  assert.ok(!PSP.validate(L).some((x) => x.code.startsWith('ct')), 'still valid after a merge');
+  const off = PSP.parseLevel(OBJ(false, '5,x,5', [F3(1, '5,5,5')]));
+  assert.equal(PSP.replaceKind(off, 5, 9), 5, '3 items + 2 list entries changed');
+  assert.equal(off.custom.str, '9,x,9', 'a switched-off list follows too; a bad token is left alone');
+  const list = PSP.parseLevel(JSON.stringify([F3(1, '5,5,5')]));
+  PSP.replaceKind(list, 5, 9);
+  assert.equal(PSP.levelForm(list), 'list', 'a level without targets keeps the list form');
+});
