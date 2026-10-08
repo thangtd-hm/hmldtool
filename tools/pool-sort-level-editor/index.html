@@ -124,6 +124,23 @@ body.mode-select .strip .add{opacity:.35;cursor:default}
   padding:10px;color:#dff3ff;font-size:var(--fs-sm);cursor:default}
 .card.addc:hover{background:#ffffff0c}
 .addc .sizes{display:flex;gap:4px}
+.addc .addf{flex-direction:row;gap:6px;padding:6px 10px;font-size:var(--fs-sm)}
+.card .addi{position:absolute;right:4px;top:4px;display:flex;align-items:center;gap:1px;background:#0b355cd9;
+  border:1px dashed #6fc2ff;border-radius:8px;color:#dff3ff;font-weight:800;font-size:13px;line-height:1;padding:1px 3px 1px 5px;cursor:pointer}
+.card .addi:hover{border-style:solid;border-color:#fff;background:#0b355c}
+.stage .slot.picked{filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 6px var(--accent)) drop-shadow(0 0 2px var(--accent))}
+.strip .ex.picked{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+body.mode-erase .stage .slot,body.mode-erase .strip .ex{cursor:pointer}
+body.mode-erase .stage .slot:hover{filter:saturate(.5) drop-shadow(0 0 2px #ff8080) drop-shadow(0 0 6px var(--danger))}
+body.mode-erase .strip .ex:hover{border-color:var(--danger);box-shadow:0 0 0 2px var(--danger)}
+body.mode-erase .strip .add{display:none}
+body.mode-erase .card:hover:not(:has([data-slot]:not(.last):hover,[data-extra]:hover)){background:#ff4d4d24;box-shadow:0 0 0 2px var(--danger)}
+.pickchip{display:flex;align-items:center;gap:3px;border:1px solid var(--accent);border-radius:var(--r1);padding:1px 2px 1px 4px;
+  font-size:var(--fs-xs)}
+.pickchip b{margin:0 2px;white-space:nowrap}
+.pickchip .x{background:none;border:0;color:var(--dim);cursor:pointer;padding:0 4px;font-size:var(--fs-sm)}
+.pickchip .x:hover{color:var(--danger)}
+.picks{display:flex;flex-wrap:wrap;gap:4px;margin:var(--s1) 0}
 .addc button{background:#0b355c;border:1px solid #6fc2ff;border-radius:8px;color:#fff;cursor:pointer;padding:3px;
   display:flex;flex-direction:column;align-items:center;font-size:10px}
 .welcome{max-width:560px;margin:8vh auto;background:#0e1016e6;border:1px solid var(--line2);border-radius:var(--r2);
@@ -243,10 +260,8 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
   color:var(--dim);font-size:9.5px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px}
 .ct-chip.open .ct-no{background:#11303c;color:var(--accent2);border-color:var(--accent2)}
 .ct-chip > b{padding-right:5px}
-/* the remove control is its own segment at the chip's end, so "23 ✕" never reads as "23 times" */
-.ct-x{align-self:stretch;margin:0 0 0 2px;width:20px;border:none;border-left:1px solid var(--line2);border-radius:0 var(--r1) var(--r1) 0;
-  background:#ffffff08;color:var(--faint);cursor:pointer;font-size:10px;padding:0;display:flex;align-items:center;justify-content:center}
-.ct-x:hover{background:var(--danger);color:var(--danger-ink)}
+/* 🧽 Xoá mode removes a box from the order: the chip a click would remove turns red */
+body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;box-shadow:0 0 0 2px var(--danger) inset}
 /* the spawn order bar: one row at the top of the board */
 #ctBar{grid-row:1;display:flex;align-items:center;gap:var(--s3);min-width:0;min-height:74px;box-sizing:border-box;overflow:hidden;background:#0e1016f0;border-bottom:1px solid var(--line2);padding:4px var(--s4)}
 #ctBar[hidden]{display:none}
@@ -261,7 +276,7 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
 .ctb-raw input{flex:1;min-width:0;font-size:var(--fs-sm)}
 .ctb-lane{flex:1;min-width:0;display:flex;align-items:center;gap:6px;overflow-x:auto;overflow-y:hidden;padding:9px 2px 5px;scrollbar-width:thin}
 .ctb-acts{flex:0 0 auto;display:flex;gap:4px}
-.ct-chip{flex:0 0 auto;height:48px;padding:0 0 0 7px;gap:4px}
+.ct-chip{flex:0 0 auto;height:48px;padding:0 7px;gap:4px}
 .ct-chip.on{border-color:var(--accent2);box-shadow:0 0 0 2px var(--accent2) inset;background:#11303c}
 .ct-chip.hl,.ct-kind.hl{box-shadow:0 0 0 2px var(--accent)}
 .ct-chip .ct-id{min-width:18px;text-align:center;font-size:var(--fs-md);padding:0}
@@ -395,7 +410,7 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
   <button class="tb" id="btnNew" title="Tạo level mới: file LevelData_N.json và một dòng trong LevelConfig.json">＋ Mới</button>
   <button class="tb" id="btnDup" title="Nhân bản level đang mở (phao và cài đặt level) sang một số level mới">⧉ Nhân bản</button>
   <span class="sep"></span>
-  <span class="seg"><button class="tb" id="btnSelect" title="Chế độ Chọn (V): bấm vào phao hay đồ chơi chỉ để xem dữ liệu, không sửa gì">🖱 Chọn</button><button class="tb" id="btnDraw" title="Chế độ Vẽ (B): bấm vào ô để vẽ đồ chơi đang chọn, hoặc gắn cơ chế đang chọn">🖌 Vẽ</button></span>
+  <span class="seg"><button class="tb" id="btnSelect" title="Chế độ Chọn (V): bấm vào phao hay đồ chơi chỉ để xem dữ liệu, không sửa gì">🖱 Chọn</button><button class="tb" id="btnDraw" title="Chế độ Vẽ (B): bấm vào ô để vẽ đồ chơi đang chọn, hoặc gắn cơ chế đang chọn">🖌 Vẽ</button><button class="tb" id="btnErase" title="Chế độ Xoá (E): bấm vào đồ chơi để xoá nó (phao nhỏ lại một cỡ), vào thân phao để xoá cả phao, vào đồ chơi nạp lại để bỏ nó">🧽 Xoá</button></span>
   <span class="sep"></span>
   <button class="tb" id="btnUndo" title="Hoàn tác (Ctrl+Z)">↶</button>
   <button class="tb" id="btnRedo" title="Làm lại (Ctrl+Y)">↷</button>
@@ -639,6 +654,30 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     return true;
   }
 
+  /** One more visible item: the float grows a size (refills stay after it). Stones and full floats refuse. */
+  function addItem(rec, id) {
+    const v = floatView(rec);
+    if (v.stone || v.items.length >= MAX_SLOTS) return false;
+    const n = v.items.length + 1;
+    setField(rec, 'FloatieType', n);
+    setField(rec, 'ToyStr', v.items.concat([id], v.extra).join(','));
+    resizeSlotFields(rec, n);
+    return true;
+  }
+  /** Takes one visible item out: the float shrinks a size and every per-slot list drops that slot. Refuses a stone,
+   *  a bad slot and the float's last item (the caller removes the float instead: a float with no item is a stone). */
+  function removeItem(rec, slot) {
+    const v = floatView(rec);
+    if (v.stone || slot < 0 || slot >= v.items.length || v.items.length <= 1) return false;
+    for (const k in SLOT_FIELDS) {
+      const f = SLOT_FIELDS[k];
+      if (rec[f]) setField(rec, f, slotStr(fitSlots(parseInts(rec[f]), v.items.length).filter((_, j) => j !== slot)));
+    }
+    setField(rec, 'FloatieType', v.items.length - 1);
+    setField(rec, 'ToyStr', v.items.filter((_, j) => j !== slot).concat(v.extra).join(','));
+    return true;
+  }
+
   // The commonest key set in the data (6,983 records), so a new float looks like its neighbours.
   function newFloat(size, fill) {
     return { FloatieID: 0, FloatieType: size, ToyStr: new Array(size).fill(fill || 1).join(','), IsFrozen: false,
@@ -709,6 +748,13 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
       let changed = false;
       const out = all.map((id) => { const t = fn(id); if (t !== id) { n++; changed = true; } return t; });
       if (changed) setField(r, 'ToyStr', out.join(','));
+    }
+    return n + mapRefs(level, fn);
+  }
+  /** Kinds named outside ToyStr follow fn: each Mask's target, and the box targets. */
+  function mapRefs(level, fn) {
+    let n = 0;
+    for (const r of level.floats) {
       const m = r.MaskTargetToy | 0;
       if (m > 0 && fn(m) !== m) { setField(r, 'MaskTargetToy', fn(m)); n++; }
     }
@@ -728,6 +774,34 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     return n;
   }
   function replaceKind(level, a, b) { return mapKinds(level, (id) => (id === a ? b : id)); }
+  /**
+   * Sets each picked item ({ float, slot }, or { float, extra } for a refill) to id; picks that no longer point at
+   * an item are skipped. A kind whose every item was picked leaves the level, so its Mask targets and box targets
+   * follow, as in replaceKind; a kind picked in part keeps them, and the checks flag the box targets' counts.
+   * Returns how many items changed.
+   */
+  function replaceItems(level, picks, id) {
+    const total = counts(level).items, taken = new Map(), seen = new Set();
+    let n = 0;
+    for (const p of picks) {
+      const rec = level.floats[p.float];
+      if (!rec) continue;
+      const v = floatView(rec);
+      const index = p.extra >= 0 ? (p.extra < v.extra.length ? v.items.length + p.extra : -1)
+        : (p.slot >= 0 && p.slot < v.items.length ? p.slot : -1);
+      if (index < 0 || seen.has(p.float + ':' + index)) continue;
+      seen.add(p.float + ':' + index);
+      const all = parseIds(rec.ToyStr), old = all[index];
+      taken.set(old, (taken.get(old) || 0) + 1);
+      if (old === id) continue;
+      all[index] = id;
+      setField(rec, 'ToyStr', all.join(','));
+      n++;
+    }
+    const gone = new Set([...taken].filter(([k, c]) => k !== id && c === total.get(k)).map(([k]) => k));
+    if (gone.size) mapRefs(level, (k) => (gone.has(k) ? id : k));
+    return n;
+  }
   function swapKinds(level, a, b) { return mapKinds(level, (id) => (id === a ? b : id === b ? a : id)); }
 
   function counts(level) {
@@ -890,8 +964,8 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     DEMO, parseLevel, serializeLevel, levelForm, parseConfig, serializeConfig, levelIdFromName,
     parseTargets, setTargets, setCustomOn, autoTargets, targetStats,
     MAX_SLOTS, SLOT_FIELDS, MECHS, MECH_NAME, ART_IDS, setField, parseIds, floatView, setItem, setSize, setExtra,
-    setMechanic, setSlot, newFloat, addFloat, removeFloat, moveFloat, duplicateFloat, renumber, cloneLevel,
-    replaceKind, swapKinds, counts, validate, parseRanges, formatRanges, getRow, newRow, setRowField };
+    setMechanic, setSlot, addItem, removeItem, newFloat, addFloat, removeFloat, moveFloat, duplicateFloat, renumber, cloneLevel,
+    replaceKind, replaceItems, swapKinds, counts, validate, parseRanges, formatRanges, getRow, newRow, setRowField };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <script id="ui">
@@ -913,9 +987,12 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     id: null, level: null, levelText: null, row: null, rowText: 'null', addedRow: false, demo: false,
     undo: [], redo: [], sel: { float: -1, slot: -1 }, brush: 1, stamp: null, pick: null, issues: [], lastErrors: 0,
     zoom: 34, seeThrough: true, help: true,
-    // 'select': clicks only select (and show raw data); 'draw': clicks paint the brush or apply the stamp.
-    // Starts in select so a stray click cannot change a level. sel.extra = index of a selected Portal refill item.
+    // 'select': clicks only select (and show raw data); 'draw': clicks paint the brush or apply the stamp;
+    // 'erase': clicks remove an item, a refill or a whole float. Starts in select (erase is never restored) so a
+    // stray click cannot change a level. sel.extra = index of a selected Portal refill item.
     mode: 'select',
+    // Select mode's multi-selection (Ctrl/Shift+click): [{ float, slot, extra }] (extra >= 0: a refill item).
+    picks: [],
   };
   let ART = null, TOYS = new Set(), PX = 34;
   const IMG = {};
@@ -960,15 +1037,42 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     try { localStorage.setItem('psp-level-editor', JSON.stringify({ zoom: S.zoom, seeThrough: S.seeThrough, help: S.help, brush: S.brush, mode: S.mode })); } catch (e) { /* ignore */ }
   }
   function setMode(m) {
-    S.mode = m === 'draw' ? 'draw' : 'select';
-    if (S.mode === 'select') S.stamp = null;
+    S.mode = m === 'draw' || m === 'erase' ? m : 'select';
+    if (S.mode !== 'draw') S.stamp = null;
+    if (S.mode !== 'select') S.picks = [];
     savePrefs();
     render();
   }
   // Choosing a brush or a stamp means the user wants to paint, so both switch to draw mode.
-  function useBrush(id) { S.brush = id; S.stamp = null; S.mode = 'draw'; savePrefs(); render(); }
-  function useStamp(key) { S.stamp = S.stamp === key && S.mode === 'draw' ? null : key; S.mode = 'draw'; savePrefs(); render(); }
+  function useBrush(id) { S.brush = id; S.stamp = null; S.mode = 'draw'; S.picks = []; savePrefs(); render(); }
+  function useStamp(key) { S.stamp = S.stamp === key && S.mode === 'draw' ? null : key; S.mode = 'draw'; S.picks = []; savePrefs(); render(); }
   const selExtra = () => (S.sel.extra >= 0 ? S.sel.extra : -1);
+
+  // ---------- multi-selection (select mode) ----------
+  const pickKey = (p) => p.float + (p.extra >= 0 ? ':x' + p.extra : ':' + p.slot);
+  function isPicked(i, slot, extra) {
+    if (S.mode !== 'select' || !S.picks.length) return false;
+    const k = pickKey({ float: i, slot, extra });
+    return S.picks.some((p) => pickKey(p) === k);
+  }
+  /** The id a pick points at, or null when the level changed under it. */
+  function pickedId(p) {
+    const rec = S.level && S.level.floats[p.float];
+    if (!rec) return null;
+    const v = PSP.floatView(rec);
+    const id = p.extra >= 0 ? v.extra[p.extra] : v.items[p.slot];
+    return id === undefined ? null : id;
+  }
+  const livePicks = () => (S.mode === 'select' ? S.picks.filter((p) => pickedId(p) !== null) : []);
+  /** Ctrl/Shift+click: adds or drops one item. The item open in the inspector joins first, as in a file list. */
+  function togglePick(i, slot, extra) {
+    if (!S.picks.length && S.sel.float >= 0 && (S.sel.slot >= 0 || selExtra() >= 0))
+      S.picks.push({ float: S.sel.float, slot: selExtra() >= 0 ? -1 : S.sel.slot, extra: selExtra() });
+    const p = { float: i, slot: extra >= 0 ? -1 : slot, extra: extra >= 0 ? extra : -1 };
+    const k = pickKey(p), at = S.picks.findIndex((q) => pickKey(q) === k);
+    if (at >= 0) S.picks.splice(at, 1); else S.picks.push(p);
+    S.sel = extra >= 0 ? { float: i, slot: -1, extra } : { float: i, slot };
+  }
 
   // ---------- art ----------
   function prepArt() {
@@ -1070,7 +1174,8 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     st.style.left = W / 2 + 'px';
     st.style.top = W / 2 + 'px';
     card.appendChild(st);
-    card.title = `Phao #${i + 1} · cỡ ${v.size}` + (v.mech !== 'none' ? ' · ' + MECH_LABEL[v.mech] : '');
+    card.title = `Phao #${i + 1} · cỡ ${v.size}` + (v.mech !== 'none' ? ' · ' + MECH_LABEL[v.mech] : '') +
+      (S.mode === 'erase' ? '\nBấm vào thân phao: xoá cả phao' : '');
 
     if (ART) {
       artAt(st, g.body.img, g.body.s, g.body.x, g.body.y);
@@ -1105,7 +1210,17 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     if (v.mechs.length) idx.appendChild(el('small', null, v.mechs.map((m) => MECH_LABEL[m]).join(' + ')));
     card.appendChild(idx);
 
-    if (hasStrip) card.appendChild(drawStrip(v, W, stripH, S.sel.float === i ? selExtra() : -1));
+    if (hasStrip) card.appendChild(drawStrip(v, W, stripH, S.sel.float === i ? selExtra() : -1, i));
+    // ＋: one more item (the brush), so a float grows with its items up to 5; in Chọn it switches to Vẽ first
+    if (!v.stone && v.items.length < PSP.MAX_SLOTS && S.mode !== 'erase') {
+      const add = el('button', 'addi', '＋');
+      add.dataset.addItem = '1';
+      add.draggable = false;
+      add.appendChild(itemBox(S.brush, 16));
+      add.title = `Thêm đồ chơi ${S.brush} (đồ chơi đang chọn): phao lên cỡ ${v.items.length + 1}` +
+        (S.mode === 'select' ? ' — chuyển sang 🖌 Vẽ' : '');
+      card.appendChild(add);
+    }
     return card;
   }
 
@@ -1127,6 +1242,8 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     node.dataset.slot = s;
     node.dataset.item = id;
     if (S.sel.float === i && S.sel.slot === s) node.classList.add('sel');
+    if (isPicked(i, s, -1)) node.classList.add('picked');
+    if (v.items.length === 1) node.classList.add('last');
     const tips = [`Ô ${s + 1}: đồ chơi ${id}`];
     if (unknown) {
       tips.push('Mystery Item');
@@ -1144,7 +1261,8 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     }
     if (keyItem && ART) { artAt(st, ART.overlays.key.img, 0.42, x + 0.36, y - 0.34); tips.push('Key Item'); }
     if (!ART && (ice || cage || keyItem || unknown)) at(st, el('span', 'tag', [ice && 'ice ' + ice, unknown && '?', cage && 'cage ' + cage, keyItem && 'key'].filter(Boolean).join(' ')), x, y - 0.5);
-    node.title = tips.join(' · ') + (S.mode === 'select' ? '\nBấm: xem dữ liệu · Chuột phải: lấy đồ chơi này làm cọ'
+    node.title = tips.join(' · ') + (S.mode === 'select' ? '\nBấm: xem dữ liệu · Ctrl/Shift+bấm: chọn nhiều · Chuột phải: lấy đồ chơi này làm cọ'
+      : S.mode === 'erase' ? (v.items.length > 1 ? '\nBấm: xoá đồ chơi này (phao nhỏ lại một cỡ)' : '\nBấm: xoá cả phao (đồ chơi cuối cùng)')
       : '\nBấm: đổi sang đồ chơi đang chọn · Chuột phải: lấy đồ chơi này làm cọ');
   }
 
@@ -1174,18 +1292,18 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     at(st, el('span', 'tag', 'Mask'), g.R * 0.62, g.R * 0.62 - 0.55);
   }
 
-  function drawStrip(v, W, H, selK) {
+  function drawStrip(v, W, H, selK, i) {
     const strip = el('div', 'strip');
     strip.style.top = (W - 4) + 'px';
     strip.style.height = H + 'px';
     strip.appendChild(el('span', null, '↻'));
     const px = Math.round(0.8 * PX);
     v.extra.forEach((id, k) => {
-      const b = el('span', 'ex' + (k === selK ? ' sel' : ''));
+      const b = el('span', 'ex' + (k === selK ? ' sel' : '') + (isPicked(i, -1, k) ? ' picked' : ''));
       b.dataset.extra = k;
       b.dataset.item = id;
-      b.title = `Đồ chơi nạp lại ${k + 1}: ${id}` + (S.mode === 'select' ? '\nBấm: xem dữ liệu · Chuột phải: lấy làm cọ'
-        : '\nBấm: đổi sang đồ chơi đang chọn · Chuột phải: bỏ');
+      b.title = `Đồ chơi nạp lại ${k + 1}: ${id}` + (S.mode === 'select' ? '\nBấm: xem dữ liệu · Ctrl/Shift+bấm: chọn nhiều · Chuột phải: lấy làm cọ'
+        : S.mode === 'erase' ? '\nBấm: bỏ đồ chơi nạp lại này' : '\nBấm: đổi sang đồ chơi đang chọn · Chuột phải: bỏ');
       b.appendChild(itemBox(id, px));
       strip.appendChild(b);
     });
@@ -1285,8 +1403,10 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     $('#btnHelp').classList.toggle('on', !!S.help);
     $('#btnSelect').classList.toggle('on', S.mode === 'select');
     $('#btnDraw').classList.toggle('on', S.mode === 'draw');
+    $('#btnErase').classList.toggle('on', S.mode === 'erase');
     document.body.classList.toggle('mode-select', S.mode === 'select');
     document.body.classList.toggle('mode-draw', S.mode === 'draw');
+    document.body.classList.toggle('mode-erase', S.mode === 'erase');
     $('#zoom').value = S.zoom;
     const dl = $('#lvList');
     if (dl.childElementCount !== ids.length) {
@@ -1300,7 +1420,7 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     const p = $('#pal');
     p.textContent = '';
     p.appendChild(el('h3', null, 'Đồ chơi'));
-    p.appendChild(el('div', 'help', 'Chọn một đồ chơi làm cọ (tự chuyển sang 🖌 Vẽ), rồi bấm vào ô trên phao để vẽ. Chuột phải lên một ô để lấy đồ chơi của ô đó. Ở 🖱 Chọn, bấm chỉ để xem dữ liệu.'));
+    p.appendChild(el('div', 'help', 'Chọn một đồ chơi làm cọ (tự chuyển sang 🖌 Vẽ), rồi bấm vào ô trên phao để vẽ; ＋ trên phao thêm một đồ chơi. Chuột phải lên một ô để lấy đồ chơi của ô đó. Ở 🖱 Chọn, bấm chỉ để xem dữ liệu; Ctrl/Shift+bấm chọn nhiều đồ chơi để thay ở thanh dưới. 🧽 Xoá (E): bấm đồ chơi để xoá nó, bấm thân phao để xoá cả phao.'));
     const grid = el('div', 'pgrid');
     const ids = ART ? ART.toys.slice() : [...PSP.ART_IDS];
     for (const id of ids) grid.appendChild(paletteItem(id));
@@ -1405,19 +1525,15 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     return w;
   }
 
+  // A new float holds one item (the brush); ＋ on its card adds more, and the float grows with them up to 5.
   function addCard() {
     const c = el('div', 'card addc');
-    c.appendChild(el('div', null, '＋ Thêm phao'));
-    const row = el('div', 'sizes');
-    for (let n = 1; n <= 5; n++) {
-      const b = el('button');
-      b.appendChild(miniFloat(n, 34));
-      b.appendChild(el('span', null, 'cỡ ' + n));
-      b.title = `Thêm phao cỡ ${n} ở cuối, đầy đồ chơi đang chọn`;
-      b.onclick = (e) => { e.stopPropagation(); edit(() => { PSP.addFloat(S.level, S.level.floats.length, n, S.brush); S.sel = { float: S.level.floats.length - 1, slot: -1 }; }); };
-      row.appendChild(b);
-    }
-    c.appendChild(row);
+    const b = el('button', 'addf');
+    b.id = 'btnAddFloat';
+    b.append(itemBox(S.brush, 26), el('span', null, '＋ Thêm phao'));
+    b.title = `Thêm ở cuối một phao 1 ô chứa đồ chơi ${S.brush} (đồ chơi đang chọn). Bấm ＋ trên phao để thêm đồ chơi; phao tự lớn tới 5 ô.`;
+    b.onclick = (e) => { e.stopPropagation(); edit(() => { PSP.addFloat(S.level, S.level.floats.length, 1, S.brush); S.sel = { float: S.level.floats.length - 1, slot: -1 }; }); };
+    c.appendChild(b);
     c.style.minHeight = Math.round(2 * 1.5 * 1.2 * PX) + 'px';
     return c;
   }
@@ -1458,7 +1574,8 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     if (!rec) {
       pf.appendChild(el('h3', null, 'Phao'));
       pf.appendChild(el('div', 'hint', S.mode === 'select'
-        ? 'Bấm vào một phao hay một đồ chơi để xem dữ liệu của nó. Bấm 🖌 Vẽ (B) để sửa bằng cách bấm lên phao.'
+        ? 'Bấm vào một phao hay một đồ chơi để xem dữ liệu của nó; Ctrl/Shift+bấm để chọn nhiều đồ chơi. Bấm 🖌 Vẽ (B) để sửa bằng cách bấm lên phao.'
+        : S.mode === 'erase' ? 'Bấm vào một đồ chơi để xoá nó (phao nhỏ lại một cỡ), vào thân phao để xoá cả phao, vào đồ chơi nạp lại để bỏ nó. Ctrl+Z để hoàn tác.'
         : 'Bấm vào một phao để sửa cỡ và cơ chế. Bấm vào một ô để sửa cơ chế của đồ chơi trong ô.'));
       return;
     }
@@ -1515,6 +1632,7 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     pf.appendChild(acts);
 
     // slot panel
+    if (livePicks().length > 1) { renderPicks(ps); return; }
     const s = S.sel.slot, k = selExtra();
     if (S.mode === 'select' && k >= 0 && k < v.extra.length) {
       ps.appendChild(el('h3', null, `Nạp lại #${k + 1} · đồ chơi ${v.extra[k]}`));
@@ -1546,6 +1664,20 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     ps.appendChild(field(SLOT_LABEL.link, ART && ART.toyArt.link, sel, true));
     ps.appendChild(field(SLOT_LABEL.cage + ' (số chìa)', ART && ART.overlays.lock.img, stepper(v.slot.cage[s], 0, 9, (n) => set('cage', n)), true));
     ps.appendChild(field(SLOT_LABEL.keyItem, ART && ART.overlays.key.img, toggle(!!v.slot.keyItem[s], (on) => set('keyItem', on ? 1 : 0), SLOT_TIP.keyItem), true));
+  }
+
+  function renderPicks(ps) {
+    const picks = livePicks(), kinds = new Map();
+    for (const p of picks) { const id = pickedId(p); kinds.set(id, (kinds.get(id) || 0) + 1); }
+    ps.appendChild(el('h3', null, `Đã chọn ${picks.length} đồ chơi`));
+    const row = el('div', 'picks');
+    for (const [id, k] of [...kinds].sort((a, b) => a[0] - b[0])) {
+      const c = el('span', 'kc');
+      c.append(itemBox(id, 24), el('span', null, `${id} ×${k}`));
+      row.appendChild(c);
+    }
+    ps.appendChild(row);
+    ps.appendChild(el('div', 'hint', 'Ctrl/Shift+bấm để thêm hay bỏ một đồ chơi · Esc để bỏ chọn. Chọn B ở thanh dưới rồi bấm "Thay đã chọn → B".'));
   }
 
   // ---------- select mode: raw data ----------
@@ -1724,15 +1856,15 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
       chip.draggable = true;
       chip.dataset.i = i;
       chip.dataset.kind = id;
-      const x = el('button', 'ct-x', '✕');
-      x.title = `Bỏ hộp ${i + 1} khỏi thứ tự (trả về "Còn lại")`;
-      x.setAttribute('aria-label', x.title);
-      x.onclick = (e) => { e.stopPropagation(); const ids = t.ids.slice(); ids.splice(i, 1); S.ctSel = -1; setIds(ids); };
-      chip.append(el('span', 'ct-no', String(i + 1)), el('b', 'ct-id', String(id)), itemBox(id, 38), x);
+      chip.append(el('span', 'ct-no', String(i + 1)), el('b', 'ct-id', String(id)), itemBox(id, 38));
       chip.title = `Hộp ${i + 1}: đồ chơi ${id}` + (i < 2 ? ' · có sẵn từ đầu' : '') +
         (!k ? ' · level không có đồ chơi này' : k.listed > k.need ? ' · loại này bị xếp quá số hộp' : '') +
-        '\nBấm: chọn rồi bấm một loại ở "Còn lại" để đổi · Kéo: đổi thứ tự · ✕: bỏ khỏi thứ tự';
-      chip.onclick = () => { S.ctSel = S.ctSel === i ? -1 : i; renderTargetsBar(); };
+        (S.mode === 'erase' ? '\nBấm: bỏ hộp này khỏi thứ tự (trả về "Còn lại")'
+          : '\nBấm: chọn rồi bấm một loại ở "Còn lại" để đổi · Kéo: đổi thứ tự · 🧽 Xoá (E) rồi bấm: bỏ khỏi thứ tự');
+      chip.onclick = () => {
+        if (S.mode === 'erase') { const ids = t.ids.slice(); ids.splice(i, 1); S.ctSel = -1; setIds(ids); return; }
+        S.ctSel = S.ctSel === i ? -1 : i; renderTargetsBar();
+      };
       chip.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', 'ct:' + i); e.dataTransfer.effectAllowed = 'move'; });
       dropZone(chip, i);
       hoverLink(chip, id);
@@ -2073,11 +2205,34 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     const inLevel = [...c.items.keys()].filter((x) => Number.isInteger(x) && x > 0);
     const a = itemPicker('A', inLevel, first, c.items, 'Loại đồ chơi A: chỉ các loại đang có trong level');
     const b = itemPicker('B', opts, S.brush, c.items, 'Loại đồ chơi B: mọi id có hình, và các id đang có trong level');
-    const r1 = el('button', 'tb', 'Thay A → B'); r1.title = 'Đổi mọi đồ chơi A trong level thành B (cả nạp lại, Mask và thứ tự spawn hộp)';
-    r1.onclick = () => { const x = +a.value, y = +b.value; if (x !== y) edit(() => PSP.replaceKind(S.level, x, y)); };
-    const r2 = el('button', 'tb', 'Đổi A ↔ B'); r2.title = 'Hoán đổi hai loại đồ chơi trong level (cả nạp lại, Mask và thứ tự spawn hộp)';
+    // With a multi-selection (Ctrl/Shift+click in 🖱 Chọn), A is the selection and the replace acts on it alone.
+    const picks = livePicks();
+    let aNode = a;
+    if (picks.length) {
+      aNode = el('span', 'pickchip');
+      aNode.id = 'pickChip';
+      const kinds = [...new Set(picks.map(pickedId))];
+      for (const id of kinds.slice(0, 4)) aNode.appendChild(itemBox(id, 22));
+      if (kinds.length > 4) aNode.appendChild(el('span', null, '…'));
+      aNode.appendChild(el('b', null, `${picks.length} đã chọn`));
+      aNode.title = `${picks.length} đồ chơi đã chọn, ${kinds.length} loại: ${kinds.join(', ')}`;
+      const x = el('button', 'x', '✕'); x.title = 'Bỏ chọn (Esc)'; x.onclick = () => { S.picks = []; render(); };
+      aNode.appendChild(x);
+    }
+    const r1 = el('button', 'tb', picks.length ? 'Thay đã chọn → B' : 'Thay A → B');
+    r1.id = 'btnReplace';
+    r1.title = picks.length ? `Đổi ${picks.length} đồ chơi đã chọn thành B. Loại nào được chọn hết thì Mask và thứ tự spawn hộp đi theo; chọn một phần thì Soát lỗi báo nếu thứ tự spawn hộp lệch.`
+      : 'Đổi mọi đồ chơi A trong level thành B (cả nạp lại, Mask và thứ tự spawn hộp)';
+    r1.onclick = () => {
+      const y = +b.value;
+      if (picks.length) { edit(() => PSP.replaceItems(S.level, picks, y), { keepPicks: true }); return; }
+      const x = +a.value; if (x !== y) edit(() => PSP.replaceKind(S.level, x, y));
+    };
+    const r2 = el('button', 'tb', 'Đổi A ↔ B');
+    r2.title = picks.length ? 'Đang chọn nhiều đồ chơi: bỏ chọn (Esc) để hoán đổi hai loại' : 'Hoán đổi hai loại đồ chơi trong level (cả nạp lại, Mask và thứ tự spawn hộp)';
+    r2.disabled = picks.length > 0;
     r2.onclick = () => { const x = +a.value, y = +b.value; if (x !== y) edit(() => PSP.swapKinds(S.level, x, y)); };
-    rep.append(el('span', 'stat', 'A'), a, el('span', 'stat', 'B'), b, r1, r2);
+    rep.append(el('span', 'stat', 'A'), aNode, el('span', 'stat', 'B'), b, r1, r2);
     f.appendChild(rep);
   }
 
@@ -2163,9 +2318,11 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     S.playCheck = null;
     if (S.row && o.r) { for (const k of Object.keys(S.row)) delete S.row[k]; Object.assign(S.row, o.r); } // keep the row object inside S.cfg
     if (S.sel.float >= S.level.floats.length) S.sel = { float: -1, slot: -1 };
+    S.picks = [];
   }
   function pushUndo() { S.undo.push(snapshot()); if (S.undo.length > 200) S.undo.shift(); S.redo = []; }
-  function edit(fn) { if (!S.level) return; pushUndo(); fn(); S.playCheck = null; render(); }
+  // opts.keepPicks: the edit moved no item (a replace), so the multi-selection still points at the same items.
+  function edit(fn, opts) { if (!S.level) return; pushUndo(); fn(); if (!(opts && opts.keepPicks)) S.picks = []; S.playCheck = null; render(); }
   function undo() { if (!S.undo.length) return; S.redo.push(snapshot()); restore(S.undo.pop()); render(); }
   function redo() { if (!S.redo.length) return; S.undo.push(snapshot()); restore(S.redo.pop()); render(); }
 
@@ -2181,6 +2338,16 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     }
   }
 
+  // Erase mode: a refill chip drops that refill; an item goes and its float shrinks a size; the float body, or a float's
+  // last item, removes the whole float (a float with no item would be a stone).
+  function eraseAt(i, slotEl, exEl) {
+    const rec = S.level.floats[i], v = PSP.floatView(rec);
+    if (exEl) { const k = +exEl.dataset.extra; edit(() => PSP.setExtra(rec, v.extra.filter((_, j) => j !== k))); return; }
+    if (slotEl && v.items.length > 1) { edit(() => { PSP.removeItem(rec, +slotEl.dataset.slot); S.sel = { float: i, slot: -1 }; }); return; }
+    edit(() => { PSP.removeFloat(S.level, i); S.sel = { float: -1, slot: -1 }; });
+    toast(`🧽 Đã xoá phao #${i + 1} · Ctrl+Z để hoàn tác`);
+  }
+
   // ---------- card events (delegated) ----------
   function cardEvents() {
     const box = $('#cards');
@@ -2191,7 +2358,19 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
       if (!card || card.classList.contains('addc')) return;
       const i = +card.dataset.i, rec = S.level.floats[i];
       const slotEl = e.target.closest('[data-slot]'), exEl = e.target.closest('[data-extra]'), addEl = e.target.closest('[data-add-extra]');
+      if (e.target.closest('[data-add-item]')) { // ＋ on the card: one more item; Chọn switches to Vẽ first
+        if (S.mode === 'select') { S.mode = 'draw'; savePrefs(); }
+        edit(() => { if (PSP.addItem(rec, S.brush)) S.sel = { float: i, slot: PSP.floatView(rec).items.length - 1 }; });
+        return;
+      }
+      if (S.mode === 'erase') { eraseAt(i, slotEl, exEl); return; }
       if (S.mode === 'select') { // select only: never edits
+        if ((e.ctrlKey || e.metaKey || e.shiftKey) && (slotEl || exEl)) {
+          togglePick(i, slotEl ? +slotEl.dataset.slot : -1, exEl ? +exEl.dataset.extra : -1);
+          render();
+          return;
+        }
+        S.picks = [];
         if (exEl) S.sel = { float: i, slot: -1, extra: +exEl.dataset.extra };
         else if (slotEl) S.sel = { float: i, slot: +slotEl.dataset.slot };
         else S.sel = { float: i, slot: -1 };
@@ -2321,7 +2500,7 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     S.row = S.cfg ? PSP.getRow(S.cfg, id) : null;
     S.rowText = JSON.stringify(S.row);
     S.addedRow = false;
-    S.undo = []; S.redo = []; S.sel = { float: -1, slot: -1 }; S.pick = null; S.lastErrors = 0; S.playCheck = null;
+    S.undo = []; S.redo = []; S.sel = { float: -1, slot: -1 }; S.picks = []; S.pick = null; S.lastErrors = 0; S.playCheck = null;
     render();
     $('#cards').scrollTop = 0;
   }
@@ -2576,6 +2755,7 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     $('#btnSee').onclick = () => { S.seeThrough = !S.seeThrough; savePrefs(); render(); };
     $('#btnSelect').onclick = () => setMode('select');
     $('#btnDraw').onclick = () => setMode('draw');
+    $('#btnErase').onclick = () => setMode('erase');
     $('#btnHelp').onclick = () => { S.help = !S.help; savePrefs(); render(); };
     $('#btnCopy').onclick = async () => {
       try { await navigator.clipboard.writeText(PSP.serializeLevel(S.level)); toast('📋 Đã copy JSON level ' + S.id); }
@@ -2595,9 +2775,10 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
       if ((e.ctrlKey || e.metaKey) && (k === 'y' || (k === 'z' && e.shiftKey))) { e.preventDefault(); redo(); return; }
       if (e.key === 'PageUp' || (e.altKey && e.key === 'ArrowLeft')) { e.preventDefault(); stepLevel(-1); return; }
       if (e.key === 'PageDown' || (e.altKey && e.key === 'ArrowRight')) { e.preventDefault(); stepLevel(1); return; }
-      if (e.key === 'Escape') { S.stamp = null; S.pick = null; S.sel = { float: -1, slot: -1 }; render(); return; }
+      if (e.key === 'Escape') { S.stamp = null; S.pick = null; S.picks = []; S.sel = { float: -1, slot: -1 }; render(); return; }
       if (k === 'v' && !e.ctrlKey && !e.metaKey && !e.altKey) { setMode('select'); return; }
       if (k === 'b' && !e.ctrlKey && !e.metaKey && !e.altKey) { setMode('draw'); return; }
+      if (k === 'e' && !e.ctrlKey && !e.metaKey && !e.altKey) { setMode('erase'); return; }
       if (k === 'p' && !e.ctrlKey && !e.metaKey && !e.altKey && S.level) { $('#btnPlay').click(); return; }
       const i = S.sel.float, rec = S.level && S.level.floats[i];
       if (!rec) return;
@@ -2624,7 +2805,7 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     wire();
     const q = new URLSearchParams(location.search);
     if (q.has('zoom')) S.zoom = +q.get('zoom') || S.zoom;
-    if (q.has('mode')) S.mode = q.get('mode') === 'draw' ? 'draw' : 'select';
+    if (q.has('mode')) S.mode = ['draw', 'erase'].includes(q.get('mode')) ? q.get('mode') : 'select';
     if (q.has('demo')) {
       loadDemo();
       if (q.has('sel')) S.sel = { float: (+q.get('sel') || 1) - 1, slot: q.has('slot') ? (+q.get('slot') || 1) - 1 : -1 };

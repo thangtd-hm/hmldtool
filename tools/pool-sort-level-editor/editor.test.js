@@ -416,3 +416,47 @@ test('replace and swap also rewrite the box targets, so a valid list stays valid
   PSP.replaceKind(list, 5, 9);
   assert.equal(PSP.levelForm(list), 'list', 'a level without targets keeps the list form');
 });
+
+// ---------- floats that grow with their items, erase, replace selected ----------
+
+test('addItem grows a float one size with the item; stones and full floats refuse', () => {
+  const r = { FloatieID: 1, FloatieType: 1, ToyStr: '4', IceToyStr: '3' };
+  assert.equal(PSP.addItem(r, 7), true);
+  assert.deepEqual([r.FloatieType, r.ToyStr, r.IceToyStr], [2, '4,7', '3,0'], 'the per-slot list grows with it');
+  const portal = { FloatieType: 2, ToyStr: '1,2,8,9', IsMore: true };
+  PSP.addItem(portal, 5);
+  assert.deepEqual([portal.FloatieType, portal.ToyStr], [3, '1,2,5,8,9'], 'refills stay after the visible items');
+  const full = { FloatieType: 5, ToyStr: '1,1,1,2,2' };
+  assert.equal(PSP.addItem(full, 3), false);
+  assert.equal(full.ToyStr, '1,1,1,2,2');
+  assert.equal(PSP.addItem({ FloatieType: 3, ToyStr: '', IsObstacle: true }, 3), false, 'a stone holds no item');
+});
+
+test('removeItem shrinks a float and drops that slot from every per-slot list; never its last item', () => {
+  const r = { FloatieType: 3, ToyStr: '1,2,3,8', IsMore: true, IceToyStr: '0,5,0', UnKnowToyStr: '1,0,1' };
+  assert.equal(PSP.removeItem(r, 1), true);
+  assert.deepEqual([r.FloatieType, r.ToyStr, r.IceToyStr, r.UnKnowToyStr], [2, '1,3,8', '', '1,1'],
+    'the ice on the removed slot goes with it (an all-zero list is written empty)');
+  const one = { FloatieType: 1, ToyStr: '6' };
+  assert.equal(PSP.removeItem(one, 0), false, 'the caller removes the float instead');
+  assert.equal(PSP.removeItem(r, 5), false);
+});
+
+test('replaceItems changes only the picked items; a kind picked in full takes its box targets and Mask along', () => {
+  const L = PSP.parseLevel(OBJ(true, '1,2,1,2', [F3(1, '1,1,1'), F3(2, '2,2,2'), F3(3, '1,1,1'),
+    { FloatieID: 4, FloatieType: 3, ToyStr: '2,2,2', MaskTargetToy: 2 }]));
+  // part of kind 1 (three of its six items): the list keeps naming 1 twice, and the checks flag 1 and 9
+  assert.equal(PSP.replaceItems(L, [{ float: 0, slot: 0 }, { float: 0, slot: 1 }, { float: 2, slot: 2 }], 9), 3);
+  assert.deepEqual(L.floats.map((r) => r.ToyStr), ['9,9,1', '2,2,2', '1,1,9', '2,2,2']);
+  assert.equal(L.custom.str, '1,2,1,2');
+  assert.deepEqual(PSP.validate(L).filter((x) => x.code === 'ctCount').map((x) => x.kind).sort(), [1, 9]);
+  // every item of kind 2, mixed with a 9 already there and a repeated pick: 2 leaves, its list entry and Mask follow
+  const all2 = [0, 1, 2].flatMap((slot) => [{ float: 1, slot }, { float: 3, slot }]);
+  assert.equal(PSP.replaceItems(L, all2.concat([{ float: 0, slot: 0 }, { float: 1, slot: 0 }]), 9), 6);
+  assert.equal(L.custom.str, '1,9,1,9');
+  assert.equal(L.floats[3].MaskTargetToy, 9);
+  // refills are picked by index; stale picks are skipped
+  const P = PSP.parseLevel(JSON.stringify([{ FloatieType: 1, ToyStr: '4,5,6', IsMore: true }]));
+  assert.equal(PSP.replaceItems(P, [{ float: 0, extra: 1 }, { float: 0, extra: 7 }, { float: 3, slot: 0 }], 2), 1);
+  assert.equal(P.floats[0].ToyStr, '4,5,2');
+});

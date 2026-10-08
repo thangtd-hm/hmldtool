@@ -21,15 +21,24 @@ and `…-plan.md`.
      shows **📂 Mở lại: Levels** (reopen), which opens it in one press with save-in-place. Chrome may show one Allow
      prompt per visit. **📂 Chọn thư mục khác** (choose another folder) picks a different one, for example another
      branch's checkout; the picker starts in the last folder. A folder that has moved is forgotten with a message.
-2. Two modes, toggled in the toolbar and remembered:
+2. Three modes in the toolbar. Chọn and Vẽ are remembered; Xoá never is, so a page always opens in a mode where a
+   stray click changes nothing:
    - **🖱 Chọn** (select, key V; the first mode on a new browser): a click on a float, an item or a Portal refill item
      only selects it. The right panel then shows the float's raw record (every field, in file order) and the item's
      data: picture, id, slot or refill number, that slot's raw value in each per-slot list, how many of that item the
-     level holds, and on which floats (click one to jump to it).
+     level holds, and on which floats (click one to jump to it). **Ctrl+click or Shift+click** adds or drops items,
+     of any ids and refills included, to a selection that glows on the cards. The right panel then lists it by kind
+     and the bottom strip replaces only those items (item 7). Esc, a plain click or another mode clears it.
    - **🖌 Vẽ** (draw, key B): a click on a slot paints the brush item, or applies the chosen stamp.
+   - **🧽 Xoá** (erase, key E): a click on an item removes it, and the float shrinks a size; on a refill item it
+     removes that refill; on the float's body, or on its only item, it removes the whole float (a float with no item
+     would be a stone). What a click would remove turns red on hover. Ctrl+Z undoes it.
    Picking an item or a stamp in the palette switches to draw. Right-click a slot to pick up its item as the brush,
-   in either mode.
-3. Click a float to edit it in the inspector: its size, its mechanic (one choice, as in the data), counters, and
+   in any mode.
+   A float's size follows its items. **＋ Thêm phao** (the card after the last float) adds a float holding one brush
+   item, and every float under 5 items has a **＋** in its top corner that adds the brush item, so the float grows a
+   size (in Chọn, the ＋ switches to Vẽ first). Refills stay after the new item.
+3. Click a float to edit it in the inspector: its size (still settable, and the only size control a stone has), its mechanic (one choice, as in the data), counters, and
    the Mask target. Click a slot to edit its slot mechanics: Frozen Item, Mystery Item, Linked Item, Caged Item and
    Key Item. The inspector edits in both modes.
 4. Stamps in the palette apply a mechanic with one click per float or slot. Esc goes back to painting.
@@ -43,7 +52,10 @@ and `…-plan.md`.
 7. The bottom strip counts every item kind (red when a count is not a multiple of 3), keys against locks, and
    each mechanic. It can also replace one item kind with another, or swap two. A and B are picked from grids of
    item pictures with their ids: A from the kinds in the level (with counts), B from every id with art.
-   Both also rewrite the box targets (item 8), so a valid list stays valid.
+   Both also rewrite the box targets (item 8), so a valid list stays valid. With a selection made in Chọn, A shows
+   "N đã chọn" and **Thay đã chọn → B** replaces only the selected items; swap is off until the selection is cleared.
+   A kind whose every item was selected takes its box targets and Mask along, as a full replace does; a kind
+   selected in part leaves the box targets, and Soát lỗi flags their counts (↺ Tự điền rebuilds the list).
 8. **Thứ tự spawn hộp** (box spawn order, "box targets" below) chooses which item each box asks for, in place of the
    game's auto-pick (`UseCustomTarget`, `CustomTargetStr`). It lives in the **spawn order bar**, one row across the
    top of the board, always there while a level is open:
@@ -53,9 +65,10 @@ and `…-plan.md`.
      valid order (each kind is listed when its third item has dropped) and shows the parts below. The bar keeps the
      same height in both modes, so the cards do not move.
    - Middle, scrolling sideways (the mouse wheel scrolls it): one chip per box in spawn order, with the item id on the
-     left, its picture in the middle and a separate ✕ segment on the right. The badge is the order; 1–2 (blue) are
+     left and its picture on the right. The badge is the order; 1–2 (blue) are
      the two boxes there from the start, and every box spawned later takes the next chip. Dashed slots are boxes
-     still to place. Drag a chip to reorder; ✕ sends it back.
+     still to place. Drag a chip to reorder. In **🧽 Xoá** mode a click on a chip
+     sends that box back to "Còn lại" (the chip turns red on hover).
    - **Còn lại** (left), pinned beside the lane and shown only while needed: each kind that still needs boxes
      (`×n`), or that is listed too often (red `-n`) or not in the level (red ✗). Click a kind to add a box at the end,
      drag it onto a chip to insert it there, or select a chip first and click a kind to change that box.
