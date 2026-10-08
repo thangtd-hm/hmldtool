@@ -82,9 +82,10 @@ body:not(.help-on) .help{display:none}
   text-shadow:0 1px 2px #0009;box-shadow:inset 0 0 0 2px #fff6}
 
 /* ═══ board (centre; id "center", since "board" is the Playtest script block) ═══ */
-#center{grid-row:2;display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0;
+#center{grid-row:2;display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-height:0;min-width:0;
   background:radial-gradient(ellipse at 50% 0%,var(--water1),var(--water2) 75%)}
-#cards{overflow:auto;display:flex;flex-wrap:wrap;align-content:flex-start;gap:4px 8px;padding:var(--s4)}
+/* each part of the board keeps its own row, so the hidden spawn order bar does not shift the others */
+#cards{grid-row:2;min-height:0;overflow:auto;display:flex;flex-wrap:wrap;align-content:flex-start;gap:4px 8px;padding:var(--s4)}
 .card{position:relative;flex:0 0 auto;border-radius:14px;cursor:pointer;user-select:none}
 .card:hover{background:#ffffff10}
 .card.sel{background:#48d1ff26;box-shadow:0 0 0 2px var(--accent2)}
@@ -132,11 +133,12 @@ body.mode-select .strip .add{opacity:.35;cursor:default}
 .welcome .row{display:flex;gap:var(--s3);margin-top:var(--s4)}
 
 /* check panel under the board */
-#checks{background:#0e1016f0;border-top:1px solid var(--line2);max-height:30vh;overflow:auto}
+#checks{grid-row:3;background:#0e1016f0;border-top:1px solid var(--line2);max-height:30vh;overflow:auto}
 #checks summary{cursor:pointer;padding:6px var(--s4);font-size:var(--fs-sm);font-weight:650;position:sticky;top:0;background:#0e1016}
 #checks summary .e{color:var(--danger)} #checks summary .w{color:var(--move)} #checks summary .ok{color:var(--accent)}
 #chkList div{padding:3px var(--s4) 3px 30px;font-size:var(--fs-sm);text-indent:-18px;line-height:1.4}
-#chkList div[data-f]{cursor:pointer} #chkList div[data-f]:hover{background:var(--panel2)}
+#chkList div[data-f],#chkList div[data-k]{cursor:pointer} #chkList div[data-f]:hover,#chkList div[data-k]:hover{background:var(--panel2)}
+#chkList div.ok{color:var(--accent)}
 
 /* ═══ inspector (right) ═══ */
 #insp{grid-row:2;overflow:auto;background:var(--panel);border-left:1px solid var(--line);padding:var(--s3) var(--s4) var(--s5)}
@@ -229,10 +231,8 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
 .ipick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(48px,1fr));gap:4px;max-height:48vh;overflow:auto}
 .ipick-grid .pcnt{position:absolute;left:3px;top:1px;font-size:9.5px;font-weight:700;color:var(--accent2)}
 .ipick-grid .pcnt.bad{color:var(--danger)}
-.ct-pop{position:fixed;bottom:auto;right:auto;z-index:45;width:min(380px,90vw)}
 /* custom box targets */
-.ct-strip{display:flex;flex-wrap:wrap;gap:4px;margin:var(--s2) 0}
-.ct-chip{position:relative;display:flex;align-items:center;gap:3px;padding:2px 14px 2px 2px;background:var(--panel2);border:1px solid var(--line);
+.ct-chip{position:relative;display:flex;align-items:center;gap:3px;padding:2px 0 2px 2px;background:var(--panel2);border:1px solid var(--line);
   border-radius:var(--r1);cursor:pointer;user-select:none;font-size:var(--fs-sm)}
 .ct-chip:hover{border-color:var(--line2);background:var(--panel3)}
 .ct-chip.open{border-color:#48d1ff66}
@@ -242,18 +242,44 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
 .ct-no{position:absolute;left:-4px;top:-6px;min-width:15px;height:15px;border-radius:8px;background:var(--panel3);border:1px solid var(--line2);
   color:var(--dim);font-size:9.5px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px}
 .ct-chip.open .ct-no{background:#11303c;color:var(--accent2);border-color:var(--accent2)}
-.ct-x{position:absolute;right:0;top:0;bottom:0;width:13px;border:none;background:none;color:var(--faint);cursor:pointer;font-size:12px;padding:0}
-.ct-x:hover{color:var(--danger)}
-.ct-add{min-width:40px;background:var(--panel2);border:1px dashed var(--line2);border-radius:var(--r1);cursor:pointer;color:var(--dim);font-size:16px}
-.ct-add:hover{border-color:var(--accent);color:var(--accent)}
-.ct-sum{font-size:var(--fs-sm);font-weight:650;margin:var(--s1) 0}
-.ct-sum.ok{color:var(--accent)} .ct-sum.bad{color:var(--danger)}
-.ct-tally{display:flex;flex-wrap:wrap;gap:3px}
-.ct-k{display:flex;align-items:center;gap:2px;font-size:var(--fs-xs);font-weight:700;padding:1px 4px 1px 1px;border-radius:var(--r1);border:1px solid var(--line)}
-.ct-k.ok{color:var(--accent);border-color:#a8e63555} .ct-k.bad{color:var(--danger);border-color:var(--danger);background:#2a0d13}
-.ct-k img,.ct-k .chip{width:20px;height:20px}
-.ct-check{font-size:var(--fs-sm);line-height:1.45;padding:6px 8px;border-radius:var(--r1);background:var(--panel2);margin:var(--s1) 0}
-.ct-check.ok{color:var(--accent)} .ct-check.warn{color:var(--move)} .ct-check.bad{color:var(--danger)}
+.ct-chip > b{padding-right:5px}
+/* the remove control is its own segment at the chip's end, so "23 ✕" never reads as "23 times" */
+.ct-x{align-self:stretch;margin:0 0 0 2px;width:20px;border:none;border-left:1px solid var(--line2);border-radius:0 var(--r1) var(--r1) 0;
+  background:#ffffff08;color:var(--faint);cursor:pointer;font-size:10px;padding:0;display:flex;align-items:center;justify-content:center}
+.ct-x:hover{background:var(--danger);color:var(--danger-ink)}
+/* the spawn order bar: one row at the top of the board */
+#ctBar{grid-row:1;display:flex;align-items:center;gap:var(--s3);min-width:0;min-height:74px;box-sizing:border-box;overflow:hidden;background:#0e1016f0;border-bottom:1px solid var(--line2);padding:4px var(--s4)}
+#ctBar[hidden]{display:none}
+.ctb-lbl{flex:0 0 auto;display:flex;flex-direction:column;gap:4px;min-width:150px}
+.ctb-title{display:flex;align-items:baseline;gap:6px;white-space:nowrap}
+.ctb-title b{font-size:var(--fs-sm);text-transform:uppercase;letter-spacing:.04em;color:var(--dim)}
+.ctb-title span{font-size:var(--fs-xs);color:var(--faint)}
+.ctb-title .ctb-tip{color:var(--accent2);white-space:normal}
+.ctb-mode .tb{padding:2px 9px;font-size:var(--fs-xs)}
+.ctb-auto{flex:1;min-width:0;font-size:var(--fs-sm);color:var(--faint);padding:8px 0}
+.ctb-raw{flex:1;min-width:0;display:flex;align-items:center;gap:6px;padding:10px 0}
+.ctb-raw input{flex:1;min-width:0;font-size:var(--fs-sm)}
+.ctb-lane{flex:1;min-width:0;display:flex;align-items:center;gap:6px;overflow-x:auto;overflow-y:hidden;padding:9px 2px 5px;scrollbar-width:thin}
+.ctb-acts{flex:0 0 auto;display:flex;gap:4px}
+.ct-chip{flex:0 0 auto;height:48px;padding:0 0 0 7px;gap:4px}
+.ct-chip.on{border-color:var(--accent2);box-shadow:0 0 0 2px var(--accent2) inset;background:#11303c}
+.ct-chip.hl,.ct-kind.hl{box-shadow:0 0 0 2px var(--accent)}
+.ct-chip .ct-id{min-width:18px;text-align:center;font-size:var(--fs-md);padding:0}
+.ct-chip img,.ct-chip .chip{width:38px;height:38px;object-fit:contain}
+.ct-slot{flex:0 0 auto;width:52px;height:48px;border:1px dashed var(--line2);border-radius:var(--r1);color:var(--faint);font-size:var(--fs-xs);
+  display:flex;align-items:flex-start;justify-content:flex-start;padding:2px 5px}
+.ct-slot.drop,.ct-end.drop{border-color:var(--accent);background:#a8e63518}
+.ct-end{flex:0 0 auto;width:28px;height:48px;border-radius:var(--r1)}
+.ct-pool{flex:0 1 auto;max-width:40%;min-width:0;display:flex;align-items:center;gap:4px;padding:9px 2px 5px 8px;border-left:1px solid var(--line2);overflow-x:auto;scrollbar-width:thin}
+.ctb-div{font-size:var(--fs-xs);color:var(--faint);margin-right:2px;white-space:nowrap}
+.ct-kind{flex:0 0 auto;display:flex;align-items:center;gap:2px;height:40px;padding:0 7px 0 3px;background:var(--panel2);border:1px solid var(--line);
+  border-radius:var(--r1);cursor:pointer;font-size:var(--fs-sm);font-weight:700;color:var(--txt)}
+.ct-kind:hover{border-color:var(--accent)}
+.ct-kind.bad{border-color:var(--danger);color:var(--danger);background:#2a0d13}
+.ct-kind.swap{border-color:var(--accent2);background:#11303c}
+.ct-kind img,.ct-kind .chip{width:30px;height:30px;pointer-events:none}
+.stage .slot.hl{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 7px var(--accent))}
+.strip .ex.hl{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
 
 /* modal and toast */
 #modal{position:fixed;inset:0;background:#000a;display:flex;align-items:center;justify-content:center;z-index:50}
@@ -383,7 +409,7 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
   <button class="tb primary" id="btnSave" title="Lưu (Ctrl+S). Shift+bấm = tải file về thay vì ghi đè.">💾 Lưu đè</button>
 </header>
 <aside id="pal"></aside>
-<main id="center"><div id="cards"></div><details id="checks"><summary id="chkHead"></summary><div id="chkList"></div></details></main>
+<main id="center"><section id="ctBar" hidden></section><div id="cards"></div><details id="checks"><summary id="chkHead"></summary><div id="chkList"></div></details></main>
 <aside id="insp"><section id="pFloat"></section><section id="pSlot"></section><section id="pLevel"></section></aside>
 <footer id="sum"></footer>
 <div id="modal" hidden></div>
@@ -421,8 +447,8 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
   // Two file forms. The list form (every level until 2026-10) is a bare array of floats. The object form adds the
   // owner's custom box targets: { "UseCustomTarget": bool, "CustomTargetStr": "1,14,16", "Floaties": [...] }.
   // A level keeps the form it was read in (wrap = the object's own keys, in order); a list-form level is written in
-  // the object form only once custom targets are switched on. The game's LevelParser (dev/main e6e9c7e1e) still reads
-  // only the list form.
+  // the object form only once custom targets are switched on. The game's LevelParser reads both forms since dev/main
+  // a4d58aab8 (2026-10-08); older builds read only the list form.
   const LEVEL_KEYS = ['UseCustomTarget', 'CustomTargetStr', 'Floaties'];
   function parseLevel(text) {
     const data = JSON.parse(stripBom(text));
@@ -773,16 +799,20 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     if (noArt.size) add('warn', 'noArt', -1, `Id chưa có hình: ${[...noArt].sort((a, b) => a - b).join(', ')} — game tự đổi sang id có hình.`);
     if (custom(level).on) {
       const t = targetStats(level);
-      if (t.bad) add('error', 'ctBad', -1, `Danh sách hộp đòi (CustomTargetStr): ${t.bad} phần tử không phải id hợp lệ trong "${custom(level).str}".`);
-      if (!t.ids.length) add('error', 'ctEmpty', -1, 'Bật thứ tự hộp đòi tự chọn nhưng danh sách trống.');
-      for (const id of t.unknown) add('error', 'ctUnknown', -1, `Hộp đòi đồ chơi ${id}, nhưng level không có đồ chơi ${id}.`);
+      const CT = 'Thứ tự spawn hộp: ';
+      if (t.bad) add('error', 'ctBad', -1, `${CT}${t.bad} phần tử không phải id trong CustomTargetStr "${custom(level).str}" — game sẽ không nạp được level.`);
+      if (!t.ids.length) add('error', 'ctEmpty', -1, `${CT}đang bật nhưng chưa có hộp nào — game sẽ tự chọn mọi hộp.`);
+      for (const id of t.unknown) out.push({ sev: 'error', code: 'ctUnknown', float: -1, kind: id, msg: `${CT}có hộp đồ chơi ${id}, nhưng level không có đồ chơi ${id} — game bỏ qua hộp này.` });
       for (const k of t.kinds) {
         if (k.items % 3) continue; // the mul3 error already covers it
-        if (k.listed !== k.need) add('error', 'ctCount', -1, `Đồ chơi ${k.id}: ${k.items} cái cần ${k.need} hộp, danh sách ghi ${k.listed}.`);
+        if (k.listed !== k.need) out.push({ sev: 'error', code: 'ctCount', float: -1, kind: k.id,
+          msg: `${CT}đồ chơi ${k.id} có ${k.items} cái nên cần ${k.need} hộp, đang xếp ${k.listed}` +
+            (k.listed > k.need ? ' — game bỏ qua các hộp thừa.' : ' — các hộp còn thiếu do game tự chọn sau khi hết danh sách.') });
       }
-      if (t.ids.length && t.ids.length !== t.boxes) add('error', 'ctLength', -1, `Danh sách có ${t.ids.length} hộp, level cần đúng ${t.boxes} hộp (số đồ chơi ÷ 3).`);
+      if (t.ids.length && t.ids.length !== t.boxes) add('error', 'ctLength', -1, `${CT}đang có ${t.ids.length} hộp, level cần đúng ${t.boxes} (số đồ chơi ÷ 3)` +
+        (t.ids.length < t.boxes ? ' — hết danh sách thì game tự chọn.' : '.'));
     }
-    if (levelForm(level) === 'object') add('warn', 'newForm', -1, 'File lưu dạng mới { UseCustomTarget, CustomTargetStr, Floaties }: bản game hiện tại chỉ đọc dạng danh sách phao, cần bản có LevelParser mới.');
+    if (levelForm(level) === 'object') add('warn', 'newForm', -1, 'Thứ tự spawn hộp: file lưu dạng mới { UseCustomTarget, CustomTargetStr, Floaties }; game đọc được từ dev/main a4d58aab8 (08/10/2026), bản build hoặc nhánh cũ hơn sẽ lỗi khi nạp level này.');
     if (row) {
       const odds = ['NoAdWeight', 'OneAdWeight', 'TwoAdWeight', 'ThreeAdWeight'].reduce((s, k) => s + (Number(row[k]) || 0), 0);
       if (Math.abs(odds - 1) > 0.001) add('warn', 'odds', -1, `Tỷ lệ 0–3 cửa sổ áp lực cộng lại ${+odds.toFixed(3)}, không phải 1.`);
@@ -1095,6 +1125,7 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     }
     node.classList.add('slot');
     node.dataset.slot = s;
+    node.dataset.item = id;
     if (S.sel.float === i && S.sel.slot === s) node.classList.add('sel');
     const tips = [`Ô ${s + 1}: đồ chơi ${id}`];
     if (unknown) {
@@ -1152,6 +1183,7 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     v.extra.forEach((id, k) => {
       const b = el('span', 'ex' + (k === selK ? ' sel' : ''));
       b.dataset.extra = k;
+      b.dataset.item = id;
       b.title = `Đồ chơi nạp lại ${k + 1}: ${id}` + (S.mode === 'select' ? '\nBấm: xem dữ liệu · Chuột phải: lấy làm cọ'
         : '\nBấm: đổi sang đồ chơi đang chọn · Chuột phải: bỏ');
       b.appendChild(itemBox(id, px));
@@ -1208,9 +1240,11 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     PX = S.zoom;
     document.body.classList.toggle('help-on', !!S.help);
     S.issues = S.level ? PSP.validate(S.level, S.row, artIds()) : [];
+    if (S.level && S.playCheck && !S.playCheck.busy) S.issues.push(playIssue(S.playCheck));
     renderBar();
     renderPalette();
     renderCards();
+    renderTargetsBar();
     renderInspector();
     renderLevelPanel();
     renderSummary();
@@ -1584,123 +1618,208 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     box.appendChild(list);
   }
 
-  // ---------- custom box targets (UseCustomTarget / CustomTargetStr in the level file) ----------
-  // One chip per box, in the order the boxes open; click to change its item, drag to reorder, x to remove, + to add.
-  // The tally under it shows, per kind, the boxes listed against the boxes needed (items / 3).
-  function targetsSection() {
-    const lv = S.level, c = lv.custom || { on: false, str: '' };
-    const box = el('div', 'ct');
-    box.appendChild(el('h3', null, 'Hộp đòi đồ chơi'));
-    const head = el('div', 'field');
-    head.append(el('label', null, 'Tự chọn thứ tự hộp đòi'), toggle(c.on, (on) => edit(() => {
-      PSP.setCustomOn(lv, on);
-      if (on && !PSP.parseTargets(lv.custom.str).ids.length) PSP.setTargets(lv, PSP.autoTargets(lv)); // start valid
-    }), 'UseCustomTarget: mỗi hộp đòi đúng loại đồ chơi theo danh sách này, thay cho game tự chọn'));
-    head.id = 'ctToggle';
-    box.appendChild(head);
-    if (!c.on) {
-      box.appendChild(el('div', 'hint', 'Đang tắt: game tự chọn loại đồ chơi cho từng hộp. Bật để tự đặt hộp nào đòi gì, theo thứ tự.'));
-      return box;
+  // ---------- the spawn order bar, one row at the top of the board ----------
+  // The mode switch: Tự động (UseCustomTarget false, the game picks) or Thủ công (true, the order below). Switching to
+  // manual with an empty list fills a valid order; switching back keeps the list in the file.
+  function modeSwitch(on) {
+    const w = el('div', 'seg ctb-mode');
+    w.id = 'ctMode';
+    for (const [mode, label, tip] of [['auto', 'Tự động', 'Game tự chọn loại đồ chơi cho mỗi hộp (UseCustomTarget = false)'],
+      ['manual', 'Thủ công', 'Tự đặt thứ tự đồ chơi của từng hộp (UseCustomTarget = true)']]) {
+      const manual = mode === 'manual';
+      const b = el('button', 'tb' + (manual === on ? ' on' : ''), label);
+      b.dataset.mode = mode;
+      b.title = tip;
+      b.onclick = () => {
+        if (manual === on) return;
+        S.ctSel = -1; S.ctRawEdit = false;
+        edit(() => {
+          PSP.setCustomOn(S.level, manual);
+          if (manual && !PSP.parseTargets(S.level.custom.str).ids.length) PSP.setTargets(S.level, PSP.autoTargets(S.level)); // start valid
+        });
+      };
+      w.appendChild(b);
     }
-    const t = PSP.targetStats(lv);
-    box.appendChild(el('div', 'hint', `Mỗi ô là một hộp, theo thứ tự hộp mở: ô 1–2 là 2 hộp mở ngay từ đầu, mỗi hộp mở sau (hộp xong, hộp được mở khoá) nhận ô kế tiếp. ` +
-      `Cần đúng ${t.boxes} hộp: mỗi loại đồ chơi được đòi (số cái ÷ 3) lần.`));
-    const over = new Set(t.kinds.filter((k) => k.listed > k.need).map((k) => k.id)), unknown = new Set(t.unknown);
-    const strip = el('div', 'ct-strip');
-    strip.id = 'ctStrip';
-    const setIds = (ids) => edit(() => PSP.setTargets(lv, ids));
-    t.ids.forEach((id, i) => {
-      const chip = el('div', 'ct-chip' + (i < 2 ? ' open' : '') + (unknown.has(id) || over.has(id) ? ' bad' : ''));
-      chip.draggable = true;
-      chip.dataset.i = i;
-      chip.append(el('span', 'ct-no', String(i + 1)), itemBox(id, 30), el('b', null, String(id)));
-      const x = el('button', 'ct-x', '×');
-      x.title = 'Bỏ hộp này';
-      x.onclick = (e) => { e.stopPropagation(); const ids = t.ids.slice(); ids.splice(i, 1); setIds(ids); };
-      chip.appendChild(x);
-      chip.title = `Hộp ${i + 1}: đòi đồ chơi ${id}` + (i < 2 ? ' · mở ngay từ đầu' : '') +
-        (unknown.has(id) ? ' · level không có đồ chơi này' : over.has(id) ? ' · loại này bị đòi quá số hộp' : '') + '\nBấm: đổi loại · Kéo: đổi thứ tự · ×: bỏ';
-      chip.onclick = () => kindPicker(chip, id, (nid) => { const ids = t.ids.slice(); ids[i] = nid; setIds(ids); });
-      chip.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', 'ct:' + i); e.dataTransfer.effectAllowed = 'move'; });
-      chip.addEventListener('dragover', (e) => { e.preventDefault(); chip.classList.add('drop'); });
-      chip.addEventListener('dragleave', () => chip.classList.remove('drop'));
-      chip.addEventListener('drop', (e) => {
-        e.preventDefault();
-        const m = /^ct:(\d+)$/.exec(e.dataTransfer.getData('text/plain'));
-        if (!m || +m[1] === i) return;
-        const ids = t.ids.slice(); const [mv] = ids.splice(+m[1], 1); ids.splice(i, 0, mv); setIds(ids);
-      });
-      strip.appendChild(chip);
-    });
-    const add = el('button', 'ct-add', '＋');
-    add.title = 'Thêm một hộp ở cuối (chọn loại đồ chơi)';
-    add.onclick = () => kindPicker(add, null, (nid) => setIds(t.ids.concat([nid])));
-    strip.appendChild(add);
-    box.appendChild(strip);
-    const done = t.ids.length === t.boxes && !t.unknown.length && t.kinds.every((k) => k.items % 3 || k.listed === k.need) && !t.bad;
-    const sum = el('div', 'ct-sum' + (done ? ' ok' : ' bad'), done ? `✓ Đủ ${t.boxes} hộp, đúng số lần mỗi loại` : `${t.ids.length} / ${t.boxes} hộp — xem các loại tô đỏ`);
-    box.appendChild(sum);
-    const tally = el('div', 'ct-tally');
-    for (const k of t.kinds) {
-      const ok = k.listed === k.need && k.items % 3 === 0;
-      const sp = el('span', 'ct-k' + (ok ? ' ok' : ' bad'));
-      sp.append(itemBox(k.id, 20), el('span', null, `${k.listed}/${k.need}`));
-      sp.title = `Đồ chơi ${k.id}: ${k.items} cái → cần ${k.need} hộp, danh sách ghi ${k.listed}` + (k.items % 3 ? ' · số cái không chia hết cho 3' : '');
-      tally.appendChild(sp);
-    }
-    for (const id of t.unknown) {
-      const sp = el('span', 'ct-k bad');
-      sp.append(itemBox(id, 20), el('span', null, '✗'));
-      sp.title = `Đồ chơi ${id}: level không có, nhưng danh sách đòi`;
-      tally.appendChild(sp);
-    }
-    box.appendChild(tally);
-    const acts = el('div', 'field ct-acts');
-    const fill = el('button', 'tb', '↺ Tự điền');
-    fill.title = 'Điền lại một thứ tự hợp lệ: mỗi loại được đòi khi đủ 3 cái, theo thứ tự phao rơi';
-    fill.onclick = () => setIds(PSP.autoTargets(lv));
-    const clr = el('button', 'tb', 'Xoá hết');
-    clr.onclick = () => setIds([]);
-    const errs = S.issues.filter((x) => x.sev === 'error');
-    const chk = el('button', 'tb', '▶ Kiểm tra chơi được');
-    chk.id = 'ctCheck';
-    chk.disabled = errs.length > 0; // the Playtest block may still be loading on the first draw: runPlayCheck checks it
-    chk.title = errs.length ? `Sửa ${errs.length} lỗi trước — ${errs[0].msg}` : 'Bot của game chơi level theo thứ tự này, với vật lý và luật như Chơi thử';
-    chk.onclick = runPlayCheck;
-    acts.append(fill, clr, chk);
-    box.appendChild(acts);
-    if (S.playCheck) box.appendChild(playCheckLine(S.playCheck));
-    const raw = el('input'); raw.type = 'text'; raw.className = 'raw'; raw.value = c.str; raw.id = 'ctRaw';
-    raw.title = 'CustomTargetStr — các id cách nhau bằng dấu phẩy, theo thứ tự hộp mở';
-    raw.onchange = () => { if (raw.value !== c.str) edit(() => { lv.custom = Object.assign({}, lv.custom, { str: raw.value.replace(/\s+/g, '') }); }); };
-    box.appendChild(field('CustomTargetStr', null, raw));
-    return box;
+    return w;
   }
 
-  // A grid of the level's item kinds (picture, id, boxes listed / needed) beside the anchor.
-  function kindPicker(anchor, current, onPick) {
-    document.querySelectorAll('.ct-pop').forEach((x) => x.remove());
-    const t = PSP.targetStats(S.level);
-    const pop = el('div', 'ipick-pop ct-pop');
-    pop.appendChild(el('div', 'ipick-head', 'Hộp này đòi loại đồ chơi nào? (số hộp đã ghi / cần)'));
-    const grid = el('div', 'ipick-grid');
-    for (const k of t.kinds) {
-      const o = el('button', 'pitem' + (k.id === current ? ' on' : ''));
-      o.dataset.id = k.id;
-      o.appendChild(itemBox(k.id, 34));
-      o.appendChild(el('span', 'pid', String(k.id)));
-      o.appendChild(el('span', 'pcnt' + (k.listed === k.need ? '' : ' bad'), `${k.listed}/${k.need}`));
-      o.title = `Đồ chơi ${k.id}: ${k.items} cái, cần ${k.need} hộp, đã ghi ${k.listed}`;
-      o.onclick = (e) => { e.stopPropagation(); pop.remove(); onPick(k.id); };
-      grid.appendChild(o);
+  // Left: the label and a plain count. Middle, scrolling sideways (the mouse wheel scrolls it): one chip per box in
+  // spawn order (badge = order, 1-2 = the boxes open at start; id left, picture middle, a separate ✕ right) and dashed
+  // slots for boxes still to place. Beside it, pinned: "Còn lại", the kinds that still need boxes (click to add at the end, drag
+  // onto a box to insert, or select a box first and click a kind to change it) and any kind listed wrong (red).
+  // Right: the three actions. Its findings go to the checks panel, not here.
+  function renderTargetsBar() {
+    const bar = $('#ctBar');
+    const lv = S.level;
+    const old = bar.querySelector('.ctb-lane'), keepScroll = old ? old.scrollLeft : 0;
+    if (!lv) { bar.hidden = true; bar.textContent = ''; return; }
+    const c = lv.custom || { on: false, str: '' };
+    bar.hidden = false;
+    bar.textContent = '';
+    const lbl = el('div', 'ctb-lbl');
+    const title = el('div', 'ctb-title');
+    title.appendChild(el('b', null, 'Thứ tự spawn hộp'));
+    lbl.append(title, modeSwitch(c.on));
+    bar.appendChild(lbl);
+    if (!c.on) { // automatic: the game picks; a stored manual order stays in the file
+      const kept = PSP.parseTargets(c.str).ids.length;
+      bar.appendChild(el('div', 'ctb-auto', 'Game tự chọn loại đồ chơi cho mỗi hộp khi hộp spawn (theo cửa sổ áp lực hoặc bảng DDA).' +
+        (kept ? ` Thứ tự thủ công đã có (${kept} hộp) vẫn giữ trong file; chọn Thủ công để dùng lại.` : ' Chọn Thủ công để tự đặt thứ tự.')));
+      return;
     }
-    pop.appendChild(grid);
-    document.body.appendChild(pop);
-    const r = anchor.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
-    pop.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.right - w)) + 'px';
-    pop.style.top = (r.bottom + h + 8 < window.innerHeight ? r.bottom + 6 : Math.max(8, r.top - h - 6)) + 'px';
-    const close = (ev) => { if (!pop.contains(ev.target)) { pop.remove(); document.removeEventListener('mousedown', close, true); } };
-    setTimeout(() => document.addEventListener('mousedown', close, true), 0);
+    const t = PSP.targetStats(lv);
+    const need = new Map(t.kinds.map((k) => [k.id, k]));
+    if (!(S.ctSel >= 0 && S.ctSel < t.ids.length)) S.ctSel = -1;
+    const setIds = (ids, toEnd) => { S.ctToEnd = !!toEnd; edit(() => PSP.setTargets(lv, ids)); };
+    // the count beside the title (or what a selected box is waiting for)
+    title.appendChild(S.ctSel >= 0 ? el('span', 'ctb-tip', `Hộp ${S.ctSel + 1}: bấm một loại ở "Còn lại" để đổi`)
+      : el('span', null, `${t.ids.length} / ${t.boxes} hộp`));
+    if (S.ctRawEdit) { // the list as text (CustomTargetStr), in place of the lane
+      const wrap = el('div', 'ctb-raw');
+      const raw = el('input'); raw.type = 'text'; raw.className = 'raw'; raw.id = 'ctRaw'; raw.value = c.str;
+      raw.placeholder = 'vd. 1,14,16 — các id theo thứ tự spawn';
+      raw.title = 'CustomTargetStr: các id cách nhau bằng dấu phẩy. Enter: áp dụng · Esc: huỷ';
+      const apply = () => {
+        S.ctRawEdit = false;
+        const v = raw.value.replace(/\s+/g, '');
+        if (v !== c.str) edit(() => { lv.custom = Object.assign({}, lv.custom, { str: v }); }); else renderTargetsBar();
+      };
+      raw.onkeydown = (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); apply(); }
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); S.ctRawEdit = false; renderTargetsBar(); }
+      };
+      const okb = el('button', 'tb primary', '✓ Áp dụng'); okb.id = 'ctRawApply'; okb.onclick = apply;
+      const no = el('button', 'tb', 'Huỷ'); no.onclick = () => { S.ctRawEdit = false; renderTargetsBar(); };
+      wrap.append(raw, okb, no);
+      bar.appendChild(wrap);
+      setTimeout(() => raw.focus(), 0);
+      return;
+    }
+    // middle: the lane
+    const lane = el('div', 'ctb-lane');
+    lane.id = 'ctStrip';
+    lane.addEventListener('wheel', (e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { lane.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
+    const dropAt = (e, at) => { // a box moved, or a kind dragged in from "Còn lại"
+      const d = e.dataTransfer.getData('text/plain');
+      let m = /^ct:(\d+)$/.exec(d);
+      if (m) {
+        const from = +m[1];
+        if (from === at || (from === at - 1 && at === t.ids.length)) return;
+        const ids = t.ids.slice(); const [mv] = ids.splice(from, 1); ids.splice(from < at ? at - 1 : at, 0, mv);
+        S.ctSel = -1; setIds(ids);
+        return;
+      }
+      m = /^ck:(\d+)$/.exec(d);
+      if (m) { const ids = t.ids.slice(); ids.splice(at, 0, +m[1]); S.ctSel = -1; setIds(ids); }
+    };
+    const dropZone = (node, at) => {
+      node.addEventListener('dragover', (e) => { e.preventDefault(); node.classList.add('drop'); });
+      node.addEventListener('dragleave', () => node.classList.remove('drop'));
+      node.addEventListener('drop', (e) => { e.preventDefault(); node.classList.remove('drop'); dropAt(e, at); });
+    };
+    t.ids.forEach((id, i) => {
+      const k = need.get(id);
+      const wrong = !k || k.listed > k.need;
+      const chip = el('div', 'ct-chip' + (i < 2 ? ' open' : '') + (wrong ? ' bad' : '') + (i === S.ctSel ? ' on' : ''));
+      chip.draggable = true;
+      chip.dataset.i = i;
+      chip.dataset.kind = id;
+      const x = el('button', 'ct-x', '✕');
+      x.title = `Bỏ hộp ${i + 1} khỏi thứ tự (trả về "Còn lại")`;
+      x.setAttribute('aria-label', x.title);
+      x.onclick = (e) => { e.stopPropagation(); const ids = t.ids.slice(); ids.splice(i, 1); S.ctSel = -1; setIds(ids); };
+      chip.append(el('span', 'ct-no', String(i + 1)), el('b', 'ct-id', String(id)), itemBox(id, 38), x);
+      chip.title = `Hộp ${i + 1}: đồ chơi ${id}` + (i < 2 ? ' · có sẵn từ đầu' : '') +
+        (!k ? ' · level không có đồ chơi này' : k.listed > k.need ? ' · loại này bị xếp quá số hộp' : '') +
+        '\nBấm: chọn rồi bấm một loại ở "Còn lại" để đổi · Kéo: đổi thứ tự · ✕: bỏ khỏi thứ tự';
+      chip.onclick = () => { S.ctSel = S.ctSel === i ? -1 : i; renderTargetsBar(); };
+      chip.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', 'ct:' + i); e.dataTransfer.effectAllowed = 'move'; });
+      dropZone(chip, i);
+      hoverLink(chip, id);
+      lane.appendChild(chip);
+    });
+    const left = t.kinds.reduce((n, k) => n + Math.max(0, k.need - k.listed), 0);
+    for (let j = 0; j < left; j++) {
+      const ph = el('div', 'ct-slot', String(t.ids.length + j + 1));
+      ph.title = 'Hộp chưa xếp — bấm hoặc kéo một loại ở "Còn lại" vào đây';
+      dropZone(ph, t.ids.length);
+      lane.appendChild(ph);
+    }
+    if (!left) { const end = el('div', 'ct-end'); end.title = 'Thả vào đây để thêm ở cuối'; dropZone(end, t.ids.length); lane.appendChild(end); }
+    // "Còn lại": only the kinds that still need boxes, or that are listed wrong; pinned outside the scrolling lane
+    const pending = t.kinds.filter((k) => k.need - k.listed !== 0);
+    if (pending.length || t.unknown.length) {
+      const pool = el('div', 'ct-pool');
+      pool.id = 'ctPool';
+      pool.appendChild(el('span', 'ctb-div', 'Còn lại'));
+      for (const k of pending) {
+        const n = k.need - k.listed;
+        const swap = S.ctSel >= 0 && t.ids[S.ctSel] !== k.id && n > 0;
+        const o = el('button', 'ct-kind' + (n < 0 ? ' bad' : '') + (swap ? ' swap' : ''));
+        o.dataset.kind = k.id;
+        o.draggable = n > 0;
+        o.append(itemBox(k.id, 30), el('span', null, n < 0 ? `${n}` : `×${n}`));
+        o.title = `Đồ chơi ${k.id}: ${k.items} cái → ${k.need} hộp, đã xếp ${k.listed}` +
+          (n > 0 ? (S.ctSel >= 0 ? `\nBấm: đổi hộp ${S.ctSel + 1} sang loại này` : '\nBấm: thêm một hộp ở cuối · Kéo: chèn vào vị trí') :
+            '\nBị xếp quá số hộp: bỏ bớt hộp loại này') + (k.items % 3 ? '\nSố cái không chia hết cho 3' : '');
+        o.onclick = () => {
+          if (n <= 0) return;
+          const ids = t.ids.slice();
+          const add = S.ctSel < 0;
+          if (add) ids.push(k.id); else ids[S.ctSel] = k.id;
+          S.ctSel = -1;
+          setIds(ids, add);
+        };
+        o.addEventListener('dragstart', (e) => { if (n <= 0) { e.preventDefault(); return; } e.dataTransfer.setData('text/plain', 'ck:' + k.id); e.dataTransfer.effectAllowed = 'copy'; });
+        hoverLink(o, k.id);
+        pool.appendChild(o);
+      }
+      for (const id of t.unknown) {
+        const o = el('span', 'ct-kind bad');
+        o.dataset.kind = id;
+        o.append(itemBox(id, 30), el('span', null, '✗'));
+        o.title = `Đồ chơi ${id}: level không có — bỏ các hộp loại này khỏi thứ tự`;
+        pool.appendChild(o);
+      }
+      bar.appendChild(lane);
+      bar.appendChild(pool); // pinned beside the lane, so it stays in view however long the order is
+    } else bar.appendChild(lane);
+    // right: the three actions
+    const acts = el('div', 'ctb-acts');
+    const fill = el('button', 'tb', '↺ Tự điền');
+    fill.title = 'Điền lại một thứ tự hợp lệ: mỗi loại spawn khi đủ 3 cái, theo thứ tự phao rơi';
+    fill.onclick = () => { S.ctSel = -1; setIds(PSP.autoTargets(lv)); };
+    const clr = el('button', 'tb', 'Xoá hết');
+    clr.title = 'Trả mọi hộp về "Còn lại"';
+    clr.onclick = () => { S.ctSel = -1; setIds([]); };
+    const errs = S.issues.filter((x) => x.sev === 'error');
+    const busy = S.playCheck && S.playCheck.busy;
+    const chk = el('button', 'tb', busy ? '⏳ Đang kiểm tra…' : '▶ Kiểm tra chơi được');
+    chk.id = 'ctCheck';
+    chk.disabled = busy || errs.length > 0; // the Playtest block may still be loading on the first draw: runPlayCheck checks it
+    chk.title = errs.length ? `Sửa ${errs.length} lỗi trước (xem Soát lỗi) — ${errs[0].msg}` : 'Bot của game chơi level theo thứ tự này, với vật lý và luật như Chơi thử; kết quả hiện trong Soát lỗi';
+    chk.onclick = runPlayCheck;
+    const rawb = el('button', 'tb', '✎ Chuỗi');
+    rawb.id = 'ctRawEdit';
+    rawb.title = 'Sửa trực tiếp chuỗi CustomTargetStr (vd. dán một danh sách id)';
+    rawb.onclick = () => { S.ctSel = -1; S.ctRawEdit = true; renderTargetsBar(); };
+    acts.append(fill, clr, chk, rawb);
+    bar.appendChild(acts);
+    lane.scrollLeft = S.ctToEnd ? lane.scrollWidth : keepScroll;
+    S.ctToEnd = false;
+  }
+
+  // Hovering a chip or a pool kind lights every item of that kind on the float cards; hovering an item on a card
+  // lights its chips in the bar (cardEvents).
+  function lightKind(id, on) {
+    document.querySelectorAll(`#cards [data-item="${id}"]`).forEach((x) => x.classList.toggle('hl', on));
+  }
+  function lightChips(id, on) {
+    document.querySelectorAll(`#ctBar [data-kind="${id}"]`).forEach((x) => x.classList.toggle('hl', on));
+  }
+  function hoverLink(node, id) {
+    node.addEventListener('mouseenter', () => lightKind(id, true));
+    node.addEventListener('mouseleave', () => lightKind(id, false));
   }
 
   // The playable check: the game's bot plays this order headless (Playtest's engine), without and then with unlocks.
@@ -1714,18 +1833,21 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
         const ids = PSP.parseTargets(S.level.custom.str).ids;
         S.playCheck = window.pspPlay.check(JSON.parse(JSON.stringify(S.level.floats)), S.row ? JSON.parse(JSON.stringify(S.row)) : null, ids);
       } catch (e) { S.playCheck = { error: e.message }; }
+      $('#checks').open = true; // the result is a line of the checks panel
       render();
     }, 30);
   }
-  function playCheckLine(pc) {
-    if (pc.busy) return el('div', 'ct-check', '⏳ Bot đang chơi thử thứ tự này…');
-    if (pc.error) return el('div', 'ct-check bad', 'Không kiểm tra được: ' + pc.error);
+  // The playable check as one line of the checks panel: ✓ when the bot wins without help, ⚠ otherwise.
+  function playIssue(pc) {
+    const CT = 'Thứ tự spawn hộp: ';
+    const out = (sev, msg) => ({ sev, code: 'ctPlay', float: -1, msg: CT + msg });
+    if (pc.error) return out('warn', 'không kiểm tra được — ' + pc.error);
     const won = (r) => r && r.result === 'Won';
     const why = (r) => (r.result === 'LostFull' ? 'ô tạm đầy' : r.result === 'LostCountdown' ? 'hết giờ Countdown' : 'bị kẹt, không còn nước đi');
-    if (won(pc.plain)) return el('div', 'ct-check ok', `✓ Bot thắng theo thứ tự này mà không cần mở thêm hộp (${pc.plain.taps} lượt bấm).`);
-    if (won(pc.unlock)) return el('div', 'ct-check warn', `⚠ Bot chỉ thắng khi mở thêm ${pc.unlock.unlocks} hộp (trong game: xem quảng cáo hoặc trả xu). Không mở thì thua: ${why(pc.plain)}.`);
-    return el('div', 'ct-check bad', `✗ Bot thua cả khi mở hộp (${why(pc.unlock || pc.plain)}, gom ${(pc.unlock || pc.plain).collected}/${(pc.unlock || pc.plain).total}). ` +
-      'Thứ tự này có thể làm level không qua được; bot chơi tham lam, không hoàn hảo, nên hãy Chơi thử để chắc.');
+    if (won(pc.plain)) return out('ok', `bot thắng theo thứ tự này mà không cần mở thêm hộp (${pc.plain.taps} lượt bấm).`);
+    if (won(pc.unlock)) return out('warn', `bot chỉ thắng khi mở thêm ${pc.unlock.unlocks} hộp (trong game: xem quảng cáo hoặc trả xu); không mở thì thua (${why(pc.plain)}).`);
+    const r = pc.unlock || pc.plain;
+    return out('warn', `bot thua cả khi mở hộp (${why(r)}, gom ${r.collected}/${r.total}); thứ tự này có thể làm level không qua được. Bot chơi tham lam, không hoàn hảo: hãy Chơi thử để chắc.`);
   }
 
   // ---------- level panel (the LevelConfig.json row) ----------
@@ -1734,7 +1856,6 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     p.textContent = '';
     if (!S.level) return;
     p.appendChild(el('h3', null, `Cài đặt level ${S.id}` + (S.demo ? ' (mẫu)' : '')));
-    p.appendChild(targetsSection());
     const row = S.row;
     if (!row) {
       if (S.cfg) {
@@ -1952,9 +2073,9 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     const inLevel = [...c.items.keys()].filter((x) => Number.isInteger(x) && x > 0);
     const a = itemPicker('A', inLevel, first, c.items, 'Loại đồ chơi A: chỉ các loại đang có trong level');
     const b = itemPicker('B', opts, S.brush, c.items, 'Loại đồ chơi B: mọi id có hình, và các id đang có trong level');
-    const r1 = el('button', 'tb', 'Thay A → B'); r1.title = 'Đổi mọi đồ chơi A trong level thành B (cả nạp lại, Mask và danh sách hộp đòi)';
+    const r1 = el('button', 'tb', 'Thay A → B'); r1.title = 'Đổi mọi đồ chơi A trong level thành B (cả nạp lại, Mask và thứ tự spawn hộp)';
     r1.onclick = () => { const x = +a.value, y = +b.value; if (x !== y) edit(() => PSP.replaceKind(S.level, x, y)); };
-    const r2 = el('button', 'tb', 'Đổi A ↔ B'); r2.title = 'Hoán đổi hai loại đồ chơi trong level (cả nạp lại, Mask và danh sách hộp đòi)';
+    const r2 = el('button', 'tb', 'Đổi A ↔ B'); r2.title = 'Hoán đổi hai loại đồ chơi trong level (cả nạp lại, Mask và thứ tự spawn hộp)';
     r2.onclick = () => { const x = +a.value, y = +b.value; if (x !== y) edit(() => PSP.swapKinds(S.level, x, y)); };
     rep.append(el('span', 'stat', 'A'), a, el('span', 'stat', 'B'), b, r1, r2);
     f.appendChild(rep);
@@ -2006,14 +2127,22 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     if (!S.level) { d.hidden = true; return; }
     d.hidden = false;
     const errs = S.issues.filter((x) => x.sev === 'error'), warns = S.issues.filter((x) => x.sev === 'warn');
+    const oks = S.issues.filter((x) => x.sev === 'ok');
     const head = $('#chkHead');
     head.innerHTML = errs.length || warns.length
       ? `Soát lỗi · <span class="e">${errs.length} lỗi</span> · <span class="w">${warns.length} cảnh báo</span>` + (errs.length ? ' — chưa lưu được' : '')
       : 'Soát lỗi · <span class="ok">không có lỗi</span>';
     const list = $('#chkList');
     list.textContent = '';
-    for (const x of errs.concat(warns)) {
-      const line = el('div', null, (x.sev === 'error' ? '⛔ ' : '⚠ ') + x.msg);
+    for (const x of errs.concat(warns, oks)) {
+      const line = el('div', x.sev === 'ok' ? 'ok' : null, (x.sev === 'error' ? '⛔ ' : x.sev === 'warn' ? '⚠ ' : '✓ ') + x.msg);
+      line.dataset.code = x.code;
+      if (x.kind) { // a spawn-order line: hover lights the kind on the cards and in the bar, click scrolls the bar to it
+        line.dataset.k = x.kind;
+        line.onmouseenter = () => { lightKind(x.kind, true); lightChips(x.kind, true); };
+        line.onmouseleave = () => { lightKind(x.kind, false); lightChips(x.kind, false); };
+        line.onclick = () => { const c = document.querySelector(`#ctBar [data-kind="${x.kind}"]`); if (c) c.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }); };
+      }
       if (x.float >= 0) {
         line.dataset.f = x.float;
         line.onclick = () => { S.sel = { float: x.float, slot: -1 }; render(); scrollToCard(x.float); };
@@ -2055,6 +2184,8 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
   // ---------- card events (delegated) ----------
   function cardEvents() {
     const box = $('#cards');
+    box.addEventListener('mouseover', (e) => { const n = e.target.closest('[data-item]'); if (n) lightChips(n.dataset.item, true); });
+    box.addEventListener('mouseout', (e) => { const n = e.target.closest('[data-item]'); if (n) lightChips(n.dataset.item, false); });
     box.addEventListener('click', (e) => {
       const card = e.target.closest('.card');
       if (!card || card.classList.contains('addc')) return;
@@ -2970,12 +3101,15 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
    * Parsed level. pointRanges: [{min, max}] progress windows (cleared floaties / floaties that count) where
    * pressure demand applies. countdownTargets: [{progress, seconds}] spec #4 marks. windowRollWeights: odds of
    * 0/1/2/3 windows being active (empty = every window). tier: 1 Easy / 2 Medium / 3 Hard, 0 unknown.
+   * customTargets: authored tank targets, in the order tanks open. Non-empty replaces the runtime picker (DDA and
+   * the original demand rules) for as long as it lasts. Empty = picker decides, as before.
    * Pairs may be given as {min,max} / {progress,seconds} objects or [a, b] arrays; floats are kept float32.
    */
   class LevelDefinition {
     constructor(levelId, timeSeconds, floaties, pointRanges = null, countdownTargets = null,
-      windowRollWeights = null, tier = 0) {
+      windowRollWeights = null, tier = 0, customTargets = null) {
       this.tier = tier == null ? 0 : tier;
+      this.customTargets = Object.freeze(customTargets == null ? [] : Array.from(customTargets));
       this.windowRollWeights = Object.freeze((windowRollWeights == null ? [] : Array.from(windowRollWeights)).map((w) => f32(w)));
       this.levelId = levelId;
       this.timeSeconds = f32(timeSeconds);
@@ -4021,6 +4155,8 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     constructor(level, rules = null, spawnPolicy = null, mechanics = null) {
       if (level == null) throw new ArgumentNullException('level');
       this._level = level;
+      /** Next unread entry of level.customTargets. */
+      this._customTargetIndex = 0;
       this._queue = new FloatieQueue(level.floaties, spawnPolicy);
       this._rules = rules == null ? ToySortRuleSet.Default : rules;
       this._mechanics = mechanics == null ? MechanicRegistry.Default : mechanics;
@@ -4405,19 +4541,34 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     // ---------------------------------------------------------------- Resolution (ToySortGameResolution.cs)
 
     /** True when a newly opened tank would get a demand type (Version B: rolls the strategy RNG, as C#). */
-    get canOpenTank() { return this._custom ? this._customNext < this._custom.length : this._demandType() !== 0; }
+    get canOpenTank() { return this._peekCustomTarget().type !== 0 || this._demandType() !== 0; }
 
     /**
-     * Custom box targets (LevelData UseCustomTarget + CustomTargetStr). NOT IN THE TEAM'S C# YET (dev/main e6e9c7e1e):
-     * this is the level editor's definition, the owner's rule of 2026-10-07. Every box that opens (the open boxes at
-     * start, a completed box's next demand, an unlocked box) asks for the next id of the list instead of the
-     * auto-pick; pressure windows and the DDA table no longer choose. When the list runs out, a box stays empty.
-     * Set it before start(); null = auto-pick, the game's behaviour.
+     * Next authored target that can still be completed, or type 0 when the level has none left. Entries without
+     * enough free toys for a full tank are skipped rather than opened, because a tank that can never fill would
+     * stall the level. Does not consume - canOpenTank asks too. Returns { type, index } (C# out index).
      */
-    set customTargets(ids) { this._custom = ids && ids.length ? ids.slice() : null; this._customNext = 0; }
-    get customTargets() { return this._custom || null; }
-    /** How many custom targets have been handed out so far. */
-    get customTargetsUsed() { return this._custom ? this._customNext : 0; }
+    _peekCustomTarget() {
+      const targets = this._level.customTargets;
+      let index;
+      for (index = this._customTargetIndex; index < targets.length; index++)
+        if (!this._isUnsafe(targets[index])) return { type: targets[index], index };
+      return { type: 0, index };
+    }
+
+    /**
+     * Consumes and returns the next authored target. 0 means the list is spent (or was never set) and the runtime
+     * picker takes over, so a short list cannot leave the remaining toys without a tank.
+     */
+    _takeCustomTarget() {
+      const { type, index } = this._peekCustomTarget();
+      this._customTargetIndex = index + 1;
+      return type;
+    }
+
+    /** Editor read-outs (not in C#): the level's list, null when it has none, and how many entries were read. */
+    get customTargets() { return this._level.customTargets.length ? this._level.customTargets : null; }
+    get customTargetsUsed() { return Math.min(this._customTargetIndex, this._level.customTargets.length); }
 
     /**
      * Opens a locked tank (after a rewarded ad). Counts as help used, picks a demand type and auto-flies
@@ -4562,8 +4713,8 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     }
 
     _openTank(tank, events, initial) {
-      const type = this._custom ? (this._customNext < this._custom.length ? this._custom[this._customNext++] : 0)
-        : initial ? this._initialType() : this._demandType();
+      let type = this._takeCustomTarget();
+      if (type === 0) type = initial ? this._initialType() : this._demandType();
       if (type === 0) {
         events.push(GameEvent.tankDeactivated(tank.index));
         return;
@@ -4841,6 +4992,29 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     return ranges;
   }
 
+  /**
+   * Reads either shape of a LevelData file: the original bare floatie array, or the object form
+   * { UseCustomTarget, CustomTargetStr, Floaties } (Data/LevelDataFile.cs) that adds level-wide settings around the
+   * same array. Text or parsed JSON. Keys match case-insensitively, exact case first, as Json.NET binds them.
+   */
+  function parseLevelData(json) {
+    if (json == null) return null;
+    const value = typeof json === 'string' ? JSON.parse(stripBom(json)) : json;
+    if (value == null) return null;
+    if (Array.isArray(value)) return { useCustomTarget: false, customTargetStr: null, floaties: value };
+    if (typeof value !== 'object') throw new FormatException('level data is neither a floatie array nor an object');
+    const get = (name) => {
+      if (name in value) return value[name];
+      const key = Object.keys(value).find((k) => k.toLowerCase() === name.toLowerCase());
+      return key === undefined ? undefined : value[key];
+    };
+    const floaties = get('Floaties');
+    if (floaties != null && !Array.isArray(floaties)) throw new FormatException('Floaties is not a JSON array');
+    const str = get('CustomTargetStr');
+    return { useCustomTarget: get('UseCustomTarget') === true, customTargetStr: str == null ? null : String(str),
+      floaties: floaties == null ? null : floaties };
+  }
+
   /** Strict: a bad toy id means the level is broken, so it throws FormatException. */
   function parseToyStr(toyStr, levelId) {
     if (isNullOrWhiteSpace(toyStr)) return [];
@@ -4925,13 +5099,15 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
     },
 
     /**
-     * entry: a LevelConfigEntry or a raw LevelConfig.json row; floatieJson: LevelData_N.json text or the
-     * parsed array of records (raw objects or FloatieConfigEntry); rules: ToySortRuleSet (default Default).
+     * entry: a LevelConfigEntry or a raw LevelConfig.json row; floatieJson: LevelData_N.json text, or its parsed
+     * form: the array of records (raw objects or FloatieConfigEntry) or the object form
+     * { UseCustomTarget, CustomTargetStr, Floaties }; rules: ToySortRuleSet (default Default).
      */
     parseLevel(entry, floatieJson, rules = null) {
       if (entry == null) throw new ArgumentNullException('entry');
       if (!(entry instanceof LevelConfigEntry)) entry = new LevelConfigEntry(entry);
-      const records = readJsonArray(floatieJson, 'Level ' + entry.levelID + ' floatie data');
+      const data = parseLevelData(floatieJson);
+      const records = data == null ? null : data.floaties;
       if (records == null) throw new FormatException('Level ' + entry.levelID + ': floatie data empty or invalid');
       if (rules == null) rules = ToySortRuleSet.Default;
       const floaties = [];
@@ -4944,7 +5120,8 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
       // CountdownTargetProgress has the same "a,b|a,b" shape (malformed pairs and all) as PointRangeStr.
       return new LevelDefinition(entry.levelID, entry.levelTime, floaties,
         parsePointRanges(entry.pointRangeStr), parsePointRanges(entry.countdownTargetProgress),
-        [entry.noAdWeight, entry.oneAdWeight, entry.twoAdWeight, entry.threeAdWeight], entry.levelDifficulty);
+        [entry.noAdWeight, entry.oneAdWeight, entry.twoAdWeight, entry.threeAdWeight], entry.levelDifficulty,
+        data.useCustomTarget ? parseToyStr(data.customTargetStr, entry.levelID) : null);
     },
 
     /** Same as parseLevel(row, records, rules), argument order of the editor. */
@@ -5142,7 +5319,8 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
                              slot -1 = press on the hull. tapY: world y of the pointer (ToyTapInput gates
                              the pointer); omitted = the item's centre (ToySortBoard.IsToyTappable)
    board.canTap(floatieId, slot, tapY?) -> { ok, reason, mechanic?, wait? }   same checks, no side effects
-   opts.customTargets: the level's custom box targets (ids, one per box in opening order) or null for the auto-pick.
+   opts.customTargets: the level's custom box targets (ids, one per box in opening order) or null for the auto-pick;
+                             handed to the parser as the object form (UseCustomTarget + CustomTargetStr).
    board.requestUnlock(tankIndex) -> { ok, events, reason }   a press on a locked box (no ad: opens at once);
                              reasons not-playing, unknown-tank, unlocked, no-demand. board.unlockCount counts them.
    board.drainEvents()       every event since the last drain, in order: ALL core events (Start, the events
@@ -5350,11 +5528,12 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
 
     // ToySortBoard.Build: rules, definition, ToyArtRemapper.Apply, game, difficulty. Apply runs only when the host
     // says which ids have art (opts.artIds); Shuffle is skipped so the authored art stays recognisable.
-    const definition = G.LevelRepository.build(o.records, o.row, rules);
+    const data = o.customTargets && o.customTargets.length
+      ? { UseCustomTarget: true, CustomTargetStr: o.customTargets.join(','), Floaties: o.records } : o.records;
+    const definition = G.LevelRepository.build(data, o.row, rules);
     if (!definition) throw new Error('PSPBoard: level did not build');
     const artRemap = o.artIds ? ToyArtRemapper.apply(definition, rng, (id) => o.artIds.has(id)) : new Map();
     const game = new G.ToySortGame(definition, rules, null);
-    if (o.customTargets) game.customTargets = o.customTargets; // before Start: the open boxes take entries 1-2
     game.isSlotVisible = (floatieId, slot) => toyWorldY(floatieId, slot) <= POOL.topMaskY;
     // Remote level_test: 4 = every window on, otherwise the windows are rolled; 5 also hands over the DDA table
     // (null stays on Version A) with the same unseeded random.
@@ -6304,7 +6483,7 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
       ['Tiến độ phao', Math.round(prog * 100) + '% (cửa sổ, Countdown)'],
       ['Cửa sổ áp lực', versionB ? 'Version B: không dùng' : windows.length ? `${active} / ${windows.length} bật` + (pressing ? ' · đang ép' : '') : 'level không có'],
     ];
-    if (g.customTargets) rows.push(['Hộp đòi', `theo danh sách tự chọn · đã mở ${g.customTargetsUsed}/${g.customTargets.length} hộp`]);
+    if (g.customTargets) rows.push(['Thứ tự spawn hộp', `tự đặt · đã spawn ${g.customTargetsUsed}/${g.customTargets.length} hộp`]);
     if (versionB) rows.push(['Cách đòi (DDA)', g.lastStrategy ? String(g.lastStrategy) : '—'], ['Tiến độ đồ chơi', Math.round((g.toyProgress || 0) * 100) + '% (bảng DDA)']);
     const remap = b.artRemap && b.artRemap.size ? [...b.artRemap].map(([k, v]) => `${k}→${v}`).join(', ') : '';
     if (remap) rows.push(['Id chưa có hình', `đổi ngẫu nhiên như game: ${remap}`]);

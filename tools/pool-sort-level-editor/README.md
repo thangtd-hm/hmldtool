@@ -44,19 +44,29 @@ and `…-plan.md`.
    each mechanic. It can also replace one item kind with another, or swap two. A and B are picked from grids of
    item pictures with their ids: A from the kinds in the level (with counts), B from every id with art.
    Both also rewrite the box targets (item 8), so a valid list stays valid.
-8. **Hộp đòi đồ chơi** (box targets, top of the level panel) chooses which item each box asks for, in place of the
-   game's auto-pick (`UseCustomTarget`, `CustomTargetStr`):
-   - Switch it on, and the list fills itself with a valid order: each kind is listed when its third item has dropped.
-   - Each chip is one box, in the order boxes open. Chips 1–2 (blue number) are the two boxes open from the start;
-     every box opened later (after a box is done, or when one is unlocked) takes the next chip.
-   - Click a chip to change its item from a grid of the level's kinds (each shows listed / needed boxes). Drag a
-     chip to reorder it, × removes it, ＋ adds one at the end. **↺ Tự điền** (auto-fill) restores a valid order,
-     and the `CustomTargetStr` field edits the raw list.
-   - The tally under the chips shows, per kind, the boxes listed against the boxes needed (items ÷ 3). Red means
-     wrong, and saving stays blocked until every kind is right.
-   - **▶ Kiểm tra chơi được** (playable check) lets the game's bot play this order on Playtest's engine, first
-     without unlocking boxes, then unlocking when stuck. It says whether the bot wins, needs unlocks, or loses. The
-     bot is greedy rather than perfect, so a loss means "probably stuck", not proof.
+8. **Thứ tự spawn hộp** (box spawn order, "box targets" below) chooses which item each box asks for, in place of the
+   game's auto-pick (`UseCustomTarget`, `CustomTargetStr`). It lives in the **spawn order bar**, one row across the
+   top of the board, always there while a level is open:
+   - Left: the label, a plain count (`47 / 48 hộp`) or what a selected box is waiting for, and the mode switch
+     **Tự động | Thủ công**. Tự động (`UseCustomTarget` false) lets the game pick and shows a one-line note in the
+     bar; a manual list already in the file is kept and comes back on Thủ công. Thủ công with an empty list fills a
+     valid order (each kind is listed when its third item has dropped) and shows the parts below. The bar keeps the
+     same height in both modes, so the cards do not move.
+   - Middle, scrolling sideways (the mouse wheel scrolls it): one chip per box in spawn order, with the item id on the
+     left, its picture in the middle and a separate ✕ segment on the right. The badge is the order; 1–2 (blue) are
+     the two boxes there from the start, and every box spawned later takes the next chip. Dashed slots are boxes
+     still to place. Drag a chip to reorder; ✕ sends it back.
+   - **Còn lại** (left), pinned beside the lane and shown only while needed: each kind that still needs boxes
+     (`×n`), or that is listed too often (red `-n`) or not in the level (red ✗). Click a kind to add a box at the end,
+     drag it onto a chip to insert it there, or select a chip first and click a kind to change that box.
+   - Right: **↺ Tự điền** (auto-fill), **Xoá hết** (clear), **▶ Kiểm tra chơi được** (playable check) and
+     **✎ Chuỗi**, which swaps the lane for the raw `CustomTargetStr` text (Enter or ✓ Áp dụng applies, Esc cancels).
+   - Hover a chip or a kind and its items glow on the float cards; hover an item on a card and its chips light up.
+
+   Every finding goes to **Soát lỗi** with the item checks, in the same format, each starting "Thứ tự spawn hộp:".
+   Hovering such a line lights its kind; clicking it scrolls the bar there. The playable check adds a line there too:
+   ✓ when the game's bot wins this order on Playtest's engine, ⚠ when it needs unlocks or loses. The bot is greedy
+   rather than perfect, so a loss means "probably stuck", not proof.
 
 ## Playtest ("▶ Chơi thử", key P)
 
@@ -106,9 +116,12 @@ or Esc) leaves the editor untouched. It opens only when the level passes the blo
   - the new box picks a demand, and matching items fly in from the queue;
   - it is refused when no item kind is left to demand (the game's "not enough targets").
   The stats and the end banner count the unlocks.
-- **Box targets:** a level with custom box targets plays them: every box that opens asks for the next listed item,
-  and the panel shows how many boxes have opened. The team's game does not have this yet, so this behaviour is the
-  editor's own reading of the owner's rule (2026-10-07).
+- **Box targets:** a level with custom box targets plays them with the game's own code (dev/main `a4d58aab8`,
+  ported): every box that opens (the two at the start, a completed box's replacement, an unlocked box) asks for the
+  next listed item. An entry whose item has fewer than 3 items left that no open box has claimed is skipped, and
+  once the list runs out the game's usual pick takes over. A list that passes the checks is never skipped. The
+  panel shows how many entries have been read. Playtest leaves the game's per-entry Shuffle out, so it shows the
+  order as authored; in the game, Shuffle (`a4d58aab8`) renames the items but not the list (reported 2026-10-08).
 - **Known gaps:**
   - no boosters, revive or tutorial; box unlock is free;
   - ids without art are swapped as the game does (`ToyArtRemapper.Apply`: a random unused id with art), and the
@@ -136,9 +149,9 @@ or Esc) leaves the editor untouched. It opens only when the level passes the blo
 - **Two file forms.** The list form (a bare array of floats, every level before 2026-10) and the object form
   `{ "UseCustomTarget": …, "CustomTargetStr": "…", "Floaties": [ … ] }`, which carries custom box targets. A level
   keeps the form it was read in, with its own key order. A list-form level is written in the object form only when
-  box targets are switched on; switched off again before saving, it is written unchanged. **The game's
-  `LevelParser` (dev/main `e6e9c7e1e`) still reads only the list form**, so object-form files need the team's
-  updated parser before they can ship. The checks warn about this on every object-form level.
+  box targets are switched on; switched off again before saving, it is written unchanged. The game's `LevelParser`
+  reads both forms since dev/main `a4d58aab8` (2026-10-08); a build or branch older than that fails to load an
+  object-form level, so the checks warn on every object-form level.
 
 ## Checks ("Soát lỗi")
 
@@ -153,7 +166,8 @@ These block saving:
 - a float size above 5;
 - an empty level;
 - with box targets on: an entry that is not an id, an empty list, an item the level does not hold, a kind listed
-  more or fewer times than its items ÷ 3, or a list length other than all items ÷ 3.
+  more or fewer times than its items ÷ 3, or a list length other than all items ÷ 3. Each message says what the
+  game would do instead: refuse to load the level (not an id), skip the entry, or pick the remaining boxes itself.
 
 These warn but still save:
 

@@ -546,7 +546,7 @@ test('art remap: off without artIds, and nothing to do when every id has art', (
 });
 
 
-// ---------- custom box targets (the editor's definition until the team's C# ships it) ----------
+// ---------- custom box targets (dev/main a4d58aab8; the board hands them to the parser in the object form) ----------
 
 test('custom targets: boxes open with the listed items in order, unlocks take the next, then nothing is left', () => {
   const level = remapLevel(['1,1,1', '2,2,2', '3,3,3', '4,4,4']);

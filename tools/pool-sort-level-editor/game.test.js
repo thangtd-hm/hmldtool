@@ -1767,6 +1767,106 @@ describe('ToySortUnlockTests', () => {
 // AutoPlayBotLevelTests.cs + the item-count sweep over every team level
 // =====================================================================================================
 
+// ---------- Custom tank targets (dev/main a4d58aab8: Data/LevelDataFile.cs, LevelParser.ParseLevelData,
+// ToySortGameDemand.PeekCustomTarget / TakeCustomTarget, ToySortGameResolution.OpenTank). The commit came without
+// NUnit tests; these pin what its C# does. ----------
+
+describe('CustomTargetTests', () => {
+  const Entry = { LevelID: 7, LevelTime: 300 };
+  const Floats = '[{"FloatieType":3,"ToyStr":"16,16,16"},{"FloatieType":3,"ToyStr":"14,14,14"},{"FloatieType":3,"ToyStr":"1,1,1"}]';
+  const Obj = (use, str) => `{"UseCustomTarget":${use},"CustomTargetStr":${JSON.stringify(str)},"Floaties":${Floats}}`;
+  /** Synthetic level with an authored target list; each array is one plain floatie, ids 1..N once spawned. */
+  const Custom = (targets, ...floaties) => new G.LevelDefinition(0, 300,
+    floaties.map((b) => new G.FloatieDefinition(b.length, b, null)), null, null, null, 0, targets);
+  const opened = (game) => game.tanks.filter((t) => t.isActive).map((t) => t.toyType);
+
+  test('ObjectForm_ReadsFloaties_AndTheListWhenOn', () => {
+    const level = G.LevelParser.parseLevel(Entry, Obj(true, '16,14,1'));
+    assert.equal(level.floaties.length, 3);
+    assert.deepEqual(level.customTargets, [16, 14, 1]);
+  });
+
+  test('ObjectForm_Off_IgnoresTheList_EvenWhenMalformed', () => {
+    assert.deepEqual(G.LevelParser.parseLevel(Entry, Obj(false, '16,x')).customTargets, []);
+  });
+
+  test('ListForm_HasNoCustomTargets', () => {
+    assert.deepEqual(G.LevelParser.parseLevel(Entry, Floats).customTargets, []);
+  });
+
+  test('ObjectForm_KeysBindCaseInsensitively_AndTokensAreTrimmed', () => {
+    const level = G.LevelParser.parseLevel(Entry, `{"useCustomTarget":true,"customTargetStr":" 1, 14 ","floaties":${Floats}}`);
+    assert.deepEqual(level.customTargets, [1, 14]);
+  });
+
+  test('ObjectForm_On_EmptyString_LeavesThePickerInCharge', () => {
+    assert.deepEqual(G.LevelParser.parseLevel(Entry, Obj(true, '')).customTargets, []);
+  });
+
+  for (const str of ['16,x', '16,14,', '0,14']) {
+    test('ObjectForm_On_InvalidToken_ThrowsWithLevelId(' + str + ')', () => {
+      assert.throws(() => G.LevelParser.parseLevel(Entry, Obj(true, str)),
+        (ex) => ex instanceof G.FormatException && ex.message.includes('Level 7'));
+    });
+  }
+
+  test('ObjectForm_WithoutFloaties_Throws', () => {
+    assert.throws(() => G.LevelParser.parseLevel(Entry, '{"UseCustomTarget":false}'), (ex) => ex instanceof G.FormatException);
+  });
+
+  test('StartingTanks_TakeEntriesOneAndTwo', () => {
+    const game = StartAndSpawnAll(Custom([3, 2, 1], [1, 1, 1], [2, 2, 2], [3, 3, 3]));
+    assert.deepEqual(opened(game), [3, 2], 'the picker would have opened 1 and 2');
+    assert.equal(game.customTargetsUsed, 2);
+  });
+
+  test('CompletedTank_ReopensOnTheNextEntry', () => {
+    const game = StartAndSpawnAll(Custom([3, 2, 1], [1, 1, 1], [2, 2, 2], [3, 3, 3]));
+    for (let slot = 0; slot < 3; slot++) game.tap(3, slot);
+    assert.equal(game.tanks[0].toyType, 1);
+    assert.equal(game.customTargetsUsed, 3);
+  });
+
+  test('UnlockedTank_TakesTheNextEntry', () => {
+    const game = StartAndSpawnAll(Custom([1, 2, 3], [1, 1, 1], [2, 2, 2], [3, 3, 3]));
+    assert.equal(game.canOpenTank, true);
+    game.unlockTank(2);
+    assert.equal(game.tanks[2].toyType, 3);
+  });
+
+  test('EntryWithoutAFullTankOfFreeToys_IsSkipped_AndConsumed', () => {
+    // 9 is not in the level; the second 1 finds every 1 reserved by tank 0.
+    const game = StartAndSpawnAll(Custom([9, 1, 1, 2], [1, 1, 1], [2, 2, 2]));
+    assert.deepEqual(opened(game), [1, 2]);
+    assert.equal(game.customTargetsUsed, 4);
+  });
+
+  test('SpentList_HandsBackToThePicker', () => {
+    const game = StartAndSpawnAll(Custom([2], [1, 1, 1], [2, 2, 2]));
+    assert.deepEqual(opened(game), [2, 1]);
+    assert.equal(game.canOpenTank, false, 'every toy is reserved, the list is spent');
+  });
+
+  test('ValidList_IsNeverSkipped_OnABotRun', () => {
+    // Each kind listed (count / 3) times: Free - Reserved stays >= a tank at its turn, so the order holds to the end.
+    const list = [2, 1, 3, 1, 2, 3];
+    const game = new G.ToySortGame(Custom(list, [1, 2, 3], [3, 2, 1], [1, 1, 2], [3, 3, 2], [2, 1, 3], [1, 3, 2]));
+    const spawned = [];
+    const watch = (events) => { for (const e of events) if (e.type === E.TankSpawned) spawned.push(e.toyType); };
+    watch(game.start());
+    while (game.spawnNextFloatie() !== null) { /* spawn all */ }
+    for (let k = 0; k < 200 && game.result === R.Playing; k++) {
+      const unlock = G.AutoPlayBot.shouldUnlock(game);
+      if (unlock.ok) { watch(game.unlockTank(unlock.tankIndex)); continue; }
+      const move = G.AutoPlayBot.tryChooseMove(game);
+      if (!move.ok) break;
+      watch(game.tap(move.floatieId, move.slot));
+    }
+    assert.equal(game.result, R.Won);
+    assert.deepEqual(spawned, list);
+  });
+});
+
 describe('AutoPlayBotLevelTests', () => {
   /** Explicit in C# (a report, not a gate): its doc says level 158 is the one level that does not finish. */
   test('Bot_FinishesLevels_1To200_WithPressure_UsingRevives', { skip: NO_TEAM }, (t) => {
