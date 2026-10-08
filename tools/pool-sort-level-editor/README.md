@@ -64,11 +64,16 @@ and `…-plan.md`.
      bar; a manual list already in the file is kept and comes back on Thủ công. Thủ công with an empty list fills a
      valid order (each kind is listed when its third item has dropped) and shows the parts below. The bar keeps the
      same height in both modes, so the cards do not move.
-   - Middle, scrolling sideways (the mouse wheel scrolls it): one chip per box in spawn order, with the item id on the
-     left and its picture on the right. The badge is the order; 1–2 (blue) are
-     the two boxes there from the start, and every box spawned later takes the next chip. Dashed slots are boxes
-     still to place. Drag a chip to reorder. In **🧽 Xoá** mode a click on a chip
-     sends that box back to "Còn lại" (the chip turns red on hover).
+   - Middle, scrolling sideways (the mouse wheel scrolls it): one chip per box in spawn order, drawn as the game's
+     box (the tray with the item on its three docks) with the item id in its corner. The badge is the order; 1–2
+     (blue) are the two boxes there from the start, and every box spawned later takes the next chip. Dashed slots are
+     boxes still to place. Drag a chip to reorder. In **🧽 Xoá** mode a click on a chip sends that box back to
+     "Còn lại" (the chip turns red on hover).
+   - ⏱ under a box: the Countdown clock it gets, estimated. The level file has no clock per box: once level progress
+     passes a Countdown mark (the level panel), the next box to open gets that clock, so which box that is depends on
+     play. The bar asks the game's bot: it plays this order with the game's rules but without physics (every float in
+     reach), first without unlocking boxes and, if it does not win, with. It reruns whenever the floats, the marks or
+     the order change (a few milliseconds); a real player can land a box or so either side.
    - **Còn lại** (left), pinned beside the lane and shown only while needed: each kind that still needs boxes
      (`×n`), or that is listed too often (red `-n`) or not in the level (red ✗). Click a kind to add a box at the end,
      drag it onto a chip to insert it there, or select a chip first and click a kind to change that box.

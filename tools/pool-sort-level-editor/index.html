@@ -263,7 +263,7 @@ input[type=number],input[type=text],select,textarea{background:var(--bg);border:
 /* 🧽 Xoá mode removes a box from the order: the chip a click would remove turns red */
 body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;box-shadow:0 0 0 2px var(--danger) inset}
 /* the spawn order bar: one row at the top of the board */
-#ctBar{grid-row:1;display:flex;align-items:center;gap:var(--s3);min-width:0;min-height:74px;box-sizing:border-box;overflow:hidden;background:#0e1016f0;border-bottom:1px solid var(--line2);padding:4px var(--s4)}
+#ctBar{grid-row:1;display:flex;align-items:center;gap:var(--s3);min-width:0;min-height:96px;box-sizing:border-box;overflow:hidden;background:#0e1016f0;border-bottom:1px solid var(--line2);padding:4px var(--s4)}
 #ctBar[hidden]{display:none}
 .ctb-lbl{flex:0 0 auto;display:flex;flex-direction:column;gap:4px;min-width:150px}
 .ctb-title{display:flex;align-items:baseline;gap:6px;white-space:nowrap}
@@ -276,15 +276,23 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
 .ctb-raw input{flex:1;min-width:0;font-size:var(--fs-sm)}
 .ctb-lane{flex:1;min-width:0;display:flex;align-items:center;gap:6px;overflow-x:auto;overflow-y:hidden;padding:9px 2px 5px;scrollbar-width:thin}
 .ctb-acts{flex:0 0 auto;display:flex;gap:4px}
-.ct-chip{flex:0 0 auto;height:48px;padding:0 7px;gap:4px}
+.ct-chip{flex:0 0 auto;height:72px;padding:2px 3px 0;gap:0;flex-direction:column;justify-content:flex-start;background:#ffffff06}
+.ct-chip > b{padding-right:0}
+/* a box as the game draws it (TankView): the tray, the item on its three docks */
+.ct-tray{position:relative;flex:0 0 auto}
+.ct-tray .bd{position:absolute;inset:0;width:100%;height:100%}
+.ct-tray .it{position:absolute;transform:translate(-50%,-50%)}
+.ct-tray.flat{border-radius:10px;background:#2b8fd6;box-shadow:inset 0 0 0 3px #7fd0ff}
+.ct-timer{height:15px;display:flex;align-items:center;justify-content:center;gap:2px;font-size:10px;font-weight:800;color:#ffe9a8}
+.ct-timer img{width:13px;height:13px;object-fit:contain}
 .ct-chip.on{border-color:var(--accent2);box-shadow:0 0 0 2px var(--accent2) inset;background:#11303c}
 .ct-chip.hl,.ct-kind.hl{box-shadow:0 0 0 2px var(--accent)}
-.ct-chip .ct-id{min-width:18px;text-align:center;font-size:var(--fs-md);padding:0}
-.ct-chip img,.ct-chip .chip{width:38px;height:38px;object-fit:contain}
-.ct-slot{flex:0 0 auto;width:52px;height:48px;border:1px dashed var(--line2);border-radius:var(--r1);color:var(--faint);font-size:var(--fs-xs);
+.ct-chip .ct-id{position:absolute;right:3px;top:38px;font-size:10px;font-weight:800;color:#fff;
+  text-shadow:0 0 2px #000,0 0 2px #000,0 1px 2px #000;pointer-events:none}
+.ct-slot{flex:0 0 auto;width:56px;height:72px;border:1px dashed var(--line2);border-radius:var(--r1);color:var(--faint);font-size:var(--fs-xs);
   display:flex;align-items:flex-start;justify-content:flex-start;padding:2px 5px}
 .ct-slot.drop,.ct-end.drop{border-color:var(--accent);background:#a8e63518}
-.ct-end{flex:0 0 auto;width:28px;height:48px;border-radius:var(--r1)}
+.ct-end{flex:0 0 auto;width:28px;height:72px;border-radius:var(--r1)}
 .ct-pool{flex:0 1 auto;max-width:40%;min-width:0;display:flex;align-items:center;gap:4px;padding:9px 2px 5px 8px;border-left:1px solid var(--line2);overflow-x:auto;scrollbar-width:thin}
 .ctb-div{font-size:var(--fs-xs);color:var(--faint);margin-right:2px;white-space:nowrap}
 .ct-kind{flex:0 0 auto;display:flex;align-items:center;gap:2px;height:40px;padding:0 7px 0 3px;background:var(--panel2);border:1px solid var(--line);
@@ -1750,6 +1758,72 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
     box.appendChild(list);
   }
 
+  // A target box as the game draws it (TankView): the tray, with the item on its three docks. ART.scene.tank is in world
+  // units (y up); TRAY_U is pixels per unit in the bar.
+  const TRAY_U = 24;
+  function trayArt(id) {
+    const T = ART && ART.scene && ART.scene.tank;
+    const w = el('div', 'ct-tray' + (T ? '' : ' flat'));
+    const W = Math.round((T ? T.w : 2.19) * TRAY_U), H = Math.round((T ? T.h : 2.14) * TRAY_U);
+    w.style.width = W + 'px';
+    w.style.height = H + 'px';
+    if (T) w.appendChild(imgEl(T.body, 'bd'));
+    const d = Math.round(0.9 * TRAY_U);
+    for (const [dx, dy] of T ? T.docks : [[-0.38, 0.64], [0.45, 0.64], [0.02, -0.12]]) {
+      const it = itemBox(id, d);
+      it.classList.add('it');
+      it.style.left = (W / 2 + dx * TRAY_U) + 'px';
+      it.style.top = (H / 2 - dy * TRAY_U) + 'px';
+      w.appendChild(it);
+    }
+    return w;
+  }
+
+  // Countdown clocks on the order, estimated. A box's clock is not in the level file: once level progress passes a
+  // Countdown mark (LevelConfig CountdownTargetProgress), the next box to open gets it (ToySortGame.StartCountdownIfDue),
+  // so which box that is depends on play. The bar shows the boxes that get one when the game's bot plays this order on
+  // the game's rules without physics (every spawned float in reach, as game.test.js's BotHarness): first without
+  // unlocking boxes, then with, if the bot did not win. Map(order index -> seconds), cached per floats, marks and order.
+  let ctTimerKey = null, ctTimerVal = new Map();
+  function ctTimers(lv, ids) {
+    const G = window.PSPGame, row = S.row;
+    if (!G || !row || !ids.length || !PSP.parseRanges(row.CountdownTargetProgress).pairs.length) return new Map();
+    const key = JSON.stringify([lv.floats, row.CountdownTargetProgress, ids]);
+    if (key === ctTimerKey) return ctTimerVal;
+    const E = G.GameEventType, M = G.FloatieMechanicType, Playing = G.GameResult.Playing;
+    const play = (allowUnlock) => {
+      const level = G.LevelRepository.build({ UseCustomTarget: true, CustomTargetStr: ids.join(','),
+        Floaties: JSON.parse(JSON.stringify(lv.floats)) }, Object.assign({}, row));
+      const game = new G.ToySortGame(level), order = [], timers = new Map();
+      let opened = 0;
+      const watch = (events) => {
+        let banked = 0;
+        for (const e of events) {
+          if (e.type === E.TankSpawned) order[e.tankIndex] = opened++;
+          else if (e.type === E.TankCountdownStarted) timers.set(order[e.tankIndex], e.amount);
+          else if (e.type === E.ToyToTank || e.type === E.ToyToTemp) banked++;
+        }
+        for (let k = 0; k < banked; k++) // no positions: every float in play is beside every other
+          for (const f of game.activeFloaties) if (f.mechanicType === M.Frozen && f.mechanicCounter > 0) game.thawFrozen(f.id);
+      };
+      watch(game.start());
+      for (let step = 0; step < 5000 && game.result === Playing; step++) {
+        while (game.activeFloaties.length < 12 && game.spawnNextFloatie() !== null) { /* keep 12 in play */ }
+        for (const f of game.activeFloaties) if (f.mechanicType === M.Hidden && f.mechanicCounter > 0) watch(game.revealFloatie(f.id));
+        if (allowUnlock) { const u = G.AutoPlayBot.shouldUnlock(game); if (u.ok) { watch(game.unlockTank(u.tankIndex)); continue; } }
+        const m = G.AutoPlayBot.tryChooseMove(game);
+        if (!m.ok) break;
+        watch(game.tap(m.floatieId, m.slot));
+      }
+      return { won: game.result === G.GameResult.Won, timers };
+    };
+    let out = new Map();
+    try { const a = play(false); out = a.won ? a.timers : play(true).timers; } catch (e) { out = new Map(); }
+    ctTimerKey = key;
+    ctTimerVal = out;
+    return out;
+  }
+
   // ---------- the spawn order bar, one row at the top of the board ----------
   // The mode switch: Tự động (UseCustomTarget false, the game picks) or Thủ công (true, the order below). Switching to
   // manual with an empty list fills a valid order; switching back keeps the list in the file.
@@ -1801,6 +1875,8 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
     }
     const t = PSP.targetStats(lv);
     const need = new Map(t.kinds.map((k) => [k.id, k]));
+    if (!window.PSPGame && !S.ctWaitGame) { S.ctWaitGame = true; setTimeout(() => { if (S.level) renderTargetsBar(); }, 60); } // the game block loads after this one
+    const timers = ctTimers(lv, t.ids);
     if (!(S.ctSel >= 0 && S.ctSel < t.ids.length)) S.ctSel = -1;
     const setIds = (ids, toEnd) => { S.ctToEnd = !!toEnd; edit(() => PSP.setTargets(lv, ids)); };
     // the count beside the title (or what a selected box is waiting for)
@@ -1856,9 +1932,13 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
       chip.draggable = true;
       chip.dataset.i = i;
       chip.dataset.kind = id;
-      chip.append(el('span', 'ct-no', String(i + 1)), el('b', 'ct-id', String(id)), itemBox(id, 38));
+      const sec = timers.get(i);
+      const tm = el('div', 'ct-timer');
+      if (sec) { if (ART) tm.appendChild(imgEl(ART.ui.clock)); tm.appendChild(el('span', null, Math.round(sec) + 's')); }
+      chip.append(el('span', 'ct-no', String(i + 1)), trayArt(id), el('b', 'ct-id', String(id)), tm);
       chip.title = `Hộp ${i + 1}: đồ chơi ${id}` + (i < 2 ? ' · có sẵn từ đầu' : '') +
         (!k ? ' · level không có đồ chơi này' : k.listed > k.need ? ' · loại này bị xếp quá số hộp' : '') +
+        (sec ? `\n⏱ ${Math.round(sec)} giây (ước tính: bot của game chơi thử thứ tự này; người chơi thật có thể lệch một hộp)` : '') +
         (S.mode === 'erase' ? '\nBấm: bỏ hộp này khỏi thứ tự (trả về "Còn lại")'
           : '\nBấm: chọn rồi bấm một loại ở "Còn lại" để đổi · Kéo: đổi thứ tự · 🧽 Xoá (E) rồi bấm: bỏ khỏi thứ tự');
       chip.onclick = () => {
