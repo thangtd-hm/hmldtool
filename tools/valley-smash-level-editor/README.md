@@ -39,6 +39,19 @@ This uses the File System Access API, which works on a `file://` page in
 Chrome and Edge. The browser asks once for write permission on the file or
 folder you picked — there is no way to write silently, and there shouldn't be.
 
+### Reopening the last folder (since 2026-10-09)
+
+The folder works like the Pool Sort editor's: the page remembers the last folder
+opened with **📁 Nạp thư mục**, one per game (Block Shoot and Valley Smash each
+keep their own), in IndexedDB (`bs-level-editor` / `handles` / `levels:<game>`).
+Next visit, while no folder is open, the toolbar shows **📁 Mở lại: <name>**
+(the level switcher's footer offers the same). One click reopens it; Chrome may
+ask **Allow** once per visit, which is why it is a button, not automatic. The
+picker asks for read and write access when you pick the folder, so **💾 Lưu đè**
+does not ask again, and it opens where you were last time. Opening a folder with
+unsaved edits asks before discarding them. If the remembered folder is gone, the
+page says so and forgets it.
+
 Everything still falls back cleanly:
 
 - **Firefox and Safari** have no such API, so both buttons keep using the old

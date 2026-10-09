@@ -428,6 +428,9 @@ canvas{display:block}
 .tb.tbig{font-size:var(--fs-md);font-weight:600;padding:5px 10px;gap:var(--s2);display:inline-flex;align-items:center}
 .tb.tbig .tblab{font-size:var(--fs-sm)}
 #topbar.tbtiny .tb.tbig{font-size:var(--fs-sm);padding:5px var(--s3)}
+#btnReopen[hidden]{display:none}           /* .tbig đặt display:inline-flex, đè mất thuộc tính hidden */
+#btnReopen b{display:inline-block;vertical-align:bottom;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#app.tbnarrow #btnReopen .rn{display:none}  /* thanh chật: bỏ tên thư mục (vẫn có trong tooltip), giữ chữ "Mở lại" */
 /* user 12/08: 2 nút Xem 3D + Preview PHẢI luôn thấy chữ, thu gọn mấy cũng không giấu */
 #app.tbnarrow #topbar .vbtn.keeplbl .lbl,
 #topbar.tbnarrow .vbtn.keeplbl .lbl,
@@ -771,7 +774,8 @@ window.ART={"provisional":false,"generated":"2026-09-24T18:27:16","light":{"eule
       <button class="tb" id="btnExport" title="Tải Level{N}.json về máy — chép vào ...\levels\prod-13\">⬇️ Tải về</button>
       <button class="tb" id="btnCopy" title="📋 Copy toàn bộ JSON của level vào clipboard">📋</button>
       <label class="tb file tbig" title="📂 Nạp 1 file Level*.json">📂<span class="tblab">Nạp file</span><input type="file" id="fileIn" accept=".json,application/json" style="display:none"></label>
-      <label class="tb file tbig" title="📁 Nạp cả thư mục Level*.json rồi bấm ◀ ▶ để xem lần lượt (Chrome/Edge)">📁<span class="tblab">Nạp thư mục</span><input type="file" id="dirIn" webkitdirectory directory multiple style="display:none"></label>
+      <button class="tb tbig primary" id="btnReopen" hidden>📁<span class="tblab">Mở lại<span class="rn">: <b id="reopenName"></b></span></span></button>
+      <label class="tb file tbig" title="📁 Nạp cả thư mục Level*.json rồi bấm ◀ ▶ để xem lần lượt (Chrome/Edge).&#10;Trang nhớ thư mục này: lần sau mở trang, bấm 📁 Mở lại là vào ngay.&#10;Level của game: block-shot-2/Assets/_BaseCode/Modules/Gameplay/Configs/LevelDatas/Levels/ver_N">📁<span class="tblab">Nạp thư mục</span><input type="file" id="dirIn" webkitdirectory directory multiple style="display:none"></label>
       <button class="tb" id="btnPaste" title="📥 Dán nội dung JSON vào ô rồi bấm lần nữa để nạp">📥</button>
       <button class="tb danger" id="btnClear" title="RESET — xoá sạch mọi bàn &amp; khối của level đang mở, về 1 bàn trống. Có hỏi lại trước khi xoá.">🗑 RESET</button>
     </div>
@@ -5058,7 +5062,7 @@ function lvOpen(){ const p=lvEnsurePop(); lvEdit=null; lvHi=-1; $('lvFind').valu
   $('lvFind').focus(); }
 function lvClose(){ const p=$('lvPop'); if(!p||p.hidden)return; p.hidden=true; lvEdit=null; $('lvPick').setAttribute('aria-expanded','false'); }
 function lvOpenFolder(){ lvClose();
-  if(FS_OK) fsPickDir().catch(fsErr); else $('dirIn').click(); }
+  if(FS_OK) (lastDir&&lastDir.handle?fsReopenDir():fsPickDir()).catch(fsErr); else $('dirIn').click(); }
 /* các ô sẽ hiện: file (lọc theo ô gõ) + ô "thiếu" chen giữa hai số không liền nhau */
 function lvRows(){
   const q=($('lvFind')?$('lvFind').value:'').trim().toLowerCase(), rows=[];
@@ -5094,6 +5098,8 @@ function lvRender(listOnly){
   $('lvDir').title=has?((folderDirName||'')+(ed?'':' — '+lvNoEditWhy)):'';
   const nb=$('lvNew');
   if(has){ nb.textContent='＋ Mới → '+(lvMaxIdx()+1); nb.disabled=!ed; nb.title=ed?'Tạo Level'+(lvMaxIdx()+1)+'.json TRẮNG trong thư mục rồi mở ra':lvNoEditWhy; }
+  else if(FS_OK&&lastDir&&lastDir.handle){ nb.textContent='📁 Mở lại: '+lastDir.name; nb.disabled=false;
+    nb.title='Mở lại thư mục level lần trước. Thư mục khác: bấm 📁 Nạp thư mục trên thanh công cụ.'; }
   else { nb.textContent='📁 Mở thư mục…'; nb.disabled=false; nb.title='Chọn thư mục chứa Level*.json'; }
   $('lvFind').disabled=!has;
   list.classList.toggle('empty',!has);
@@ -5282,6 +5288,7 @@ function renderFolderNav(){
   $('btnPrevLv').disabled=folderPos<=0;
   $('btnNextLv').disabled=folderPos>=folderFiles.length-1;
   if(lvPopOpen()) lvRender();
+  syncReopenBtn();
 }
 function folderShow(i){
   if(folderBusy||i<0||i>=folderFiles.length||i===folderPos){renderFolderNav();return;}
@@ -5303,6 +5310,7 @@ function folderShow(i){
 }
 const folderStep=d=>folderShow(folderPos+d);
 $('dirIn').onchange=e=>{
+  if(!folderLeaveOk()){e.target.value='';return;}
   const picked=[...e.target.files].filter(f=>/\.json$/i.test(f.name));   // .json.meta bị loại vì không kết thúc bằng .json
   if(!picked.length){warn('Thư mục không có file .json nào.');e.target.value='';return;}
   folderFiles=picked.map(f=>({file:f,name:f.name,idx:lvIdxOf(f.name)}));   // không có handle ⇒ chỉ tải về được
@@ -5330,7 +5338,13 @@ async function fsPickFile(){
 }
 /* Nạp cả thư mục bằng picker: mỗi file giữ handle riêng, nên lật tới level nào thì
    nút Lưu đè ghi vào đúng level đó. */
-async function fsPickDir(){ await folderOpenDir(await window.showDirectoryPicker()); }
+/* Xin luôn quyền GHI ngay lúc chọn (mode readwrite) như bản Pool Sort: hỏi một lần, Lưu đè khỏi hỏi lại.
+   Hộp chọn mở sẵn ở thư mục lần trước (startIn), lần đầu thì ở chỗ trình duyệt nhớ cho id 'vs-levels'. */
+async function fsPickDir(){
+  if(!folderLeaveOk())return;
+  const opts={id:'vs-levels',mode:'readwrite'};
+  if(lastDir&&lastDir.handle)opts.startIn=lastDir.handle;
+  await folderOpenDir(await window.showDirectoryPicker(opts)); }
 /* tách riêng khỏi picker: kiểm thử đưa vào một thư mục GIẢ (verifylv.py) đi đúng đường này */
 async function folderOpenDir(dir){
   const list=[];
@@ -5340,10 +5354,76 @@ async function folderOpenDir(dir){
   folderFiles=list; lvSort(); lvOpenIt=null;
   folderDir=dir; folderDirName=dir.name||'';
   folderPos=-1; folderDirty=false; fsHandle=null; syncSaveBtn(); renderFolderNav();
+  lastDirRemember(dir,list.length);
   lvScanDiff();
   hint('Đã nạp thư mục "'+dir.name+'" — '+folderFiles.length+' file .json. Sửa xong bấm 💾 Lưu đè là ghi ngay vào file đang xem.');
   folderShow(0);
 }
+/* Mở thư mục mới = bỏ level đang mở ⇒ hỏi trước nếu có sửa chưa lưu (folderOpenDir tự đặt folderDirty=false
+   nên trước đây sửa dở là mất lặng lẽ). */
+const folderLeaveOk=()=>!folderDirty||confirm('Level đang mở có sửa chưa lưu.\nMở thư mục khác sẽ MẤT thay đổi. Tiếp tục?');
+
+/* ---------- 📁 MỞ LẠI THƯ MỤC LẦN TRƯỚC (giống Pool Sort level editor) ----------
+   Tay cầm thư mục không cất vào localStorage được nên cất trong IndexedDB, mỗi game một ô
+   ('levels:obs' / 'levels:vs') vì hai game ở hai thư mục level khác nhau. Mở trang lại thì thanh công cụ
+   hiện "📁 Mở lại: <tên>" khi chưa mở thư mục nào. Là NÚT chứ không tự mở: Chrome có thể hỏi Cho phép
+   một lần mỗi phiên, và hộp hỏi đó cần một cú bấm. */
+const LASTDIR_DB={name:'bs-level-editor',store:'handles'};
+var lastDir=null;          // {handle,name,levels,at} của game đang chọn; null = chưa nhớ gì
+                           // (var: renderFolderNav → syncReopenBtn có thể chạy trước dòng này lúc trang đang nạp)
+const lastDirKey=()=>'levels:'+GAME;
+function lastDirIdb(mode,fn){
+  return new Promise((resolve,reject)=>{
+    let req; try{ req=indexedDB.open(LASTDIR_DB.name,1); }catch(e){ reject(e); return; }
+    req.onupgradeneeded=()=>req.result.createObjectStore(LASTDIR_DB.store);
+    req.onerror=()=>reject(req.error);
+    req.onsuccess=()=>{ const db=req.result; let r;
+      try{ r=fn(db.transaction(LASTDIR_DB.store,mode).objectStore(LASTDIR_DB.store)); }catch(e){ db.close(); reject(e); return; }
+      r.onsuccess=()=>{ db.close(); resolve(r.result); };
+      r.onerror=()=>{ db.close(); reject(r.error); }; };
+  }); }
+function lastDirLoad(){
+  if(!FS_OK)return;
+  const g=GAME, key=lastDirKey();
+  lastDirIdb('readonly',s=>s.get(key)).catch(()=>null).then(rec=>{
+    if(g!==GAME)return;                    // đổi game trong lúc đang đọc → bỏ kết quả cũ
+    lastDir=rec&&rec.handle?rec:null; syncReopenBtn(); }); }
+function lastDirRemember(dir,n){
+  // chỉ nhớ tay cầm THẬT của picker; thư mục giả của kiểm thử không cất vào IndexedDB được
+  if(typeof FileSystemDirectoryHandle==='undefined'||!(dir instanceof FileSystemDirectoryHandle))return;
+  lastDir={handle:dir,name:dir.name,levels:n,at:Date.now()};
+  const key=lastDirKey(), rec=lastDir;
+  lastDirIdb('readwrite',s=>s.put(rec,key)).catch(()=>{ /* cửa sổ ẩn danh: không nhớ được, vẫn chạy bình thường */ });
+  syncReopenBtn(); }
+function lastDirForget(){ const key=lastDirKey(); lastDir=null;
+  lastDirIdb('readwrite',s=>s.delete(key)).catch(()=>{}); syncReopenBtn(); }
+async function fsReopenDir(){
+  const rec=lastDir; if(!rec||!rec.handle)return fsPickDir();
+  if(!folderLeaveOk())return;
+  try{
+    let p=rec.handle.queryPermission?await rec.handle.queryPermission({mode:'readwrite'}):'granted';
+    if(p!=='granted')p=await rec.handle.requestPermission({mode:'readwrite'});
+    if(p!=='granted'){ warn('Trình duyệt chưa cho mở thư mục "'+rec.name+'" — bấm 📁 Mở lại lần nữa và chọn Cho phép.'); return; }
+    await folderOpenDir(rec.handle);
+  }catch(e){
+    warn('Không mở lại được thư mục "'+rec.name+'" ('+(e&&e.message||e)+') — chọn lại bằng 📁 Nạp thư mục.');
+    lastDirForget(); } }
+/* Nút chỉ hiện khi có thư mục để mở lại và CHƯA mở thư mục nào; mở rồi thì 📁 Nạp thư mục là "chọn thư mục khác". */
+function syncReopenBtn(){
+  const b=$('btnReopen'); if(!b)return;
+  const show=!!(FS_OK&&lastDir&&lastDir.handle&&!folderFiles.length);
+  b.hidden=!show;
+  if(show){
+    const when=new Date(lastDir.at);
+    $('reopenName').textContent=lastDir.name;
+    b.title='Mở lại thư mục level lần trước: "'+lastDir.name+'", '+lastDir.levels+' file .json, mở lúc '
+      +when.toLocaleDateString('vi-VN')+' '+when.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})+'.'
+      +'\nLưu đè được ngay. Chrome có thể hỏi Cho phép một lần.\nThư mục khác: bấm 📁 Nạp thư mục.'; }
+  if(lvPopOpen())lvRender();
+  try{ fitBarsSoon(); }catch(_){}          // lúc trang đang nạp, fitBars chưa sẵn — thanh tự đo lại sau
+}
+$('btnReopen').onclick=()=>{ fsReopenDir().catch(fsErr); };
+setTimeout(lastDirLoad,0);                 // đợi applyGame lúc khởi động chọn xong game rồi mới đọc ô của game đó
 if(FS_OK){
   // <label> bọc <input type=file> ẩn: chặn hành vi mặc định để mở picker của API thay thế.
   // Không có API (Firefox/Safari) thì không gắn gì cả, <input> cũ chạy y như trước.
@@ -7006,7 +7086,7 @@ window.addEventListener('resize',resize);
 applyGame(loadGamePref(),true);fillRepSelects();buildShapeLib();buildTowerUI();
 if(!brush)selectBrush(1);
 buildSizeBar();     // brush mặc định là 1 (truthy) nên dòng trên thường KHÔNG chạy — phải tự dựng
-$('gmSel').onchange=e=>applyGame(e.target.value);updateDepthLab();updateAxHint();resetTableState();
+$('gmSel').onchange=e=>{ applyGame(e.target.value); lastDirLoad(); };   // mỗi game nhớ thư mục level riêngupdateDepthLab();updateAxHint();resetTableState();
 objects.push({type:1,px:-0.5,py:0.5,pz:0,sx:1,sy:1,sz:1},{type:1,px:0.5,py:0.5,pz:0,sx:1,sy:1,sz:1},
          {type:1,px:-0.5,py:1.5,pz:0,sx:1,sy:1,sz:1},{type:1,px:0.5,py:1.5,pz:0,sx:1,sy:1,sz:1});
 /* CHỈ DẪN bật/tắt — nhớ lựa chọn qua localStorage để mở lại tool không phải bấm lại. */
