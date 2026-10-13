@@ -59,6 +59,12 @@ and `…-plan.md`.
 8. **Thứ tự spawn hộp** (box spawn order, "box targets" below) chooses which item each box asks for, in place of the
    game's auto-pick (`UseCustomTarget`, `CustomTargetStr`). It lives in the **spawn order bar**, one row across the
    top of the board, always there while a level is open:
+   - Left, under the mode switch: **Random hình** (`RandomVisualId`, a level-file setting like the mode). On, the
+     game swaps the item pictures among the level's kinds on every entry, as it always did; off, items keep the
+     pictures placed here. A file without the key counts as on (the game's default, dev/main `74ec8910a`); switching
+     off writes `"RandomVisualId": false` as the file's first key, and a level that never had the key and is switched
+     back on is saved unchanged. With the shuffle on, an authored spawn order no longer names the items the designer
+     saw, so Soát lỗi warns about that pair.
    - Left: the label, a plain count (`47 / 48 hộp`) or what a selected box is waiting for, and the mode switch
      **Tự động | Thủ công**. Tự động (`UseCustomTarget` false) lets the game pick and shows a one-line note in the
      bar; a manual list already in the file is kept and comes back on Thủ công. Thủ công with an empty list fills a
@@ -138,8 +144,9 @@ or Esc) leaves the editor untouched. It opens only when the level passes the blo
   ported): every box that opens (the two at the start, a completed box's replacement, an unlocked box) asks for the
   next listed item. An entry whose item has fewer than 3 items left that no open box has claimed is skipped, and
   once the list runs out the game's usual pick takes over. A list that passes the checks is never skipped. The
-  panel shows how many entries have been read. Playtest leaves the game's per-entry Shuffle out, so it shows the
-  order as authored; in the game, Shuffle (`a4d58aab8`) renames the items but not the list (reported 2026-10-08).
+  panel shows how many entries have been read. Playtest never runs the game's per-entry Shuffle, so it shows the
+  order as authored. In the game, Shuffle renames the items but not the list (reported 2026-10-08); since dev/main
+  `74ec8910a` a level opts out of it with `RandomVisualId` false (the **Random hình** switch).
 - **Known gaps:**
   - no boosters, revive or tutorial; box unlock is free;
   - ids without art are swapped as the game does (`ToyArtRemapper.Apply`: a random unused id with art), and the
@@ -165,11 +172,14 @@ or Esc) leaves the editor untouched. It opens only when the level passes the blo
   level, use Unity or Explorer.
 - `FloatieID` is renumbered 1…n after a reorder. The game never reads it.
 - **Two file forms.** The list form (a bare array of floats, every level before 2026-10) and the object form
-  `{ "UseCustomTarget": …, "CustomTargetStr": "…", "Floaties": [ … ] }`, which carries custom box targets. A level
-  keeps the form it was read in, with its own key order. A list-form level is written in the object form only when
-  box targets are switched on; switched off again before saving, it is written unchanged. The game's `LevelParser`
-  reads both forms since dev/main `a4d58aab8` (2026-10-08); a build or branch older than that fails to load an
-  object-form level, so the checks warn on every object-form level.
+  `{ "RandomVisualId": …, "UseCustomTarget": …, "CustomTargetStr": "…", "Floaties": [ … ] }`, which carries the
+  level-wide settings: the art shuffle and custom box targets. A level keeps the form it was read in, with its own
+  key order; a file read without `RandomVisualId` gets that key (first) only once the switch sets it. A list-form
+  level is written in the object form, with all four keys, only when box targets are switched on or Random hình is
+  switched off; set back before saving, it is written unchanged. The game's `LevelParser` reads both forms since
+  dev/main `a4d58aab8` (2026-10-08) and `RandomVisualId` since `74ec8910a` (2026-10-13); a build older than the first
+  fails to load an object-form level, so the checks warn on every object-form level, and one between the two loads
+  it but always shuffles.
 
 ## Checks ("Soát lỗi")
 
@@ -197,7 +207,8 @@ These warn but still save:
 - window odds that don't add up to 1;
 - window or Countdown values out of range, or malformed pairs;
 - float size 0;
-- the object file form, which today's game cannot read yet.
+- the object file form, which builds older than dev/main `a4d58aab8` cannot read;
+- Random hình on together with an authored spawn order (the shuffle renames the items, not the order).
 
 No shipped level has an error, on either line of level data. `dev/main` (checked at `d6f5067f8`) has 1,000 levels;
 `gd-leveldesign` has 200 levels that use only ids 1–24. The warnings that matter, on both lines: level 12's odds add

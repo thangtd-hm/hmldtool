@@ -45,10 +45,18 @@ function teamLevelsDir() {
 }
 const TEAM = teamLevelsDir();
 const NO_TEAM = !TEAM && 'team levels folder not found (set PSP_LEVELS)';
-// Two lines of level data live in the team repo, and the C# tests on each branch assert their own: gd-leveldesign
-// ships levels 1-200 with toy ids 1-24 (level 1 opens with 16,16,16); dev/main has the original 1,000 (1,1,1).
-const LINE = !TEAM ? null : fs.readdirSync(TEAM).filter((n) => /^LevelData_\d+\.json$/.test(n)).length === 200
-  ? { name: 'gd-leveldesign', levels: 200, level1: [16, 16, 16] } : { name: 'dev/main', levels: 1000, level1: [1, 1, 1] };
+// Three states of the team's level data, each asserted by the C# tests of its own commit: gd-leveldesign ships
+// levels 1-200 with toy ids 1-24 (level 1 opens with 16,16,16); dev/main had the original 1,000 (1,1,1), and since
+// 2026-10 has 1,000 with the new levels in front (16,16,16; LevelParserTests at 74ec8910a).
+function teamLine() {
+  if (!TEAM) return null;
+  if (fs.readdirSync(TEAM).filter((n) => /^LevelData_\d+\.json$/.test(n)).length === 200)
+    return { name: 'gd-leveldesign', levels: 200, level1: [16, 16, 16] };
+  const data = JSON.parse(fs.readFileSync(path.join(TEAM, 'LevelData_1.json'), 'utf8').replace(/^\uFEFF/, ''));
+  return (Array.isArray(data) ? data : data.Floaties)[0].ToyStr === '1,1,1'
+    ? { name: 'dev/main (original 1,000)', levels: 1000, level1: [1, 1, 1] } : { name: 'dev/main', levels: 1000, level1: [16, 16, 16] };
+}
+const LINE = teamLine();
 
 const E = G.GameEventType;
 const R = G.GameResult;
@@ -1809,6 +1817,16 @@ describe('CustomTargetTests', () => {
         (ex) => ex instanceof G.FormatException && ex.message.includes('Level 7'));
     });
   }
+
+  // dev/main 74ec8910a: LevelDataFile.RandomVisualId = true, handed to LevelDefinition; Shuffle returns when it is false.
+  test('RandomVisualId_OnUnlessTheFileSaysFalse', () => {
+    const With = (v) => `{"RandomVisualId":${v},"UseCustomTarget":false,"CustomTargetStr":"","Floaties":${Floats}}`;
+    assert.equal(G.LevelParser.parseLevel(Entry, With(false)).randomVisualId, false);
+    assert.equal(G.LevelParser.parseLevel(Entry, With(true)).randomVisualId, true);
+    assert.equal(G.LevelParser.parseLevel(Entry, Obj(true, '16,14,1')).randomVisualId, true, 'no key: on, as before');
+    assert.equal(G.LevelParser.parseLevel(Entry, Floats).randomVisualId, true, 'list form: on');
+    assert.equal(new G.LevelDefinition(0, 300, []).randomVisualId, true);
+  });
 
   test('ObjectForm_WithoutFloaties_Throws', () => {
     assert.throws(() => G.LevelParser.parseLevel(Entry, '{"UseCustomTarget":false}'), (ex) => ex instanceof G.FormatException);

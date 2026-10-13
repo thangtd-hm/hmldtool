@@ -271,6 +271,9 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
 .ctb-title span{font-size:var(--fs-xs);color:var(--faint)}
 .ctb-title .ctb-tip{color:var(--accent2);white-space:normal}
 .ctb-mode .tb{padding:2px 9px;font-size:var(--fs-xs)}
+.ctb-rnd{display:flex;align-items:center;gap:6px;font-size:var(--fs-xs);color:var(--dim);white-space:nowrap}
+.ctb-rnd small{color:var(--faint)}
+.ctb-rnd .tgl{transform:scale(.8);transform-origin:left center;margin-right:-6px}
 .ctb-auto{flex:1;min-width:0;font-size:var(--fs-sm);color:var(--faint);padding:8px 0}
 .ctb-raw{flex:1;min-width:0;display:flex;align-items:center;gap:6px;padding:10px 0}
 .ctb-raw input{flex:1;min-width:0;font-size:var(--fs-sm)}
@@ -467,38 +470,58 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
   function stripBom(t) { return t.charCodeAt(0) === 0xFEFF ? t.slice(1) : t; }
   function crlf(s) { return s.replace(/\n/g, '\r\n'); }
 
-  // Two file forms. The list form (every level until 2026-10) is a bare array of floats. The object form adds the
-  // owner's custom box targets: { "UseCustomTarget": bool, "CustomTargetStr": "1,14,16", "Floaties": [...] }.
+  // Two file forms. The list form (every level until 2026-10) is a bare array of floats. The object form adds
+  // level-wide settings around it, in the team's key order (2026-10-13):
+  //   { "RandomVisualId": bool, "UseCustomTarget": bool, "CustomTargetStr": "1,14,16", "Floaties": [...] }.
   // A level keeps the form it was read in (wrap = the object's own keys, in order); a list-form level is written in
-  // the object form only once custom targets are switched on. The game's LevelParser reads both forms since dev/main
-  // a4d58aab8 (2026-10-08); older builds read only the list form.
-  const LEVEL_KEYS = ['UseCustomTarget', 'CustomTargetStr', 'Floaties'];
+  // the object form only once a setting needs it. The game's LevelParser reads both forms since dev/main a4d58aab8
+  // (2026-10-08); older builds read only the list form.
+  // RandomVisualId (level.random: true, false, or undefined when the file has no such key): whether the game swaps
+  // the item pictures among the level's kinds on every entry. Read by the game since dev/main 74ec8910a (2026-10-13):
+  // LevelDataFile.RandomVisualId defaults to true, so a file without the key, and every list-form file, shuffles as
+  // before; false makes ToyArtRemapper.Shuffle return at once. Builds before that commit ignore the key and shuffle.
+  const LEVEL_KEYS = ['RandomVisualId', 'UseCustomTarget', 'CustomTargetStr', 'Floaties'];
   function parseLevel(text) {
     const data = JSON.parse(stripBom(text));
     if (Array.isArray(data)) return { floats: data, wrap: null, custom: { on: false, str: '' } };
     if (!data || typeof data !== 'object' || !Array.isArray(data.Floaties)) {
       throw new Error('LevelData phải là một mảng phao, hoặc một object có "Floaties"');
     }
+    const random = typeof data.RandomVisualId === 'boolean' ? data.RandomVisualId : undefined;
     const extra = {};
-    for (const k of Object.keys(data)) if (!LEVEL_KEYS.includes(k)) extra[k] = data[k];
-    return { floats: data.Floaties, wrap: { keys: Object.keys(data), extra },
+    // a RandomVisualId that is not true / false is kept as the file has it, like a key the editor does not know
+    for (const k of Object.keys(data)) if (!LEVEL_KEYS.includes(k) || (k === 'RandomVisualId' && random === undefined)) extra[k] = data[k];
+    return { floats: data.Floaties, wrap: { keys: Object.keys(data), extra }, random,
       custom: { on: data.UseCustomTarget === true, str: typeof data.CustomTargetStr === 'string' ? data.CustomTargetStr : '' } };
   }
   const custom = (level) => level.custom || { on: false, str: '' };
-  /** 'object' when the level is written as { UseCustomTarget, CustomTargetStr, Floaties }, else 'list'. */
-  function levelForm(level) { return level.wrap || custom(level).on ? 'object' : 'list'; }
+  /** Whether the game shuffles this level's item pictures: on unless the file says false. */
+  const randomVisual = (level) => level.random !== false;
+  /** Off writes the key. On goes back to "no key" when the file had none, so such a level is saved unchanged. */
+  function setRandomVisual(level, on) {
+    const had = !!(level.wrap && level.wrap.keys.includes('RandomVisualId'));
+    level.random = on && !had ? undefined : !!on;
+  }
+  /** 'object' when the level is written as { RandomVisualId, UseCustomTarget, CustomTargetStr, Floaties }, else 'list'. */
+  function levelForm(level) { return level.wrap || custom(level).on || level.random !== undefined ? 'object' : 'list'; }
   // Byte-identical to the team's files (checked on all 1,000): two-space JSON, CRLF, no final newline.
   function serializeLevel(level) {
     if (levelForm(level) === 'list') return crlf(JSON.stringify(level.floats, null, 2));
     const keys = level.wrap ? level.wrap.keys.slice() : [];
-    for (const k of LEVEL_KEYS) { // a key the file did not have goes before Floaties (or last)
+    for (const k of LEVEL_KEYS) {
       if (keys.includes(k)) continue;
-      const at = k === 'Floaties' ? -1 : keys.indexOf('Floaties');
+      if (k === 'RandomVisualId') { // first, as the team writes it; a file read without it gets it only once it is set
+        if (level.random !== undefined || !level.wrap) keys.unshift(k);
+        continue;
+      }
+      const at = k === 'Floaties' ? -1 : keys.indexOf('Floaties'); // a key the file did not have goes before Floaties (or last)
       if (at < 0) keys.push(k); else keys.splice(at, 0, k);
     }
     const c = custom(level), out = {};
     for (const k of keys) {
-      out[k] = k === 'UseCustomTarget' ? c.on : k === 'CustomTargetStr' ? c.str : k === 'Floaties' ? level.floats : level.wrap.extra[k];
+      out[k] = k === 'UseCustomTarget' ? c.on : k === 'CustomTargetStr' ? c.str : k === 'Floaties' ? level.floats
+        : k === 'RandomVisualId' && (level.random !== undefined || !level.wrap || !(k in level.wrap.extra)) ? randomVisual(level)
+        : level.wrap.extra[k];
     }
     return crlf(JSON.stringify(out, null, 2));
   }
@@ -702,7 +725,7 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
   }
   function cloneLevel(level) {
     return { floats: JSON.parse(JSON.stringify(level.floats)), wrap: level.wrap ? JSON.parse(JSON.stringify(level.wrap)) : null,
-      custom: Object.assign({}, custom(level)) };
+      random: level.random, custom: Object.assign({}, custom(level)) };
   }
 
   // ---------- custom box targets (UseCustomTarget / CustomTargetStr) ----------
@@ -894,7 +917,10 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
       if (t.ids.length && t.ids.length !== t.boxes) add('error', 'ctLength', -1, `${CT}đang có ${t.ids.length} hộp, level cần đúng ${t.boxes} (số đồ chơi ÷ 3)` +
         (t.ids.length < t.boxes ? ' — hết danh sách thì game tự chọn.' : '.'));
     }
-    if (levelForm(level) === 'object') add('warn', 'newForm', -1, 'Thứ tự spawn hộp: file lưu dạng mới { UseCustomTarget, CustomTargetStr, Floaties }; game đọc được từ dev/main a4d58aab8 (08/10/2026), bản build hoặc nhánh cũ hơn sẽ lỗi khi nạp level này.');
+    // Proven on dev/main 74ec8910a: Shuffle renames the floats' items but not the box targets, so with it on the
+    // order no longer names the items the designer saw. Revisit if the team makes Shuffle carry the list along.
+    if (custom(level).on && randomVisual(level)) add('warn', 'randomOn', -1, 'Thứ tự spawn hộp: Random hình đang bật — game đảo hình đồ chơi mỗi lần vào level nhưng không đảo theo danh sách hộp, nên hộp sẽ đòi khác đồ chơi đã xếp. Tắt Random hình ở thanh trên để giữ đúng thứ tự.');
+    if (levelForm(level) === 'object') add('warn', 'newForm', -1, 'File level lưu dạng mới { RandomVisualId, UseCustomTarget, CustomTargetStr, Floaties } (vì Random hình hoặc thứ tự spawn hộp); game đọc được từ dev/main a4d58aab8 (08/10/2026), bản build hoặc nhánh cũ hơn sẽ lỗi khi nạp level này.');
     if (row) {
       const odds = ['NoAdWeight', 'OneAdWeight', 'TwoAdWeight', 'ThreeAdWeight'].reduce((s, k) => s + (Number(row[k]) || 0), 0);
       if (Math.abs(odds - 1) > 0.001) add('warn', 'odds', -1, `Tỷ lệ 0–3 cửa sổ áp lực cộng lại ${+odds.toFixed(3)}, không phải 1.`);
@@ -973,7 +999,7 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
     parseTargets, setTargets, setCustomOn, autoTargets, targetStats,
     MAX_SLOTS, SLOT_FIELDS, MECHS, MECH_NAME, ART_IDS, setField, parseIds, floatView, setItem, setSize, setExtra,
     setMechanic, setSlot, addItem, removeItem, newFloat, addFloat, removeFloat, moveFloat, duplicateFloat, renumber, cloneLevel,
-    replaceKind, replaceItems, swapKinds, counts, validate, parseRanges, formatRanges, getRow, newRow, setRowField };
+    replaceKind, replaceItems, swapKinds, randomVisual, setRandomVisual, counts, validate, parseRanges, formatRanges, getRow, newRow, setRowField };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <script id="ui">
@@ -1824,6 +1850,21 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
     return out;
   }
 
+  // RandomVisualId, a level-file setting like the mode beside it: on = the game swaps the item pictures among the
+  // level's kinds on every entry (what it does today), off = it keeps the pictures as authored.
+  function randomSwitch(lv) {
+    const on = PSP.randomVisual(lv);
+    const row = el('div', 'ctb-rnd');
+    row.id = 'ctRandomRow';
+    const tip = 'RandomVisualId — Bật: game đảo hình đồ chơi giữa các loại mỗi lần vào level (cách game đang chạy). ' +
+      'Tắt: giữ đúng hình đã đặt trong level.\nFile chưa có khoá này thì game coi như Bật. Game đọc khoá này từ dev/main 74ec8910a (13/10/2026); bản cũ hơn bỏ qua và luôn đảo hình.';
+    const tg = toggle(on, (v) => edit(() => PSP.setRandomVisual(lv, v)), tip);
+    tg.id = 'ctRandom';
+    row.title = tip;
+    row.append(el('span', null, 'Random hình'), tg, el('small', null, on ? 'bật' : 'tắt'));
+    return row;
+  }
+
   // ---------- the spawn order bar, one row at the top of the board ----------
   // The mode switch: Tự động (UseCustomTarget false, the game picks) or Thủ công (true, the order below). Switching to
   // manual with an empty list fills a valid order; switching back keeps the list in the file.
@@ -1865,7 +1906,7 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
     const lbl = el('div', 'ctb-lbl');
     const title = el('div', 'ctb-title');
     title.appendChild(el('b', null, 'Thứ tự spawn hộp'));
-    lbl.append(title, modeSwitch(c.on));
+    lbl.append(title, modeSwitch(c.on), randomSwitch(lv));
     bar.appendChild(lbl);
     if (!c.on) { // automatic: the game picks; a stored manual order stays in the file
       const kept = PSP.parseTargets(c.str).ids.length;
@@ -2390,11 +2431,12 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
   function scrollToCard(i) { const c = document.querySelector(`.card[data-i="${i}"]`); if (c) c.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
 
   // ---------- editing and undo ----------
-  function snapshot() { return JSON.stringify({ f: S.level.floats, r: S.row, c: S.level.custom || null }); }
+  function snapshot() { return JSON.stringify({ f: S.level.floats, r: S.row, c: S.level.custom || null, x: S.level.random }); }
   function restore(snap) {
     const o = JSON.parse(snap);
     S.level.floats = o.f;
     S.level.custom = o.c || { on: false, str: '' };
+    S.level.random = o.x; // undefined (no key in the file) is dropped by JSON and comes back undefined
     S.playCheck = null;
     if (S.row && o.r) { for (const k of Object.keys(S.row)) delete S.row[k]; Object.assign(S.row, o.r); } // keep the row object inside S.cfg
     if (S.sel.float >= S.level.floats.length) S.sel = { float: -1, slot: -1 };
@@ -3364,12 +3406,15 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
    * 0/1/2/3 windows being active (empty = every window). tier: 1 Easy / 2 Medium / 3 Hard, 0 unknown.
    * customTargets: authored tank targets, in the order tanks open. Non-empty replaces the runtime picker (DDA and
    * the original demand rules) for as long as it lasts. Empty = picker decides, as before.
+   * randomVisualId: false = the host must leave toy ids as authored instead of permuting them per entry
+   * (LevelDataFile.RandomVisualId, dev/main 74ec8910a); true by default.
    * Pairs may be given as {min,max} / {progress,seconds} objects or [a, b] arrays; floats are kept float32.
    */
   class LevelDefinition {
     constructor(levelId, timeSeconds, floaties, pointRanges = null, countdownTargets = null,
-      windowRollWeights = null, tier = 0, customTargets = null) {
+      windowRollWeights = null, tier = 0, customTargets = null, randomVisualId = true) {
       this.tier = tier == null ? 0 : tier;
+      this.randomVisualId = randomVisualId == null ? true : !!randomVisualId;
       this.customTargets = Object.freeze(customTargets == null ? [] : Array.from(customTargets));
       this.windowRollWeights = Object.freeze((windowRollWeights == null ? [] : Array.from(windowRollWeights)).map((w) => f32(w)));
       this.levelId = levelId;
@@ -5255,14 +5300,15 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
 
   /**
    * Reads either shape of a LevelData file: the original bare floatie array, or the object form
-   * { UseCustomTarget, CustomTargetStr, Floaties } (Data/LevelDataFile.cs) that adds level-wide settings around the
-   * same array. Text or parsed JSON. Keys match case-insensitively, exact case first, as Json.NET binds them.
+   * { RandomVisualId, UseCustomTarget, CustomTargetStr, Floaties } (Data/LevelDataFile.cs) that adds level-wide
+   * settings around the same array. Text or parsed JSON. Keys match case-insensitively, exact case first, as Json.NET
+   * binds them. RandomVisualId is on unless the file says false (the field's initializer), so a list-form file has it on.
    */
   function parseLevelData(json) {
     if (json == null) return null;
     const value = typeof json === 'string' ? JSON.parse(stripBom(json)) : json;
     if (value == null) return null;
-    if (Array.isArray(value)) return { useCustomTarget: false, customTargetStr: null, floaties: value };
+    if (Array.isArray(value)) return { useCustomTarget: false, customTargetStr: null, randomVisualId: true, floaties: value };
     if (typeof value !== 'object') throw new FormatException('level data is neither a floatie array nor an object');
     const get = (name) => {
       if (name in value) return value[name];
@@ -5271,9 +5317,9 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
     };
     const floaties = get('Floaties');
     if (floaties != null && !Array.isArray(floaties)) throw new FormatException('Floaties is not a JSON array');
-    const str = get('CustomTargetStr');
+    const str = get('CustomTargetStr'), random = get('RandomVisualId');
     return { useCustomTarget: get('UseCustomTarget') === true, customTargetStr: str == null ? null : String(str),
-      floaties: floaties == null ? null : floaties };
+      randomVisualId: random === undefined ? true : random === true, floaties: floaties == null ? null : floaties };
   }
 
   /** Strict: a bad toy id means the level is broken, so it throws FormatException. */
@@ -5382,7 +5428,7 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
       return new LevelDefinition(entry.levelID, entry.levelTime, floaties,
         parsePointRanges(entry.pointRangeStr), parsePointRanges(entry.countdownTargetProgress),
         [entry.noAdWeight, entry.oneAdWeight, entry.twoAdWeight, entry.threeAdWeight], entry.levelDifficulty,
-        data.useCustomTarget ? parseToyStr(data.customTargetStr, entry.levelID) : null);
+        data.useCustomTarget ? parseToyStr(data.customTargetStr, entry.levelID) : null, data.randomVisualId);
     },
 
     /** Same as parseLevel(row, records, rules), argument order of the editor. */
@@ -5788,7 +5834,8 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
     const Playing = G.GameResult.Playing;
 
     // ToySortBoard.Build: rules, definition, ToyArtRemapper.Apply, game, difficulty. Apply runs only when the host
-    // says which ids have art (opts.artIds); Shuffle is skipped so the authored art stays recognisable.
+    // says which ids have art (opts.artIds); Shuffle is never run here, whatever the level's RandomVisualId says, so
+    // the authored art stays recognisable.
     const data = o.customTargets && o.customTargets.length
       ? { UseCustomTarget: true, CustomTargetStr: o.customTargets.join(','), Floaties: o.records } : o.records;
     const definition = G.LevelRepository.build(data, o.row, rules);

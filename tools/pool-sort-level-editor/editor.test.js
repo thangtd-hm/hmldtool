@@ -331,6 +331,8 @@ test('getRow, newRow and setRowField', () => {
 
 // The same shape as the owner's example LevelData_201.json (synthetic ids, written the way the team writes files).
 const OBJ = (on, str, floats) => JSON.stringify({ UseCustomTarget: on, CustomTargetStr: str, Floaties: floats }, null, 2).replace(/\n/g, '\r\n');
+// The form since 2026-10-13: RandomVisualId first.
+const OBJ4 = (random, on, str, floats) => JSON.stringify({ RandomVisualId: random, UseCustomTarget: on, CustomTargetStr: str, Floaties: floats }, null, 2).replace(/\n/g, '\r\n');
 const F3 = (id, toys) => ({ FloatieID: id, FloatieType: 3, ToyStr: toys });
 const THREE = [F3(1, '16,16,16'), F3(2, '14,14,14'), F3(3, '1,1,1')];
 
@@ -362,7 +364,7 @@ test('list form stays a list until custom targets are on; on writes the object f
   assert.equal(PSP.serializeLevel(L), text);
   PSP.setCustomOn(L, true);
   PSP.setTargets(L, [16, 14, 1]);
-  assert.equal(PSP.serializeLevel(L), OBJ(true, '16,14,1', THREE));
+  assert.equal(PSP.serializeLevel(L), OBJ4(true, true, '16,14,1', THREE), 'a new object form has every key, in the team\'s order');
   PSP.setCustomOn(L, false);
   assert.equal(PSP.serializeLevel(L), text, 'switched off before saving: the file is unchanged');
 });
@@ -385,7 +387,9 @@ test('parseTargets, autoTargets and targetStats', () => {
 test('validate: every rule of the custom list, and none when it is right', () => {
   const L = PSP.parseLevel(OBJ(true, '1,14,16', THREE));
   const codes = (lv) => PSP.validate(lv).map((x) => x.code);
-  assert.deepEqual(codes(L), ['newForm'], 'the owner\'s example is correct; only the game-support warning');
+  assert.deepEqual(codes(L), ['randomOn', 'newForm'], 'the list is correct; the file has no RandomVisualId, so the shuffle warning shows');
+  assert.deepEqual(codes(PSP.parseLevel(OBJ4(false, true, '1,14,16', THREE))), ['newForm'],
+    'the owner\'s example of 2026-10-13 is correct; only the game-support warning');
   const set = (str) => { const c = PSP.cloneLevel(L); c.custom.str = str; return codes(c); };
   assert.ok(set('').includes('ctEmpty'));
   assert.ok(set('1,14,x').includes('ctBad'));
@@ -459,4 +463,49 @@ test('replaceItems changes only the picked items; a kind picked in full takes it
   const P = PSP.parseLevel(JSON.stringify([{ FloatieType: 1, ToyStr: '4,5,6', IsMore: true }]));
   assert.equal(PSP.replaceItems(P, [{ float: 0, extra: 1 }, { float: 0, extra: 7 }, { float: 3, slot: 0 }], 2), 1);
   assert.equal(P.floats[0].ToyStr, '4,5,2');
+});
+
+// ---------- RandomVisualId (level-file key since 2026-10-13; the game does not read it yet) ----------
+
+test('RandomVisualId: read, kept byte for byte, and switched', () => {
+  // the owner's example of 2026-10-13
+  const text = OBJ4(false, true, '16,14,1', THREE);
+  const L = PSP.parseLevel(text);
+  assert.equal(L.random, false);
+  assert.equal(PSP.randomVisual(L), false);
+  assert.equal(PSP.serializeLevel(L), text);
+  assert.equal(PSP.serializeLevel(PSP.cloneLevel(L)), text, 'a clone keeps it');
+  PSP.setRandomVisual(L, true);
+  assert.equal(PSP.serializeLevel(L), OBJ4(true, true, '16,14,1', THREE), 'a file that has the key keeps it when on');
+  assert.ok(PSP.validate(L).some((x) => x.code === 'randomOn' && x.sev === 'warn'), 'shuffle on with an authored order warns');
+  PSP.setRandomVisual(L, false);
+  assert.equal(PSP.serializeLevel(L), text);
+});
+
+test('RandomVisualId: a file without the key counts as on and is left alone until it is switched off', () => {
+  const old = OBJ(true, '16,14,1', THREE); // written before the key existed
+  const L = PSP.parseLevel(old);
+  assert.equal(L.random, undefined);
+  assert.equal(PSP.randomVisual(L), true, 'the game shuffles every level today');
+  assert.equal(PSP.serializeLevel(L), old, 'unedited: byte for byte, no key added');
+  PSP.setRandomVisual(L, false);
+  assert.deepEqual(Object.keys(JSON.parse(PSP.serializeLevel(L))), ['RandomVisualId', 'UseCustomTarget', 'CustomTargetStr', 'Floaties'], 'the new key goes first');
+  assert.equal(PSP.serializeLevel(L), OBJ4(false, true, '16,14,1', THREE));
+  PSP.setRandomVisual(L, true);
+  assert.equal(PSP.serializeLevel(L), old, 'on again: the file had no key, so none is written');
+  // a list-form level: off makes it an object, on again gives the list back
+  const list = JSON.stringify(THREE, null, 2).replace(/\n/g, '\r\n');
+  const P = PSP.parseLevel(list);
+  PSP.setRandomVisual(P, false);
+  assert.equal(PSP.levelForm(P), 'object');
+  assert.equal(PSP.serializeLevel(P), OBJ4(false, false, '', THREE));
+  assert.ok(!PSP.validate(P).some((x) => x.code === 'randomOn'), 'no authored order, nothing to warn about');
+  PSP.setRandomVisual(P, true);
+  assert.equal(PSP.serializeLevel(P), list);
+  // a value that is not true / false is written back as it was, until the switch sets one
+  const odd = JSON.stringify({ RandomVisualId: 'yes', Floaties: THREE }, null, 2).replace(/\n/g, '\r\n');
+  const O = PSP.parseLevel(odd);
+  assert.equal(JSON.parse(PSP.serializeLevel(O)).RandomVisualId, 'yes');
+  PSP.setRandomVisual(O, false);
+  assert.equal(JSON.parse(PSP.serializeLevel(O)).RandomVisualId, false);
 });
