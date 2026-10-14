@@ -2127,11 +2127,15 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
       const b = el('button', 'mbtn' + ((row.LevelDifficulty | 0) === t ? ' on' : ''));
       if (art && ART) b.appendChild(imgEl(ART.ui[art]));
       b.appendChild(el('span', null, label));
-      b.title = tip + ' · LevelDifficulty = ' + t + ' (cũng là khoá bảng DDA)';
+      b.title = tip + ' · LevelDifficulty = ' + t + ' (cũng là khoá bảng DDA). Lưu vào LevelConfig.json, không phải LevelData.';
       b.onclick = () => edit(() => PSP.setRowField(row, 'LevelDifficulty', t));
       tiers.appendChild(b);
     }
     p.appendChild(field('Độ khó', null, tiers));
+    // The game reads a level's tier only from this row (LevelRepository.GetTier, ToySortLevelRunner.Difficulty);
+    // LevelData_N.json has no such field, so the difficulty travels in LevelConfig.json.
+    p.appendChild(el('div', 'hint', 'Độ khó, thời gian, cửa sổ áp lực và Countdown lưu trong LevelConfig.json (cột LevelDifficulty…), không nằm trong LevelData_' +
+      S.id + '.json. Game đọc độ khó từ LevelConfig.json; khi gửi hoặc commit level, gửi kèm file này.'));
     // time
     const time = el('input'); time.type = 'number'; time.min = 0; time.step = 10; time.value = row.LevelTime; time.style.width = '80px';
     time.title = 'LevelTime (giây). Game hiện KHÔNG chạy đồng hồ level (lệnh khởi động đồng hồ đang bị comment).';
@@ -2798,8 +2802,19 @@ body.mode-erase .ct-chip:hover{border-color:var(--danger);background:#ff4d4d24;b
       } catch (e) { toast('Không ghi được: ' + e.message, 5000); return false; }
     } else {
       download(name, text);
-      if (cfgChanged) download('LevelConfig.json', cfgText);
-      toast(`⬇️ Đã tải ${name}` + (cfgChanged ? ' và LevelConfig.json' : '') + ' — chép vào thư mục Editor/Levels');
+      // A second automatic download in one click is often blocked by the browser, and the tier, windows and Countdown
+      // live only in LevelConfig.json: hand it over on a click of its own.
+      let cfgDone = !cfgChanged;
+      if (cfgChanged) {
+        const v = await modal('Tải thêm LevelConfig.json', 'Đã tải ' + name + '. Độ khó, thời gian, cửa sổ áp lực hoặc Countdown đã đổi: ' +
+          'những thứ này nằm trong LevelConfig.json, không nằm trong file level. Tải file này rồi chép cả hai vào thư mục Editor/Levels — ' +
+          'thiếu nó thì game vẫn dùng độ khó cũ.', [['Để sau', null], ['⬇️ Tải LevelConfig.json', 'cfg', 'primary']]);
+        if (v === 'cfg') { download('LevelConfig.json', cfgText); cfgDone = true; }
+      }
+      toast(cfgDone ? `⬇️ Đã tải ${name}` + (cfgChanged ? ' và LevelConfig.json' : '') + ' — chép vào thư mục Editor/Levels'
+        : `⬇️ Đã tải ${name}. LevelConfig.json CHƯA tải — độ khó mới chưa vào game; bấm Tải về lần nữa để lấy.`, cfgDone ? 2600 : 6000);
+      // the level file is out, the row is not: keep the unsaved mark until LevelConfig.json is taken too
+      if (!cfgDone) { S.levelText = text; render(); return false; }
     }
     S.levelText = text;
     if (cfgChanged) S.cfgText = cfgText;

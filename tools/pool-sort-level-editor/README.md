@@ -45,7 +45,12 @@ and `…-plan.md`.
 5. Drag cards to reorder floats. Keys: Delete removes a float, Ctrl+D duplicates it, 1–5 resize it. Ctrl+Z / Ctrl+Y
    undo and redo, Ctrl+S saves, PageUp / PageDown change level.
 6. The level panel edits the `LevelConfig.json` row:
-   - tier (Normal, Hard, Super Hard skulls);
+   - tier (Normal, Hard, Super Hard skulls): `LevelDifficulty`, the only place the game reads a level's difficulty
+     (`LevelRepository.GetTier`, `ToySortLevelRunner.Difficulty`; the `_BaseCode` LevelData asset is a fallback for a
+     level with no tier). `LevelData_N.json` has no difficulty, so a changed tier ships in `LevelConfig.json`. When the
+     page downloads instead of saving in place, it hands `LevelConfig.json` over on a click of its own (a second
+     automatic download is often blocked) and keeps the level marked unsaved until it is taken. In the Unity editor,
+     Tools ▸ ToySort ▸ Mechanic Level Set (when on) reads levels 3–13 from `Editor/MechanicLevels/LevelConfig.json` instead;
    - time (stored but not used by the game);
    - pressure windows and Countdown marks, both drawn on one level-progress bar (drag them, or type exact numbers);
    - the odds of 0–3 windows being active.
