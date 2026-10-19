@@ -52,6 +52,14 @@ does not ask again, and it opens where you were last time. Opening a folder with
 unsaved edits asks before discarding them. If the remembered folder is gone, the
 page says so and forgets it.
 
+Since 2026-10-19 the page also opens with a start pop-up, like the Pool Sort
+editor's start screen: **📁 Mở lại: <name>** as the main button (or **📁 Nạp
+thư mục** on a first visit), plus **Chọn thư mục khác**, **Nạp file**, **Bàn
+trống**, a game switch and the level folder's path. It closes by itself once a
+level loads; Esc, ✕, a click outside it or **Bàn trống** close it and leave the
+starter board. Errors from reopening show inside the pop-up. It shows once per
+page load; add `?nopop` to the URL to skip it (screenshots, tests).
+
 Everything still falls back cleanly:
 
 - **Firefox and Safari** have no such API, so both buttons keep using the old

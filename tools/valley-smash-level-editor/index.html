@@ -431,6 +431,23 @@ canvas{display:block}
 #btnReopen[hidden]{display:none}           /* .tbig đặt display:inline-flex, đè mất thuộc tính hidden */
 #btnReopen b{display:inline-block;vertical-align:bottom;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #app.tbnarrow #btnReopen .rn{display:none}  /* thanh chật: bỏ tên thư mục (vẫn có trong tooltip), giữ chữ "Mở lại" */
+/* Hộp chào lúc mở trang (giống màn chào của Pool Sort level editor): mở lại thư mục lần trước bằng 1 cú bấm */
+#bootPop{position:fixed;inset:0;z-index:2000;background:rgba(6,8,12,.62);display:flex;align-items:flex-start;justify-content:center;
+  padding:10vh var(--s5) var(--s5);overflow:auto}
+#bootPop[hidden]{display:none}
+#bootPop .card{position:relative;max-width:560px;width:100%;background:#0e1016f2;border:1px solid var(--line2);border-radius:var(--r2);
+  padding:var(--s5) 20px;line-height:1.55;color:var(--txt);box-shadow:0 18px 50px rgba(0,0,0,.5)}
+#bootPop h2{margin:0 0 var(--s3);font-size:var(--fs-xl);padding-right:28px}
+#bootPop p{margin:var(--s3) 0 0;font-size:var(--fs-md)}
+#bootPop code{background:var(--panel3);padding:1px 5px;border-radius:4px;font-size:var(--fs-sm);word-break:break-all}
+#bootPop .row{display:flex;flex-wrap:wrap;gap:var(--s3);margin-top:var(--s4)}
+#bootPop .row .tb{font-size:var(--fs-md);padding:6px 12px}
+#bootPop .hint{color:var(--dim);font-size:var(--fs-sm)}
+#bootPop .hint.warnl{color:var(--danger)}
+#bootPop .gsw{display:inline-flex;gap:var(--s1);margin-left:var(--s2)}
+#bootPop .gsw .tb.on{border-color:var(--accent2);color:var(--accent2)}
+#bootPop .x{position:absolute;top:10px;right:10px;background:none;border:0;color:var(--dim);font-size:18px;cursor:pointer;line-height:1}
+#bootPop .x:hover{color:var(--txt)}
 /* user 12/08: 2 nút Xem 3D + Preview PHẢI luôn thấy chữ, thu gọn mấy cũng không giấu */
 #app.tbnarrow #topbar .vbtn.keeplbl .lbl,
 #topbar.tbnarrow .vbtn.keeplbl .lbl,
@@ -4872,6 +4889,7 @@ function loadLevel(json,idxFromName){try{
   fIndex.value=(idxFromName!=null?idxFromName:(L.levelIndex||1));fMove.value=L.moveCount||20;setDiff(L.difficulty||0);   // ưu tiên số từ TÊN FILE (Level{N}.json)
   sel={x:0,y:0,z:0};clearSel();
   renderStgBar();renderTblBar();pushMeta();renderBlkBar();pullBlkMeta();history=[];redo=[];setView('front');updateStats();warn('');sync3D();
+  bootPopHide();                                 // đã có level trên bàn ⇒ hộp chào lúc mở trang tự đóng
   const nObj=tables.reduce((s,t)=>s+t.objs.length,0), rot=tables.some(t=>t.yaw), dyn=tables.some(t=>t.motion&&(t.motion.doRot||t.motion.movH||t.motion.movV));
   hint('Đã nạp Level '+fIndex.value+' — '+(stages.length>1?stages.length+' STAGE (đang xem Stage 1), ':'')
       +tables.length+' bàn'+(tables.length>1?' (chọn bàn ở thanh trên để sửa từng bàn)':'')+', '+nObj+' khối'
@@ -5383,9 +5401,9 @@ function lastDirIdb(mode,fn){
       r.onerror=()=>{ db.close(); reject(r.error); }; };
   }); }
 function lastDirLoad(){
-  if(!FS_OK)return;
+  if(!FS_OK)return Promise.resolve();
   const g=GAME, key=lastDirKey();
-  lastDirIdb('readonly',s=>s.get(key)).catch(()=>null).then(rec=>{
+  return lastDirIdb('readonly',s=>s.get(key)).catch(()=>null).then(rec=>{
     if(g!==GAME)return;                    // đổi game trong lúc đang đọc → bỏ kết quả cũ
     lastDir=rec&&rec.handle?rec:null; syncReopenBtn(); }); }
 function lastDirRemember(dir,n){
@@ -5420,10 +5438,84 @@ function syncReopenBtn(){
       +when.toLocaleDateString('vi-VN')+' '+when.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})+'.'
       +'\nLưu đè được ngay. Chrome có thể hỏi Cho phép một lần.\nThư mục khác: bấm 📁 Nạp thư mục.'; }
   if(lvPopOpen())lvRender();
+  if(bootPopOpen())bootPopRender();
   try{ fitBarsSoon(); }catch(_){}          // lúc trang đang nạp, fitBars chưa sẵn — thanh tự đo lại sau
 }
 $('btnReopen').onclick=()=>{ fsReopenDir().catch(fsErr); };
-setTimeout(lastDirLoad,0);                 // đợi applyGame lúc khởi động chọn xong game rồi mới đọc ô của game đó
+/* ---------- HỘP CHÀO LÚC MỞ TRANG (giống màn chào của Pool Sort level editor) ----------
+   Mở trang là hiện ngay: có thư mục lần trước thì nút to "📁 Mở lại: <tên>", không thì "📁 Nạp thư mục".
+   Nạp được level (thư mục, file, dán JSON, level mới) là hộp tự đóng — loadLevel gọi bootPopHide().
+   Esc, nút ✕, bấm ra ngoài hoặc "Bàn trống" thì đóng, làm tiếp trên bàn mẫu. Chỉ hiện MỘT lần mỗi lần mở trang;
+   sau đó vẫn còn nút Mở lại trên thanh công cụ. ?nopop trên URL thì không hiện (chụp màn hình, kiểm thử). */
+const BOOT_PATH={ vs:'block-shot-2/Assets/_BaseCode/Modules/Gameplay/Configs/LevelDatas/Levels/ver_N', obs:'levels/prod-13' };
+var bootPopEl=null;        // var + function (không let/const): syncReopenBtn và loadLevel có thể gọi tới trước dòng này lúc trang đang nạp
+function bootPopOpen(){ return !!(bootPopEl&&!bootPopEl.hidden); }
+function bootPopHide(){ if(bootPopEl)bootPopEl.hidden=true; }
+function bootPopShow(){
+  if(!bootPopEl){
+    bootPopEl=document.createElement('div'); bootPopEl.id='bootPop'; bootPopEl.hidden=true;
+    bootPopEl.setAttribute('role','dialog'); bootPopEl.setAttribute('aria-modal','true'); bootPopEl.setAttribute('aria-labelledby','bootTitle');
+    bootPopEl.addEventListener('mousedown',e=>{ if(e.target===bootPopEl)bootPopHide(); });   // bấm ra ngoài thẻ = đóng
+    document.body.appendChild(bootPopEl); }
+  bootPopRender(); bootPopEl.hidden=false;
+  const b=bootPopEl.querySelector('.primary'); if(b)b.focus(); }
+function bootPopRender(){
+  const w=bootPopEl; if(!w)return;
+  const mk=(tag,cls,txt)=>{ const e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e; };
+  const btn=(cls,txt,title,fn)=>{ const b=mk('button','tb '+cls,txt); b.type='button'; if(title)b.title=title; b.onclick=fn; return b; };
+  const card=mk('div','card');
+  const x=mk('button','x','✕'); x.type='button'; x.title='Đóng — làm tiếp trên bàn mẫu (Esc)'; x.setAttribute('aria-label','Đóng');
+  x.onclick=bootPopHide; card.appendChild(x);
+  const h=mk('h2',null,GAMES[GAME].title+' — Level Editor'); h.id='bootTitle'; card.appendChild(h);
+  // đổi game ngay trong hộp: mỗi game nhớ một thư mục level riêng
+  const gp=mk('p',null,'Game:'), gsw=mk('span','gsw');
+  for(const [g,lab] of [['obs','🧱 Ocean Block Shoot'],['vs','⛰️ Valley Smash']]){
+    const b=btn(g===GAME?'on':'',lab,'Đổi game (giống ô Game ở bảng trái)',()=>{
+      if(g===GAME)return; applyGame(g); lastDirLoad(); bootPopRender(); });
+    b.setAttribute('aria-pressed',g===GAME?'true':'false'); gsw.appendChild(b); }
+  gp.appendChild(gsw); card.appendChild(gp);
+  const path=BOOT_PATH[GAME], win=/Win/i.test(navigator.platform||navigator.userAgent);
+  const p=mk('p'); p.append('Mở thư mục ', mk('code',null,win?path.replace(/\//g,'\\'):path),
+    FS_OK?' để sửa level. Chrome và Edge lưu đè thẳng vào file (trình duyệt hỏi quyền ghi một lần).'
+         :' để sửa level. Trình duyệt này không ghi đè được: sửa xong bấm ⬇️ Tải về.');
+  card.appendChild(p);
+  const row=mk('div','row');
+  // lỗi (Chrome không cho quyền, thư mục đã mất…) hiện ngay trong hộp, vì thanh trạng thái nằm sau lớp phủ
+  const again=pr=>pr.catch(fsErr).finally(()=>{ if(bootPopOpen())bootPopRender(); });
+  const pickDir=()=>{ if(FS_OK)again(fsPickDir()); else $('dirIn').click(); };
+  const pickFile=()=>{ if(FS_OK)again(fsPickFile()); else $('fileIn').click(); };
+  const blank=btn('','✏️ Bàn trống','Đóng hộp này, làm tiếp trên bàn mẫu (Esc)',bootPopHide);
+  const last=FS_OK&&lastDir&&lastDir.handle?lastDir:null;
+  if(last){
+    const b0=btn('primary','📁 Mở lại: '+last.name,'Mở lại thư mục level lần trước, lưu đè được ngay. Chrome có thể hỏi Cho phép một lần.',
+      ()=>{ warn(''); again(fsReopenDir()); });
+    b0.id='bootReopen';
+    row.append(b0, btn('','📁 Chọn thư mục khác','Chọn một thư mục level khác (ví dụ ver_N khác, hay bản checkout của nhánh khác)',pickDir),
+      btn('','📂 Nạp file','Nạp 1 file Level*.json',pickFile), blank);
+    card.appendChild(row);
+    const when=new Date(last.at);
+    card.appendChild(mk('p','hint','Lần trước: thư mục "'+last.name+'", '+last.levels+' file .json, mở lúc '
+      +when.toLocaleDateString('vi-VN')+' '+when.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})+'.'));
+  }else{
+    row.append(btn('primary','📁 Nạp thư mục','Chọn thư mục chứa Level*.json',pickDir),
+      btn('','📂 Nạp file','Nạp 1 file Level*.json',pickFile), blank);
+    card.appendChild(row);
+    if(FS_OK)card.appendChild(mk('p','hint','Chọn thư mục một lần; lần sau mở trang, hộp này hiện nút mở lại ngay.'));
+  }
+  const wt=$('warn').textContent; if(wt)card.appendChild(mk('p','hint warnl','⚠ '+wt));
+  const hadFocus=w.contains(document.activeElement);
+  w.textContent=''; w.appendChild(card);
+  if(hadFocus){ const f=card.querySelector('.primary'); if(f)f.focus(); } }
+/* Hộp đang mở thì bàn phím không được chạm tới bàn vẽ (Delete, phím tắt…): chặn ở pha capture, trước mọi listener khác.
+   Tab / Enter / Space vẫn tới nút trong hộp vì chỉ chặn lan truyền, không chặn hành vi mặc định. */
+window.addEventListener('keydown',e=>{
+  if(!bootPopOpen())return;
+  if(e.key==='Escape'){ e.preventDefault(); bootPopHide(); }
+  e.stopImmediatePropagation(); },true);
+// đợi applyGame lúc khởi động chọn xong game rồi mới đọc ô của game đó; hộp chào hiện sau khi IndexedDB trả lời
+// (để nút Mở lại có sẵn ngay lần vẽ đầu), và không hiện nếu lúc đó đã nạp level rồi
+setTimeout(()=>{ const nopop=/[?&]nopop\b/.test(location.search);
+  (lastDirLoad()||Promise.resolve()).then(()=>{ if(!nopop&&!folderFiles.length&&!fsHandle)bootPopShow(); }); },0);
 if(FS_OK){
   // <label> bọc <input type=file> ẩn: chặn hành vi mặc định để mở picker của API thay thế.
   // Không có API (Firefox/Safari) thì không gắn gì cả, <input> cũ chạy y như trước.
@@ -7086,7 +7178,8 @@ window.addEventListener('resize',resize);
 applyGame(loadGamePref(),true);fillRepSelects();buildShapeLib();buildTowerUI();
 if(!brush)selectBrush(1);
 buildSizeBar();     // brush mặc định là 1 (truthy) nên dòng trên thường KHÔNG chạy — phải tự dựng
-$('gmSel').onchange=e=>{ applyGame(e.target.value); lastDirLoad(); };   // mỗi game nhớ thư mục level riêngupdateDepthLab();updateAxHint();resetTableState();
+$('gmSel').onchange=e=>{ applyGame(e.target.value); lastDirLoad(); };   // mỗi game nhớ thư mục level riêng
+updateDepthLab();updateAxHint();resetTableState();
 objects.push({type:1,px:-0.5,py:0.5,pz:0,sx:1,sy:1,sz:1},{type:1,px:0.5,py:0.5,pz:0,sx:1,sy:1,sz:1},
          {type:1,px:-0.5,py:1.5,pz:0,sx:1,sy:1,sz:1},{type:1,px:0.5,py:1.5,pz:0,sx:1,sy:1,sz:1});
 /* CHỈ DẪN bật/tắt — nhớ lựa chọn qua localStorage để mở lại tool không phải bấm lại. */
