@@ -18,11 +18,10 @@ ART = os.path.join(HERE, "art")
 HTML = os.path.join(HERE, "index.html")
 BEGIN, END = "<!--ART:BEGIN-->", "<!--ART:END-->"
 
-# The exporter bakes Valley Smash's ObjectDataTest under BOTH game keys. Since dev/main
-# "update id jar" (2026-09-24) Valley Smash puts jar shades on ids 220-237, which mean other
-# blocks in Ocean Block Shoot (220/221 new wood, 230 Nuclear bomb). Keep that art out of the
-# OBS profile so those blocks keep their vector look there instead of turning into jars.
-SKIP_IDS = {"obs": set(range(220, 238))}
+# The exporter bakes Valley Smash's ObjectDataTest under two game keys, "obs" and "vs" (from the
+# days the editor also served Ocean Block Shoot). The editor reads only "vs" since 2026-10-19;
+# any other key is left out, so its icons never reach the page.
+GAMES = ("vs",)
 
 
 try:
@@ -163,11 +162,10 @@ def main():
     nid = 0
     used_mesh, used_tex = set(), set()
     for game, ids in (man.get("icons") or {}).items():
+        if game not in GAMES:
+            continue
         g = {}
-        skip = SKIP_IDS.get(game, set())
         for sid, e in ids.items():
-            if sid.lstrip("-").isdigit() and int(sid) in skip:
-                continue
             row = {}
             for view in ("iso", "front", "top", "side"):
                 i = ref(e.get(view))
@@ -250,7 +248,7 @@ def main():
     block = (BEGIN + "\n<script>\n"
              "/* Sinh tu dong boi tools/valley-smash-level-editor/inline_art.py — DUNG SUA TAY.\n"
              "   Nguon: tools/valley-smash-level-editor/art/manifest.json  (provisional=%s)\n"
-             "   Anh nam trong ART.blobs; ART.icons[game][id].iso la CHI SO vao mang do. */\n"
+             "   Anh nam trong ART.blobs; ART.icons.vs[id].iso la CHI SO vao mang do. */\n"
              "window.ART=%s;\n</script>\n" % (art["provisional"], payload)) + END
 
     if not os.path.exists(args.html):
@@ -260,7 +258,7 @@ def main():
         sys.exit("Khong thay moc %s / %s trong %s" % (BEGIN, END, args.html))
 
     new = re.sub(re.escape(BEGIN) + r".*?" + re.escape(END), lambda m: block, html, count=1, flags=re.S)
-    io.open(args.html, "w", encoding="utf-8").write(new)
+    io.open(args.html, "w", encoding="utf-8", newline="\n").write(new)   # LF like the repo; text mode would write CRLF on Windows
 
     print("icon da nhung : %d id co anh  (%d anh rieng biet)" % (nid, len(blobs)))
     if nid == 0:

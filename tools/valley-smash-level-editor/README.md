@@ -28,6 +28,17 @@ views look like the game instead of like coloured boxes.
 > exporter regenerates. The baked `index.html` is tracked, so the tool
 > works after a fresh clone even before the first export.
 
+## Valley Smash only (since 2026-10-19)
+
+The editor used to serve two games on one engine, Ocean Block Shoot (`obs`) and
+Valley Smash (`vs`), with a **Game** picker that swapped the block set. Ocean
+Block Shoot is gone: no picker, and the block set is Valley Smash's 30 ids (1, 2,
+3, 11–15, 21, 22, 41, 42, 61, 62, the jar shades 220–237 without 228 and 234,
+and 238). Any other id in a file draws as a grey "KHÔNG RÕ" box and blocks the
+save check, as before. The crate (📦, `crates[]`) and wood plank (🪏,
+`planks[]`) code is still in the page but hidden: Valley Smash has no crates, and
+planks were dropped on 2026-09-08. No level in `ver_0`–`ver_3` uses either.
+
 ## Saving a level back over the file you opened
 
 Load with **📂 Nạp file** or **📁 Nạp thư mục** and the **⬇️ Tải về** button
@@ -42,8 +53,8 @@ folder you picked — there is no way to write silently, and there shouldn't be.
 ### Reopening the last folder (since 2026-10-09)
 
 The folder works like the Pool Sort editor's: the page remembers the last folder
-opened with **📁 Nạp thư mục**, one per game (Block Shoot and Valley Smash each
-keep their own), in IndexedDB (`bs-level-editor` / `handles` / `levels:<game>`).
+opened with **📁 Nạp thư mục**, in IndexedDB (`bs-level-editor` / `handles` /
+`levels:vs`).
 Next visit, while no folder is open, the toolbar shows **📁 Mở lại: <name>**
 (the level switcher's footer offers the same). One click reopens it; Chrome may
 ask **Allow** once per visit, which is why it is a button, not automatic. The
@@ -55,7 +66,7 @@ page says so and forgets it.
 Since 2026-10-19 the page also opens with a start pop-up, like the Pool Sort
 editor's start screen: **📁 Mở lại: <name>** as the main button (or **📁 Nạp
 thư mục** on a first visit), plus **Chọn thư mục khác**, **Nạp file**, **Bàn
-trống**, a game switch and the level folder's path. It closes by itself once a
+trống** and the level folder's path. It closes by itself once a
 level loads; Esc, ✕, a click outside it or **Bàn trống** close it and leave the
 starter board. Errors from reopening show inside the pop-up. It shows once per
 page load; add `?nopop` to the URL to skip it (screenshots, tests).
@@ -91,10 +102,9 @@ Every export, clicked or not, also rewrites `humanDescription.globalScale` in
 ~28 `.fbx.meta` files of the Unity repo when it toggles mesh readability. That is
 importer churn, not a real change: `git checkout` those files afterwards.
 
-`inline_art.py` drops ids 220–237 from the Ocean Block Shoot (`obs`) art. The
-exporter bakes Valley Smash's table under both game keys, and since 2026-09-24
-Valley Smash uses those ids for jar shades, while in OBS 220/221 are the new wood
-and 230 the Nuclear bomb.
+The exporter still bakes Valley Smash's table under two game keys, `obs` and
+`vs`, from the days this editor also served Ocean Block Shoot. `inline_art.py`
+embeds only `vs`.
 
 Add `--no-textures --no-meshes` if you only want the 2D palette/canvas art and
 a smaller file (~1.6 MB instead of ~7.9 MB) — the 3D view then falls back to
@@ -122,7 +132,7 @@ rewritten, so you can still hand-edit everything else.
 `art/manifest.json` has `"provisional": false` — everything is generated from
 the real prefabs, materials and lighting. Last export: **2026-09-24 18:27**, from
 the open editor on block-shot-2 `gd-leveldesign` (after `877180980`, which added
-238 Jar yellow). 81 Valley Smash ids and 65 Ocean Block Shoot ids carry:
+238 Jar yellow). 81 Valley Smash ids carry:
 
 | | |
 |---|---|
