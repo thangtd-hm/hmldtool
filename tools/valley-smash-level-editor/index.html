@@ -1000,6 +1000,10 @@ window.ART={"provisional":false,"generated":"2026-09-24T18:27:16","light":{"eule
       <textarea id="rsCustom" spellcheck="false" style="width:100%;min-height:92px;font:11px/1.4 ui-monospace,Consolas,monospace;background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:6px;resize:vertical" title="JSON thô của trường Custom. Chọn khối (✋) để sửa khối đó, bỏ chọn để sửa bàn đang mở. Ctrl+Enter = ghi."></textarea>
       <button class="btn" id="rsApply" style="margin:6px 0 4px;padding:7px" title="Ghi Custom vào khối đang chọn (mọi khối nếu chọn nhiều) hoặc vào bàn — Ctrl+Enter">✔ Ghi Custom</button>
       <div class="helptx" id="rsInfo"></div>
+      <div class="row" style="gap:6px;align-items:center;margin:4px 0 2px">
+        <span class="subnote" id="rsPackSrc" style="flex:1;min-width:0"></span>
+        <button class="tb" id="rsPackPick" title="Chọn file rs-art.js khác (vd. sau khi bake bản rip mới). Trình duyệt giữ gói trên máy này để lần sau tự nạp; không gửi đi đâu.">📦 Đổi gói art…</button>
+      </div>
       <div class="helptx">Ghi file: entity không sửa giữ <b>nguyên văn</b> chuỗi gốc; ContentHash giữ nguyên (chưa rõ game có soát không). Màu khối / bàn: shader TCP2 dựng theo công thức gốc, OmniShade (lon, hộp gỗ, mặt bàn, TNT) dựng theo tên thông số — gần đúng.</div>
     </details>
     <details class="field k-info" id="ringBox"><summary>🌀 Xếp bè theo vòng / xoắn</summary>
@@ -7275,29 +7279,51 @@ const RS = (function(){
     if(a < 0 || b < a) throw new Error('không phải gói rs-art.js');
     return JSON.parse(txt.slice(a, b+1));
   }
+  /* Gói chọn tay được GIỮ TRONG TRÌNH DUYỆT (IndexedDB 'bs-level-editor' / 'handles', khoá 'rs-art-pack'): trang Pages
+     không có art/ (không bao giờ đưa art của game khác lên repo công khai), nên lần đầu phải chọn file; từ lần sau trang tự
+     lấy bản đã giữ, không hỏi. Chỉ nằm trên máy này, không gửi đi đâu. Thứ tự: art/ cạnh trang (mới nhất) → bản đã giữ → hỏi. */
+  const PACK_KEY = 'rs-art-pack';
+  const packCacheGet = () => lastDirIdb('readonly', s=>s.get(PACK_KEY)).catch(()=>null);
+  const packCachePut = txt => lastDirIdb('readwrite', s=>s.put(txt, PACK_KEY)).catch(()=>{ /* ẩn danh: không giữ được, vẫn chạy */ });
+  R.packSource = '';                                  // 'art/' | 'đã giữ trong trình duyệt' | 'vừa chọn'
   function askPackFile(){
     return new Promise((ok, no)=>{
       const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.js,.json';
       inp.onchange = ()=>{ const f = inp.files && inp.files[0]; if(!f){ no(new Error('chưa chọn file')); return; }
-        f.text().then(t=>{ try{ ok(parsePackText(t)); }catch(e){ no(e); } }, no); };
+        f.text().then(t=>{ let A; try{ A = parsePackText(t); }catch(e){ no(e); return; }
+          packCachePut(t).then(()=>{ R.packSource = 'vừa chọn — đã giữ trong trình duyệt'; ok(A); }); }, no); };
       inp.click();
     });
   }
+  const askText = 'Chưa có gói art Royal Smash cho trang này (art/royal-smash/rs-art.js chỉ nằm trên máy, không có trên Pages).\n\n'
+    + 'Bấm OK rồi chọn file rs-art.js trong bản clone của bạn:\n  hmldtool/tools/valley-smash-level-editor/art/royal-smash/rs-art.js\n\n'
+    + 'Chỉ phải chọn MỘT lần: trình duyệt giữ gói lại trên máy này, lần sau trang tự nạp.\n'
+    + '(Chưa có file? Sinh bằng: python -P 01-projects/hm-leveldesign-tool/tools/royal-smash-bake/rs_bake.py <thư mục rip>)';
   R.ensure = function(silent){
     if(R.A) return Promise.resolve(R.A);
     if(R.loading) return R.loading;
     R.loading = new Promise((ok, no)=>{
-      if(window.RS_ART){ ok(window.RS_ART); return; }
+      if(window.RS_ART){ R.packSource = 'art/'; ok(window.RS_ART); return; }
       const s = document.createElement('script'); s.src = PACK_URL;
-      s.onload = ()=> window.RS_ART ? ok(window.RS_ART) : no(new Error('gói rỗng'));
+      s.onload = ()=>{ if(window.RS_ART){ R.packSource = 'art/'; ok(window.RS_ART); } else no(new Error('gói rỗng')); };
       s.onerror = ()=>{
-        if(silent){ no(new Error('thiếu gói art '+PACK_URL)); return; }
-        if(!confirm('Chưa thấy gói art Royal Smash cạnh trang ('+PACK_URL+').\n\nGói được sinh trên máy bằng:\n  python -P 01-projects/hm-leveldesign-tool/tools/royal-smash-bake/rs_bake.py <thư mục rip>\n\nBấm OK để tự chọn file rs-art.js.')){ no(new Error('thiếu gói art')); return; }
-        askPackFile().then(ok, no); };
+        packCacheGet().then(txt=>{
+          if(txt){ try{ const A = parsePackText(txt); R.packSource = 'đã giữ trong trình duyệt'; ok(A); return; }catch(e){ /* hỏng: hỏi lại */ } }
+          if(silent){ no(new Error('thiếu gói art '+PACK_URL)); return; }
+          if(!confirm(askText)){ no(new Error('thiếu gói art')); return; }
+          askPackFile().then(ok, no); }); };
       document.head.appendChild(s);
     }).then(A=>{ R.A = A; window.RS_ART = A; registerTypes(); return A; })
       .catch(e=>{ R.loading = null; throw e; });
     return R.loading;
+  };
+  /* 📦 đổi gói art (bản rip mới): chọn file → giữ lại → nạp lại trang cho sạch bảng loại khối */
+  R.replacePack = function(){
+    askPackFile().then(()=>{ if(confirm('Đã giữ gói art mới trong trình duyệt. Nạp lại trang để dùng gói này?')) location.reload(); },
+                       e=>warn('Không đọc được gói art: '+e.message));
+  };
+  R.forgetPack = function(){
+    lastDirIdb('readwrite', s=>s.delete(PACK_KEY)).catch(()=>{}).then(()=>hint('Đã xoá gói art giữ trong trình duyệt.'));
   };
 
   /* ---------------- loại khối ---------------- */
@@ -8109,6 +8135,8 @@ const RS = (function(){
       info.textContent = 'ContentHash ' + (L.ContentHash||'—') + ' (giữ nguyên) · BackgroundIndex ' + L.BackgroundIndex
         + (L.Arena!=null ? ' · Arena ' + L.Arena : '') + (L.PhysicsQuality!=null ? ' · PhysicsQuality ' + L.PhysicsQuality : ''); }
     else if(info) info.textContent = 'Level mới — ContentHash để trống.';
+    const ps = $('rsPackSrc');
+    if(ps) ps.textContent = '📦 Gói art: ' + (R.packSource || '—') + (R.A && R.A.generated ? ' · bake ' + String(R.A.generated).slice(0,10) : '');
   };
   R.applyCustom = function(){
     const ta = $('rsCustom'), T = target(); if(!ta || !T) return;
@@ -8175,6 +8203,7 @@ const RS = (function(){
 $('gameSel').addEventListener('change', e=>RS.setGame(e.target.value));
 $('rsApply').onclick = RS.applyCustom;
 $('btnRsRef').onclick = ()=>{ RS.refNext().catch(e=>warn(e.message)); };
+$('rsPackPick').onclick = RS.replacePack;
 $('rsLook').checked = RS.lookOn;
 $('rsLook').addEventListener('change', e=>RS.setLook(e.target.checked));
 $('rsTblKind').addEventListener('change', e=>RS.setTableKind(e.target.value));

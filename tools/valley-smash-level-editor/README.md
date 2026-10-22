@@ -56,7 +56,12 @@ python -P 01-projects/hm-leveldesign-tool/tools/royal-smash-bake/rs_bake.py "<Ri
 ```
 
 Without that file (on the Pages site, or a fresh clone) picking Royal Smash asks
-for the file instead, and the page stays on Valley Smash at start-up.
+for the file once: pick your local `art/royal-smash/rs-art.js`. The browser keeps
+the pack in its own storage on that machine (IndexedDB `bs-level-editor` /
+`handles`, key `rs-art-pack`), so later visits load it with no dialog; nothing is
+uploaded. **📦 Đổi gói art…** in the 👑 panel replaces it after a new bake. The
+level copies are not cached: on Pages, open `ref/RoyalSmashLevel/<set>` once with
+📁 Nạp thư mục and use 📁 Mở lại afterwards.
 
 The same run copies the rip's level sets, byte for byte, into
 `ref/RoyalSmashLevel/` (`rs 1/`, `rs1 loop/`, 2,380 files), also ignored by git
