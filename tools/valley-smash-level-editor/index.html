@@ -644,6 +644,19 @@ body[data-ui="xl"] #left,body[data-ui="xl"] #right,body[data-ui="xl"] #topbar,bo
 .pickrow>span{font-size:var(--fs-xs);color:var(--faint);text-transform:uppercase;letter-spacing:.05em;
   font-weight:600;white-space:nowrap;flex:0 0 auto}
 .pickrow>select{flex:1;min-width:0}
+/* 👑 Royal Smash: bảng màu riêng (#rsPal), bảng 🧩 riêng; các công cụ chỉ đúng với file Valley Smash thì giấu đi.
+   Bàn của Royal Smash luôn có kích thước rõ (w × d trong file) nên bỏ "tự ôm sát vật" / "tự căn giữa";
+   chuyển động bàn nằm trong Custom của bàn. */
+body:not(.g-rs) .rs-only{display:none!important}
+body.g-rs #left>details.grp,
+body.g-rs #ringBox, body.g-rs #impPanel, body.g-rs #blkPanel, body.g-rs #splitPanel, body.g-rs #mergePanel,
+body.g-rs #cratePanel, body.g-rs #sizebar, body.g-rs #tPlay, body.g-rs #btnImpLayout, body.g-rs #btnAutoMc, body.g-rs #mcSug,
+body.g-rs #rowH, body.g-rs #rowV, body.g-rs #rowDeck, body.g-rs #deckHint, body.g-rs #dimCZ,
+body.g-rs label.chk:has(#mRot), body.g-rs label.chk:has(#mH), body.g-rs label.chk:has(#mV),
+body.g-rs label.chk:has(#dimAuto), body.g-rs label.chk:has(#ctrAuto), body.g-rs .fld:has(#dimCZ){display:none!important}
+#rsPal .sw{background-color:#171b26}
+#bootPop .gsw{display:flex;gap:var(--s2);margin:0 0 var(--s2)}
+#bootPop .gsw .tb.on{border-color:var(--accent2);color:var(--accent2)}
 </style>
 </head>
 <body>
@@ -660,6 +673,13 @@ window.ART={"provisional":false,"generated":"2026-09-24T18:27:16","light":{"eule
     <div id="lhead">
       <h1 id="gmTitle">⛰️ Valley Smash</h1>
       <div class="sub" id="gmSub">Level Editor 2D · block-shot-2</div>
+      <div class="pickrow">
+        <span>Game</span>
+        <select id="gameSel" title="Valley Smash: level của block-shot-2.&#10;Royal Smash: level của bản rip Royal Smash (Resources/levels/…/NNNNN.json) — cần gói art art/royal-smash/rs-art.js trên máy này (sinh bằng rs_bake.py, không bao giờ commit).">
+          <option value="vs">⛰️ Valley Smash</option>
+          <option value="rs">👑 Royal Smash</option>
+        </select>
+      </div>
       <div class="pickrow">
         <span>Cỡ chữ</span>
         <select id="uiScale" title="Phóng to chữ + ô nhập của 2 bảng bên và thanh công cụ (không đổi khung vẽ). Dành cho màn nhỏ / máy Mac.">
@@ -777,6 +797,7 @@ window.ART={"provisional":false,"generated":"2026-09-24T18:27:16","light":{"eule
       <label class="tb file tbig" title="📂 Nạp 1 file Level*.json">📂<span class="tblab">Nạp file</span><input type="file" id="fileIn" accept=".json,application/json" style="display:none"></label>
       <button class="tb tbig primary" id="btnReopen" hidden>📁<span class="tblab">Mở lại<span class="rn">: <b id="reopenName"></b></span></span></button>
       <label class="tb file tbig" title="📁 Nạp cả thư mục Level*.json rồi bấm ◀ ▶ để xem lần lượt (Chrome/Edge).&#10;Trang nhớ thư mục này: lần sau mở trang, bấm 📁 Mở lại là vào ngay.&#10;Level của game: block-shot-2/Assets/_BaseCode/Modules/Gameplay/Configs/LevelDatas/Levels/ver_N">📁<span class="tblab">Nạp thư mục</span><input type="file" id="dirIn" webkitdirectory directory multiple style="display:none"></label>
+      <button class="tb tbig rs-only" id="btnRsRef" title="📚 Mở thẳng level Royal Smash có sẵn trong ref/RoyalSmashLevel/ (không cần chọn thư mục).&#10;Bấm lần nữa để đổi bộ (rs 1 ↔ rs1 loop).&#10;Đọc từ gói nên chỉ ⬇️ Tải về được; muốn 💾 Lưu đè thì mở thư mục ref/RoyalSmashLevel/&lt;bộ&gt; bằng 📁 một lần.">📚<span class="tblab">Level RS</span></button>
       <button class="tb" id="btnPaste" title="📥 Dán nội dung JSON vào ô rồi bấm lần nữa để nạp">📥</button>
       <button class="tb danger" id="btnClear" title="RESET — xoá sạch mọi bàn &amp; khối của level đang mở, về 1 bàn trống. Có hỏi lại trước khi xoá.">🗑 RESET</button>
     </div>
@@ -961,6 +982,25 @@ window.ART={"provisional":false,"generated":"2026-09-24T18:27:16","light":{"eule
         <div class="fld"><input type="number" id="deckZ" step="0.5" value="0" title="Tâm bàn theo Z" style="padding:4px 6px"><span class="cap">Tâm bàn Z</span></div>
       </div>
       <div class="subnote" id="deckHint" style="display:none;color:var(--move);margin-top:2px">Dịch bàn tự do: <b>Tâm X · Tâm Z</b> — khối giữ NGUYÊN chỗ đã xếp, chỉ nền bàn trượt.</div>
+    </details>
+    <!-- 👑 ROYAL SMASH: chỉ hiện khi chọn game Royal Smash (body.g-rs). Loại bàn, nền game của khung 3D,
+         và Custom (JSON thô của entity: randomYaw, physics*, chuyển động bàn, thông số Hammer/Blocker/Pinata…). -->
+    <details class="field k-info rs-only" id="rsPanel" open><summary>👑 Royal Smash</summary>
+      <div class="row" style="gap:6px;margin:2px 0 7px">
+        <div class="fld"><select id="rsTblKind" style="padding:5px 4px" title="Id của entity bàn đang sửa. Wagon / Boat là bàn cố định 6×4 của level nhiều stage.">
+          <option value="Table_Rect">Table_Rect</option><option value="Table_Round">Table_Round</option>
+          <option value="Table_Wagon">Table_Wagon</option><option value="Table_Boat">Table_Boat</option>
+        </select><span class="cap">Loại bàn</span></div>
+        <div class="fld"><select id="rsBg" style="padding:5px 4px" title="Nền của khung 3D (chỉ để xem, không ghi vào file). Tự động: có Boat = nước, có Wagon = sa mạc, còn lại = rừng (suy theo loại bàn, chưa kiểm chứng trong game).">
+          <option value="auto">Tự động</option><option value="forest">Rừng</option><option value="desert">Sa mạc</option><option value="water">Nước</option><option value="none">Không nền</option>
+        </select><span class="cap">Nền 3D</span></div>
+      </div>
+      <label class="chk" style="margin:0 0 8px" title="BẬT: hũ mứt và khối trụ được nắn sáng/tối cho khớp ảnh gameplay owner gửi (bảng RS_LOOK_OVERRIDE trong code) — KHÔNG phải số của game.&#10;TẮT: đúng material + đèn của bản rip."><input type="checkbox" id="rsLook" checked> 🎨 Chỉnh theo ảnh gameplay (hũ, khối trụ)</label>
+      <div class="subnote" style="margin:0 0 4px">🧩 Custom · <span id="rsCustLab" style="color:var(--txt)">—</span></div>
+      <textarea id="rsCustom" spellcheck="false" style="width:100%;min-height:92px;font:11px/1.4 ui-monospace,Consolas,monospace;background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:6px;resize:vertical" title="JSON thô của trường Custom. Chọn khối (✋) để sửa khối đó, bỏ chọn để sửa bàn đang mở. Ctrl+Enter = ghi."></textarea>
+      <button class="btn" id="rsApply" style="margin:6px 0 4px;padding:7px" title="Ghi Custom vào khối đang chọn (mọi khối nếu chọn nhiều) hoặc vào bàn — Ctrl+Enter">✔ Ghi Custom</button>
+      <div class="helptx" id="rsInfo"></div>
+      <div class="helptx">Ghi file: entity không sửa giữ <b>nguyên văn</b> chuỗi gốc; ContentHash giữ nguyên (chưa rõ game có soát không). Màu khối / bàn: shader TCP2 dựng theo công thức gốc, OmniShade (lon, hộp gỗ, mặt bàn, TNT) dựng theo tên thông số — gần đúng.</div>
     </details>
     <details class="field k-info" id="ringBox"><summary>🌀 Xếp bè theo vòng / xoắn</summary>
         <div class="helptx">Nhân bàn ĐANG SỬA thành nhiều bè giống hệt nhau, rải đều trên một vòng tròn quanh pháo — mỗi bè chỉ khác GÓC. Cộng thêm bán kính mỗi bè thì thành xoắn ốc.</div>
@@ -1237,7 +1277,12 @@ const plankInT =t=>PLANK_IN[t] !==undefined?PLANK_IN[t] :901;
 const AXLEN={};
 /* Bộ id hợp lệ cho 2 ô chọn loại khối (Thay thế · Xây tháp): không mời id mà game không có. */
 const GAMEIDS=new Set(Object.values(PAL).flat());
-const gameHasT=t=>GAMEIDS.has(+t);
+/* 👑 game Royal Smash (khối RS.* nạp từ gói art, id nội bộ 5000+): RS khai báo ở <script> cuối trang */
+const rsOn=()=>typeof RS!=='undefined'&&RS.on;
+const isRST=t=>!!(TYPES[t]&&TYPES[t].rs);
+const gameHasT=t=>rsOn()?(isRST(t)&&!TYPES[t].unknown):GAMEIDS.has(+t);
+/* đem theo dữ liệu Royal Smash (Custom, Scale, chỗ trong file) khi nhân bản / chép khối hay bàn */
+const rsClone=x=>x?JSON.parse(JSON.stringify(x)):undefined;
 /* id KHÔNG có trong bộ (level cũ ver_0 còn 16 / 31, hay id Unity mới đăng ký): nạp vào thành hộp xám
    "KHÔNG RÕ", KHÔNG được bỏ — bỏ đi thì Lưu đè sẽ xoá mất khối khỏi file. Không có trong PAL / GAMEIDS
    nên không mời vẽ; không có trong MAXLEN nên panel "Soát lỗi game" báo "CHƯA đăng ký" và chặn Xuất. */
@@ -1415,7 +1460,8 @@ const bw=$('bw'), bh=$('bh'), fMirror=$('fMirror'), fMove=$('fMove'), fIndex=$('
    bao nhiêu lần cũng vậy; 3 ô nhập chỉ còn là cách HIỂN THỊ cỡ đó theo mặt đang xem. */
 let bsz={x:1,y:1,z:1};
 function setBrushSize(s){
-  bsz={x:Math.max(1,+s.x||1), y:Math.max(1,+s.y||1), z:Math.max(1,+s.z||1)};
+  const mn=isRST(brush)?0.05:1;                       // khối Royal Smash: cỡ cố định theo prefab, có cỡ lẻ (Pinata 3,25…)
+  bsz={x:Math.max(mn,+s.x||1), y:Math.max(mn,+s.y||1), z:Math.max(mn,+s.z||1)};
   syncBrushInputs(); syncSizeBar(); }
 /* Chỉ được gọi khi cỡ cọ ĐỔI THẬT (chọn loại khối khác, bấm ô cỡ bên trái, đổi mặt nhìn) — lúc gõ
    thì ô tự hút vào bsz qua readBrushInputs, không qua đây. Nên ghi đè cả ô đang có con trỏ:
@@ -1566,6 +1612,9 @@ function computeOverlaps(){ const O=objects,s=new Set();
 const AXN=['X','Y','Z'];
 const szTxt=o=>fmt(o.sx)+'×'+fmt(o.sy)+'×'+fmt(o.sz);
 function objIssue(o){
+  // 👑 Royal Smash: cỡ đi theo prefab (StoneSquare_3…), không có luật TryGetSizeAxis. Id lạ (thiếu trong gói art)
+  // vẫn ghi lại nguyên văn nên cũng không chặn Lưu.
+  if(isRST(o.type)) return '';
   if(isCrate(o))return '';                       // hòm đi ra crates[], không qua TryGetSizeAxis/GetPrefab
   /* 🪏 THANH GỖ đi ra planks[]: game set localScale THẲNG bằng size, không qua TryGetSizeAxis lẫn
      GetPrefab ⇒ mọi luật "nguyên 1..5 / tối đa 1 trục / phải có prefab biến thể" đều KHÔNG áp dụng.
@@ -2377,6 +2426,8 @@ function drawObj(o,V,alpha){
   /* id lạ (không có trong TYPES) → KHÔNG được để văng: vẽ tạm hộp xám dấu ?,
      người dùng vẫn chọn/xoá/xuất được. Trước đây thiếu chốt này nên chỉ cần 1 khối id lạ là chết cả canvas. */
   const t=TYPES[o.type]||{name:'KHÔNG RÕ (id '+o.type+')',shape:'box',col:'#6b7280',mass:0,unknown:true}, q=getRot(o), rotated=!isIdent(q);
+  // 👑 Royal Smash: luôn vẽ sống từ mesh + shader của game (không có ảnh bake); chưa sẵn thì rơi về hình vector
+  if(t.rs && rsOn() && RS.draw2D(o,V,alpha)) return;
   /* Khoi CHUA xoay + co anh truc giao that ⇒ dan sprite. Khoi da xoay van ve
      vector vi sprite truc giao khong the hien duoc goc xoay tuy y. */
   if(!rotated && drawObjSprite(o,V,alpha,t)) return;
@@ -2465,7 +2516,8 @@ let _statsW=-1;                       // bề ngang ô thống kê lần tính t
 function updateStats(){const c={};let mass=0,nPlank=0,n=0;
   for(const o of objects){
     if(isPlank(o)){nPlank++;continue;}
-    c[o.type]=(c[o.type]||0)+1;mass+=((TYPES[o.type]||{mass:0}).mass||0)*o.sx*o.sy*o.sz;n++;}
+    c[o.type]=(c[o.type]||0)+1;n++;
+    mass+=isRST(o.type)?RS.massOf(o):((TYPES[o.type]||{mass:0}).mass||0)*o.sx*o.sy*o.sz;}   // 👑 RS: physicsMass của từng entity
   const mcs=Math.round(0.0185*n+23.4);      // ngắn gọn cho vừa thanh công cụ, giải thích để ở title
   const el=$('mcSug'); el.textContent='≈'+mcs;
   el.title='Lượt bắn gợi ý theo số khối hiện có: '+mcs+' (bấm auto để điền)'
@@ -2982,6 +3034,7 @@ var objBoxDirty=false;     // đã chụp history cho lượt gõ này chưa (gi
    số của khối cũ và gõ tiếp sẽ tính chênh lệch sai cho khối mới. */
 var objBoxFor=null, objBoxForN=0;
 function refreshObjBox(){
+  if(rsOn()) RS.syncPanel();                           // 👑 ô Custom theo khối đang chọn
   const b=$('selBox'); if(!b)return;
   const on=selObjs.length>0 && !!selObj;
   b.style.display=on?'block':'none';
@@ -3075,8 +3128,9 @@ function dupSelAsTables(tis){
       dimAuto:src.dimAuto, dim:src.dim?{x:src.dim.x,y:src.dim.y,z:src.dim.z}:null, fromFile:false,
       ctrAuto:ctrOn(src), deckX:+src.deckX||0, deckZ:+src.deckZ||0, deckX0:+src.deckX0||0, deckZ0:+src.deckZ0||0,
       objs:remapCrates(src.objs.map(o=>{ const n={type:o.type,sx:o.sx,sy:o.sy,sz:o.sz,px:o.px,py:o.py,pz:o.pz,
-          rot:o.rot?{x:o.rot.x,y:o.rot.y,z:o.rot.z,w:o.rot.w}:undefined};
+          rot:o.rot?{x:o.rot.x,y:o.rot.y,z:o.rot.z,w:o.rot.w}:undefined, rs:rsClone(o.rs)};
         if(isCrate(o)){n.cid=o.cid;n.ov=o.ov;n.cs=o.cs;n.ks=o.ks;n.mo=o.mo;} if(o.inC)n.inC=o.inC; return n; })) });
+    if(src.rs){ nt.rs=rsClone(src.rs); delete nt.rs.virtual; }
     tables.push(nt); news.push(nt); }
   cur=tables.indexOf(news[0]); objects=curT().objs;      // KHÔNG dùng selectTbl: nó xoá sạch history (mất undo)
   setSel(news.reduce((a,t)=>a.concat(t.objs),[]));       // chọn luôn bè mới để kéo đi ngay
@@ -3126,6 +3180,7 @@ function copySel(cut){
     items:selObjs.map(o=>{ const q=getRot(o); const it={type:o.type,sx:o.sx,sy:o.sy,sz:o.sz,
       dx:+(o.px-g.c.x).toFixed(4), dy:+(o.py-g.c.y).toFixed(4), dz:+(o.pz-g.c.z).toFixed(4),
       rot:{x:+q.x,y:+q.y,z:+q.z,w:+q.w}};
+      if(o.rs){ it.rs=rsClone(o.rs); delete it.rs.i; }   // 👑 dán ra là entity MỚI (không dính chỗ của bản gốc trong file)
       // HÒM: mang theo thông số mở, và đồ bên trong mang theo liên kết — lúc dán `remapCrates` cấp cid mới.
       // Chép mỗi cái hòm (không chọn đồ) → dán ra hòm RỖNG; chép mỗi đồ → dán ra khối tự do. Cả hai đều hợp lệ.
       if(isCrate(o)){it.cid=o.cid;it.ov=o.ov;it.cs=o.cs;it.ks=o.ks;it.mo=o.mo;} if(o.inC)it.inC=o.inC;
@@ -3155,7 +3210,7 @@ function pasteClip(){
   const c=getClip();
   if(!c){ hint('Bộ nhớ tạm trống — chọn khối rồi Ctrl+C (chép) hoặc Ctrl+X (cắt) trước đã.'); return; }
   if(!curT()){ hint('Chưa có bàn nào để dán.'); return; }
-  const items=c.items.filter(it=>TYPES[it.type]);
+  const items=c.items.filter(it=>TYPES[it.type]&&isRST(it.type)===rsOn());   // khối của game kia không dán sang được
   const dropped=c.items.length-items.length;                              // id lạ (clip từ bản editor khác) → bỏ, khỏi vỡ bảng thống kê
   if(!items.length){ hint('Bộ nhớ tạm chỉ có id lạ, editor này không hiểu — không dán được.'); return; }
   const V=VIEWS[view], tgt={x:c.at.x,y:c.at.y,z:c.at.z};
@@ -3171,6 +3226,7 @@ function pasteClip(){
   const copies=remapCrates(items.map(it=>{ const n={type:it.type,sx:it.sx,sy:it.sy,sz:it.sz,
     px:+(tgt.x+it.dx).toFixed(4), py:+(tgt.y+it.dy).toFixed(4), pz:+(tgt.z+it.dz).toFixed(4),
     rot:{x:it.rot.x,y:it.rot.y,z:it.rot.z,w:it.rot.w}};
+    if(it.rs)n.rs=rsClone(it.rs);
     if(it.type===CRATE_T){n.cid=it.cid;n.ov=it.ov;n.cs=it.cs;n.ks=it.ks;n.mo=it.mo;} if(it.inC)n.inC=it.inC;
     return n; }));
   for(const o of copies){ objects.push(o); if(isCrate(o))crateInit(o); }   // hòm dán từ tab khác thiếu field → điền mặc định
@@ -3186,6 +3242,7 @@ function clipInfo(){ const el=$('clipInfo'); if(!el)return; const c=getClip();
 /* ---------- palette / inspector ---------- */
 /* Dựng swatch cho từng nhóm của PAL; nhóm rỗng thì ẩn luôn cả cái .grp bao ngoài. */
 function buildPalette(){
+  if(typeof RS!=='undefined') RS.buildPalette();       // 👑 nhóm Royal Smash (#rsPal) — rỗng khi chưa nạp gói art
   for(const[pid,list]of Object.entries(PAL)){const box=$(pid); if(!box)continue;
     box.innerHTML='';
     const grp=box.closest('.grp');
@@ -3220,7 +3277,8 @@ function selectBrush(t){brush=t;document.querySelectorAll('.sw').forEach(s=>s.cl
     /* ĐỔI LOẠI KHỐI thì cây cọ luôn về 1×1×1. Mang cỡ dài của loại cũ sang loại mới rất hay
        ra cỡ loại mới không có prefab (hũ chỉ tới 3, nón chỉ 1 ô…) — mà lỗi đó im lặng cho tới
        lúc vào chơi khối biến mất. Về 1×1×1 thì cỡ nào cũng hợp lệ. */
-    setBrushSize({x:1,y:1,z:1});
+    const rz=TYPES[t].rsSize;                            // 👑 Royal Smash: cỡ = đúng prefab (StoneSquare_3 = 1×3×1)
+    setBrushSize(rz?{x:rz[0],y:rz[1],z:rz[2]}:{x:1,y:1,z:1});
     const fx=!!TYPES[t].fixed; bw.disabled=bh.disabled=fx; if(_bd)_bd.disabled=fx; }
   buildSizeBar();
   const ml=$('shapeMat'); if(ml) ml.textContent=(TYPES[t].fixed?'Hộp gỗ':TYPES[t].name); setTool('paint');draw();}
@@ -3624,6 +3682,7 @@ function pullMeta(){ const t=curT(); if(!t)return;
   // ô Cao Y trống → giữ nguyên giá trị cũ (đừng nuốt thành 0: 0 là độ cao HỢP LỆ, không phải "chưa nhập")
   { const v=$('tblY').value; if(v!=='') t.pos.y=+v||0; } }
 function pushMeta(){ const t=curT(); if(!t)return;
+  if(rsOn()) setTimeout(RS.syncPanel,0);               // 👑 bảng Royal Smash theo bàn đang mở
   setTableMotionUI(t.motion); $('dimAuto').checked=t.dimAuto!==false;
   $('tblX').value=t.pos.x; $('tblZ').value=t.pos.z; $('tblYaw').value=t.yaw||0; $('tblY').value=t.pos.y!=null?t.pos.y:TBL_Y0;
   $('ctrAuto').checked=ctrOn(t); $('deckX').value=+t.deckX||0; $('deckZ').value=+t.deckZ||0; updateDeckFields();
@@ -3639,7 +3698,7 @@ function renderTblBar(){ const bar=$('tblBar'); if(!bar)return; bar.innerHTML=''
 function selectTbl(i){ if(i===cur||!tables[i])return; pullMeta(); cur=i; objects=curT().objs; clearSel(); pushMeta(); renderTblBar();   /* KHONG xoa history: doi ban chi la doi cho nhin, khong phai sua level */
   pullBlkMeta();                       // blocker là toạ độ WORLD → đổi bàn thì nhãn "trên mặt bàn …" phải tính lại theo bàn mới
   setView(view); updateStats(); sync3D(); hint('Đang sửa Bàn '+curT().id+' — mỗi bàn có hệ toạ độ riêng.'); }
-function addTbl(){ pushHistory(); pullMeta(); const id=(tables.length?Math.max(...tables.map(t=>t.id)):-1)+1; tables.push(mkTable(id,{x:tables.length*3,y:2.9,z:0})); cur=tables.length-1; objects=curT().objs; clearSel(); pushMeta(); renderTblBar(); setView('front'); updateStats(); sync3D(); hint('Đã thêm Bàn '+id+' — vẽ khối cho bàn này; đặt vị trí/góc ở ô trên.'); }
+function addTbl(){ pushHistory(); pullMeta(); const id=(tables.length?Math.max(...tables.map(t=>t.id)):-1)+1; tables.push(rsOn()?RS.newTable(id,tables.length*8):mkTable(id,{x:tables.length*3,y:2.9,z:0})); cur=tables.length-1; objects=curT().objs; clearSel(); pushMeta(); renderTblBar(); setView('front'); updateStats(); sync3D(); hint('Đã thêm Bàn '+id+' — vẽ khối cho bàn này; đặt vị trí/góc ở ô trên.'); }
 function delTbl(){ if(tables.length<=1)return; if(!confirm('Xoá Bàn '+curT().id+' cùng toàn bộ khối?'))return; pushHistory(); tables.splice(cur,1); cur=Math.min(cur,tables.length-1); objects=curT().objs; clearSel(); pushMeta(); renderTblBar(); setView('front'); updateStats(); sync3D(); }
 /* NHÂN BẢN bàn hiện tại: clone SÂU toàn bộ khối + dim/motion/yaw/scl, đặt cạnh phải (cách 1 ô) để không đè */
 function dupTbl(){ pushHistory(); pullMeta(); const src=curT(); if(!src)return;
@@ -3650,8 +3709,9 @@ function dupTbl(){ pushHistory(); pullMeta(); const src=curT(); if(!src)return;
     motion:JSON.parse(JSON.stringify(src.motion||staticMotion())),
     dimAuto:src.dimAuto, dim:src.dim?{x:src.dim.x,y:src.dim.y,z:src.dim.z}:null, fromFile:false,
     ctrAuto:ctrOn(src), deckX:+src.deckX||0, deckZ:+src.deckZ||0, deckX0:+src.deckX0||0, deckZ0:+src.deckZ0||0,
-    objs:remapCrates(src.objs.map(o=>{ const n={type:o.type,sx:o.sx,sy:o.sy,sz:o.sz,px:o.px,py:o.py,pz:o.pz,rot:o.rot?{x:o.rot.x,y:o.rot.y,z:o.rot.z,w:o.rot.w}:undefined};
+    objs:remapCrates(src.objs.map(o=>{ const n={type:o.type,sx:o.sx,sy:o.sy,sz:o.sz,px:o.px,py:o.py,pz:o.pz,rot:o.rot?{x:o.rot.x,y:o.rot.y,z:o.rot.z,w:o.rot.w}:undefined,rs:rsClone(o.rs)};
       if(isCrate(o)){n.cid=o.cid;n.ov=o.ov;n.cs=o.cs;n.ks=o.ks;n.mo=o.mo;} if(o.inC)n.inC=o.inC; return n; })) });
+  if(src.rs){ nt.rs=rsClone(src.rs); delete nt.rs.virtual; }
   tables.push(nt); cur=tables.length-1; objects=curT().objs; clearSel();
   pushMeta(); renderTblBar(); setView('front'); updateStats(); sync3D();
   hint('Đã nhân bản Bàn '+src.id+' → Bàn '+id+' (khối y hệt) tại X='+fmt(nt.pos.x)+'. Chỉnh Vị trí/góc nếu muốn.'); }
@@ -3912,7 +3972,8 @@ function updateBlkInfo(){ const n=blockers.length, b=curBlk>=0?blockers[curBlk]:
       +(blkYawed()?'<br><b style="color:var(--danger)">⚠ Bàn đang xoay '+fmt(blkFrame().yaw)+'° — trục canvas không trùng trục thế giới của blocker, nên chỉ sửa BẰNG SỐ (không kéo được). Xem preview 3D cho chắc.</b>':'')
       +(weird?'<br><b style="color:#ffcf5a">⚠ File có 2 đầu mút khác nhau nhưng thời gian = 0 → trong game thanh sẽ nhảy/giật tức thì. Bật "Trượt qua lại" để đặt thời gian, hoặc để nguyên nếu đúng ý.</b>':'')
     : 'Không có blocker. Bấm ＋ để thêm.'; }
-function resetTableState(){ tables=[mkTable(0,{x:0,y:2.9,z:0})]; cur=0; blockers=[]; curBlk=-1; objects=tables[0].objs;
+function resetTableState(){ if(rsOn()){ RS.resetState(); return; }   // 👑 một Table_Rect trống
+  tables=[mkTable(0,{x:0,y:2.9,z:0})]; cur=0; blockers=[]; curBlk=-1; objects=tables[0].objs;
   stages=[{tables:tables,blockers:blockers,mc:0}]; curStage=0; renderStgBar();
   renderTblBar(); pushMeta(); renderBlkBar(); pullBlkMeta(); }
 
@@ -3928,7 +3989,7 @@ function resetTableState(){ tables=[mkTable(0,{x:0,y:2.9,z:0})]; cur=0; blockers
    `stages[]` giữ toàn bộ; đổi stage = cất cái đang sửa rồi trỏ sang cái mới.
    ============================================================ */
 function stageSaveCur(){ const s=stages[curStage]; if(s){ s.tables=tables; s.blockers=blockers; } }
-function mkStage(){ const t=mkTable(0,{x:0,y:2.9,z:0}); return {tables:[t],blockers:[]}; }
+function mkStage(){ const t=rsOn()?RS.newTable(0,0):mkTable(0,{x:0,y:2.9,z:0}); return {tables:[t],blockers:[]}; }
 function stageEnter(i){ const s=stages[i]; if(!s)return;
   curStage=i; tables=s.tables; blockers=s.blockers; cur=0; objects=tables[0].objs; curBlk=blockers.length?0:-1;
   clearSel(); renderStgBar(); renderTblBar(); pushMeta(); renderBlkBar(); pullBlkMeta();
@@ -4488,13 +4549,17 @@ function buildStage(tbls,blks){
   if(outPlanks.length)stage.planks=outPlanks;    // y hệt: không có thanh gỗ → KHÔNG thêm field
   return stage; }
 /* Level = DÃY stage nối tiếp. 1 stage → xuất y hệt định dạng cũ (không đổi 1 byte nào của 2233 file hiện có). */
+/* NỘI DUNG FILE sẽ ghi / tải / copy. Royal Smash ghi chuỗi riêng (giữ nguyên văn entity không sửa). */
+function levelText(){ return rsOn() ? RS.buildText() : JSON.stringify(buildJSON()); }
+const lvFileName=n=>rsOn()?RS.fileName(n):'Level'+n+'.json';
 function buildJSON(){ pullMeta(); stageSaveCur();
   const out=stages.map(s=>buildStage(s.tables,s.blockers));
   return{levelIndex:+fIndex.value,moveCount:+fMove.value,difficulty:getDiff(),stages:out.length?out:[buildStage(tables,blockers)]};}
 function downloadJSON(){
-  const blob=new Blob([JSON.stringify(buildJSON())],{type:'application/json'});const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);a.download='Level'+(+fIndex.value)+'.json';a.click();
-  hint('Đã tải Level'+(+fIndex.value)+'.json — chép vào ...\\LevelDatas\\Levels\\ver_N\\'); }
+  const blob=new Blob([levelText()],{type:'application/json'});const a=document.createElement('a');
+  const fn=lvFileName(+fIndex.value);
+  a.href=URL.createObjectURL(blob);a.download=fn;a.click();
+  hint('Đã tải '+fn+(rsOn()?'.':' — chép vào ...\\LevelDatas\\Levels\\ver_N\\')); }
 /* 💾 Lưu đè và ⬇️ Tải về tách hẳn làm HAI nút (user 11/09).
    Trước đây chỉ có một nút tự đổi vai: chưa nạp bằng 📂/📁 thì là "Tải về", nạp rồi thì
    hóa thành "Lưu đè", còn muốn tải file rời phải giữ Shift — một cử chỉ không ai đoán ra.
@@ -4509,7 +4574,7 @@ $('btnSave').onclick=async()=>{
   try{
     if(await fsCanWrite(fsHandle)){
       const w=await fsHandle.createWritable();
-      await w.write(JSON.stringify(buildJSON()));
+      await w.write(levelText());
       await w.close();
       if(folderPos>=0&&folderFiles[folderPos]&&folderFiles[folderPos].handle===fsHandle) folderFiles[folderPos].diff=getDiff();   // ô số đổi màu theo độ khó VỪA LƯU
       folderDirty=false; renderFolderNav();
@@ -4523,7 +4588,7 @@ $('btnSave').onclick=async()=>{
   }catch(err){ warn('Không ghi được '+fsName+' ('+(err&&err.message||err)+') — chưa lưu được gì.'); }
 };
 $('btnExport').onclick=()=>{ if(exportReady()) downloadJSON(); };
-$('btnCopy').onclick=()=>navigator.clipboard.writeText(JSON.stringify(buildJSON())).then(()=>hint('Đã copy JSON.'));
+$('btnCopy').onclick=()=>navigator.clipboard.writeText(levelText()).then(()=>hint('Đã copy JSON.'));
 /* 🪏 THANH GỖ từ file: size trong file là CỠ THẬT (đã nhân fsc) → chia ngược ra "ô đặt" của editor.
    Nhờ vậy nạp-rồi-xuất-lại ra đúng con số cũ. Type lạ (chưa khai trong TYPES) thì fsc=1 nên vẫn nạp được. */
 function mapPlank(p){ const it=plankInT(p.type), f=(TYPES[it]&&TYPES[it].fsc)||[1,1,1];
@@ -4567,7 +4632,11 @@ function parseStage(st){
   const newBlk=st.blockers?JSON.parse(JSON.stringify(st.blockers)):[];
   return {tables:newTbls, blockers:newBlk};
 }
-function loadLevel(json,idxFromName){try{
+function loadLevel(json,idxFromName){
+  /* 👑 file Royal Smash (có "Entities") → RS tự chuyển game và nạp; file Valley Smash mà đang ở Royal Smash → về Valley Smash */
+  if(typeof RS!=='undefined'&&RS.looksLike(json)){ RS.loadLevel(json,idxFromName); return; }
+  if(rsOn()) RS.setGame('vs',{force:true,keepFolder:true});
+  try{
   const L=typeof json==='string'?JSON.parse(json):json;
   const src=(L.stages&&L.stages.length)?L.stages:[{objects:[],tables:[],blockers:[]}];
   const newStages=src.map(parseStage);            // dựng HẾT vào biến tạm rồi mới commit (JSON hỏng nửa chừng không để lại state lệch)
@@ -4724,7 +4793,7 @@ const LV_DIFF={0:'Dễ',1:'Khó 1',2:'Khó 2 (siêu khó)'};
    "difficulty" bằng regex (khỏi JSON.parse cả level), cứ 25 file vẽ lại lưới một lần.
    Đổi thư mục giữa chừng thì lượt quét cũ tự dừng (lvScanTok). */
 let lvScanTok=0;
-const lvDiffOf=t=>{ const m=/"difficulty"\s*:\s*(\d+)/.exec(t||''); return m?+m[1]:0; };
+const lvDiffOf=t=>{ const m=/"difficulty"\s*:\s*(\d+)/i.exec(t||''); return m?+m[1]:0; };   // i: Royal Smash ghi "Difficulty"
 async function lvScanDiff(){
   const tok=++lvScanTok; let n=0;
   for(const it of folderFiles.slice()){
@@ -4897,6 +4966,7 @@ async function lvRead(it){ return it.handle ? (await it.handle.getFile()).text()
   : await new Promise((ok,no)=>{ const rd=new FileReader(); rd.onload=()=>ok(rd.result); rd.onerror=no; rd.readAsText(it.file); }); }
 /* đổi số trong NỘI DUNG mà không đụng byte nào khác (định dạng số thực của file giữ nguyên) */
 function lvSetIndexText(text,n){
+  if(/"Entities"\s*:/.test(text)) return text;        // 👑 Royal Smash: số level chỉ nằm ở TÊN file
   if(/"levelIndex"\s*:\s*-?\d+/.test(text)) return text.replace(/("levelIndex"\s*:\s*)-?\d+/, '$1'+n);
   const L=JSON.parse(text); L.levelIndex=n; return JSON.stringify(L); }
 function lvCheckNum(v,selfI){
@@ -4936,7 +5006,7 @@ async function lvCommit(){
       renderFolderNav(); lvRender();
       hint('🗑 Đã xoá '+it.name+' (kèm .meta)'+(it.idx!=null?' — Level '+it.idx+' giờ là chỗ THIẾU trong thư mục.':'.'));
       return; }
-    const n=chk.n, name='Level'+n+'.json';
+    const n=chk.n, name=lvFileName(n);
     if(await lvExists(name)) return fail(name+' đã có trong thư mục — không ghi đè.');
     const text=lvSetIndexText(await lvRead(it), n);
     const h=await lvWrite(name,text);
@@ -4966,13 +5036,14 @@ async function lvNewLevel(){
   if(lvBusy)return;
   if(!lvCanEdit()){ warn(lvNoEditWhy); return; }
   if(folderDirty&&!confirm('Level đang mở có sửa CHƯA LƯU.\nTạo level mới sẽ MẤT thay đổi. Tiếp tục?'))return;
-  const n=lvMaxIdx()+1, name='Level'+n+'.json';
+  const n=lvMaxIdx()+1, name=lvFileName(n);
   lvBusy=true;
   try{
     if(!(await lvPerm()))return;
     if(await lvExists(name)){ warn(name+' đã có trong thư mục — không ghi đè.'); return; }
-    loadLevel({levelIndex:n,moveCount:20,difficulty:0,stages:[{objects:[],tables:[],blockers:[]}]}, n);   // 1 bàn trống, move 20, Dễ
-    const h=await lvWrite(name, JSON.stringify(buildJSON()));
+    if(rsOn()) RS.loadLevel(RS.blankText(), n);       // 👑 một Table_Rect trống, MoveCount 30
+    else loadLevel({levelIndex:n,moveCount:20,difficulty:0,stages:[{objects:[],tables:[],blockers:[]}]}, n);   // 1 bàn trống, move 20, Dễ
+    const h=await lvWrite(name, levelText());
     const nit={name,handle:h,idx:n,diff:0}; folderFiles.push(nit); lvSort();
     folderPos=folderFiles.indexOf(nit); lvOpenIt=nit; folderDirty=false;
     fsHandle=h; fsName=name; syncSaveBtn();
@@ -5048,7 +5119,7 @@ async function fsPickFile(){
    Hộp chọn mở sẵn ở thư mục lần trước (startIn), lần đầu thì ở chỗ trình duyệt nhớ cho id 'vs-levels'. */
 async function fsPickDir(){
   if(!folderLeaveOk())return;
-  const opts={id:'vs-levels',mode:'readwrite'};
+  const opts={id:rsOn()?'rs-levels':'vs-levels',mode:'readwrite'};
   if(lastDir&&lastDir.handle)opts.startIn=lastDir.handle;
   await folderOpenDir(await window.showDirectoryPicker(opts)); }
 /* tách riêng khỏi picker: kiểm thử đưa vào một thư mục GIẢ (verifylv.py) đi đúng đường này */
@@ -5077,7 +5148,7 @@ const folderLeaveOk=()=>!folderDirty||confirm('Level đang mở có sửa chưa 
 const LASTDIR_DB={name:'bs-level-editor',store:'handles'};
 var lastDir=null;          // {handle,name,levels,at}; null = chưa nhớ gì
                            // (var: renderFolderNav → syncReopenBtn có thể chạy trước dòng này lúc trang đang nạp)
-const lastDirKey=()=>'levels:vs';
+const lastDirKey=()=>'levels:'+(rsOn()?'rs':'vs');   // mỗi game nhớ thư mục riêng
 function lastDirIdb(mode,fn){
   return new Promise((resolve,reject)=>{
     let req; try{ req=indexedDB.open(LASTDIR_DB.name,1); }catch(e){ reject(e); return; }
@@ -5153,8 +5224,22 @@ function bootPopRender(){
   const card=mk('div','card');
   const x=mk('button','x','✕'); x.type='button'; x.title='Đóng — làm tiếp trên bàn mẫu (Esc)'; x.setAttribute('aria-label','Đóng');
   x.onclick=bootPopHide; card.appendChild(x);
-  const h=mk('h2',null,'⛰️ Valley Smash — Level Editor'); h.id='bootTitle'; card.appendChild(h);
-  const path=BOOT_PATH, win=/Win/i.test(navigator.platform||navigator.userAgent);
+  const RSg=rsOn();
+  const h=mk('h2',null,RSg?'👑 Royal Smash — Level Editor':'⛰️ Valley Smash — Level Editor'); h.id='bootTitle'; card.appendChild(h);
+  /* 👑 chọn game ngay trong hộp chào (Royal Smash cần gói art trên máy) */
+  const gsw=mk('div','gsw');
+  for(const [g,lab] of [['vs','⛰️ Valley Smash'],['rs','👑 Royal Smash']]){
+    const b=btn((g==='rs')===RSg?'on':'',lab,g==='rs'?'Level của bản rip Royal Smash — cần gói art art/royal-smash/rs-art.js':'Level của block-shot-2',
+      ()=>{ RS.setGame(g).then(()=>{ if(bootPopOpen())bootPopRender(); }); });
+    gsw.appendChild(b); }
+  card.appendChild(gsw);
+  /* 📚 Royal Smash: bộ level có sẵn trong ref/RoyalSmashLevel/ — mở thẳng, không chọn thư mục */
+  if(RSg&&RS.refSets&&RS.refSets.length){
+    const rr=mk('div','gsw');
+    for(const S of RS.refSets) rr.appendChild(btn('','📚 '+S.set+' · '+S.n+' level','Mở thẳng bộ level có sẵn ref/RoyalSmashLevel/'+S.set+' (chỉ ⬇️ Tải về; 💾 Lưu đè cần mở thư mục đó bằng 📁 một lần)',
+      ()=>{ warn(''); RS.openRef(S.set).catch(fsErr); }));
+    card.appendChild(rr); }
+  const path=RSg?'hmldtool/tools/valley-smash-level-editor/ref/RoyalSmashLevel/rs 1':BOOT_PATH, win=/Win/i.test(navigator.platform||navigator.userAgent);
   const p=mk('p'); p.append('Mở thư mục ', mk('code',null,win?path.replace(/\//g,'\\'):path),
     FS_OK?' để sửa level. Chrome và Edge lưu đè thẳng vào file (trình duyệt hỏi quyền ghi một lần).'
          :' để sửa level. Trình duyệt này không ghi đè được: sửa xong bấm ⬇️ Tải về.');
@@ -5314,7 +5399,8 @@ function init3D(){
      phoi canh cong hon thuc te). ARTX.camera.fov do Unity ghi ra. */
   const camera=new THREE.PerspectiveCamera((ARTX.camera&&ARTX.camera.fov)||30,1,0.1,600);
   camera.layers.enable(1);              // layer 1 = lưới 3 chiều: CHỈ khung 3D lớn thấy, preview nhỏ (cam mặc định layer 0) vẫn sạch
-  const renderer=new THREE.WebGLRenderer({canvas:cv3,antialias:true});
+  // alpha: Royal Smash vẽ nền game (ảnh) bằng CSS sau canvas; Valley Smash có scene.background nên vẫn đục như cũ
+  const renderer=new THREE.WebGLRenderer({canvas:cv3,antialias:true,alpha:true});
   try{ ART_ANISO = Math.max(ART_ANISO, renderer.capabilities.getMaxAnisotropy()||0); }catch(e){}
   /* ÁNH SÁNG KHỚP GAME — so lieu lay tu _SceneRoot.prefab + RenderSettings cua
      Game.unity (xem tools/level-editor/art/manifest.json → light):
@@ -5492,7 +5578,8 @@ function applyCam3(){ if(!three)return; const c=three.camera,s=Math.sin(cam3.phi
   c.position.set(cam3.target.x+cam3.r*s*Math.sin(cam3.theta),cam3.target.y+cam3.r*co,cam3.target.z+cam3.r*s*Math.cos(cam3.theta));
   c.lookAt(cam3.target); drawCamHud(); }
 /* 🎥 nhảy về ĐÚNG góc camera trong game (nhìn từ chỗ pháo theo +Z, gần như ngang tầm) */
-function gameCam(){ if(!three)return; cam3.theta=GAME_CAM.theta; cam3.phi=GAME_CAM.phi;
+function gameCam(){ if(!three)return; if(rsOn()){ RS.gameCam(); return; }   // 👑 camera Gameplay.unity của Royal Smash
+  cam3.theta=GAME_CAM.theta; cam3.phi=GAME_CAM.phi;
   const b=three.bounds; if(b){cam3.target.set(b.x,Math.min(b.y,4),dz(b.z)); cam3.r=Math.max(12,b.r*0.92);} applyCam3();
   hint('🎥 Đang đứng ĐÚNG chỗ camera game: sau lưng pháo nhìn theo +Z (bè Z càng lớn càng XA). Kéo chuột để xoay đi xem góc khác.'); }
 
@@ -5931,7 +6018,8 @@ function build3D(refit){
     deck.position.set(yawed?0:dckX,-0.2,yawed?0:dm.z); deck.userData={deck:true,ti}; tg.add(deck);
     /* 🛷 BÀN THẬT thay tấm deck phẳng khi art có bàn. Deck vẫn ở đó nhưng ẩn: tia chuột
        không xét `visible` nên bấm chọn bàn trong 3D vẫn trúng nó như cũ. */
-    const tart = tableArt({x:dm.x, y:dm.y, z:yawed?0:dm.z}, ti===cur);
+    // 👑 Royal Smash: mặt bàn 8×8 của game giãn theo w×d + cột bàn (theo độ khó); Wagon/Boat là mô hình cố định
+    const tart = (rsOn()&&RS.A) ? RS.table3D(t, ti===cur) : tableArt({x:dm.x, y:dm.y, z:yawed?0:dm.z}, ti===cur);
     if(tart){ tart.position.x = yawed?0:dckX; tg.add(tart); deck.visible = false; }
     for(const o of t.objs){const ty=TYPES[o.type];
       const shp=ty.shape==='box'?'box':(ty.shape==='cone'?'cone':'cyl'), geo=three.g[shp];
@@ -5941,6 +6029,15 @@ function build3D(refit){
       const oc=new THREE.Group();oc.position.set(o.px-cxo,o.py,o.pz-czo);oc.quaternion.set(qv.x,qv.y,qv.z,qv.w);
       oc.userData={obj:o,ti};                            // để tia chuột trong 3D biết trúng KHỐI NÀO, BÀN NÀO
       tg.add(oc);
+      /* 👑 Royal Smash: mesh của prefab + shader game (TCP2 / OmniShade), đổ bóng. Không có marker đầu/đuôi
+         (chỉ có nghĩa với lon/hũ Valley Smash). Khối ngoài tầng Y đang khoá: mờ hẳn như nhánh dưới. */
+      if(ty.rs&&rsOn()&&RS.A){ const dimY=!onYLayer(o);
+        const rg=RS.obj3D(o,{sel:selObjs.includes(o),see:dimY,opacity:0.09});
+        if(rg){ oc.add(rg);
+          if(ovShow&&!dimY&&overlapObjs.has(o)){ const ov=new THREE.LineSegments(three.ovGeo,three.ovMat);
+            ov.scale.set(fS(o,'x'),fS(o,'y'),fS(o,'z')); const fo=ty.off; if(fo)ov.position.set(fo[0],fo[1],fo[2]);
+            ov.renderOrder=999; ov.raycast=()=>{}; oc.add(ov); }
+          continue; } }
       const cSee=isCrate(o)&&crateSee();                 // hòm + 👁 nhìn xuyên → vỏ trong suốt để thấy đồ bên trong
       /* MESH THAT + SHADER CEL neu art co; khong thi ve hinh khoi + mau phang nhu cu.
          Mesh that da la khoi 1x1x1 nen van nhan cung he so scale nhu hinh khoi dung tay.
@@ -6105,6 +6202,7 @@ function build3D(refit){
   // sẽ thấy mọi khối nằm ở gốc toạ độ → bấm trúng nhầm khối/nền. Ép cập nhật ngay tại đây.
   three.flip.updateMatrixWorld(true);
   syncCannon();                           // mốc PHÁO/hướng camera game bám theo biên level
+  if(typeof RS!=='undefined') RS.syncScene();   // 👑 nền game, đèn đổ bóng, mặt đất hứng bóng (tắt hẳn ở Valley Smash)
   if(refit!==false){ const b=three.bounds; cam3.target.set(b.x,b.y,dz(b.z)); cam3.r=b.r; applyCam3(); }   // refit=false: giữ góc nhìn (preview live)
   drawCamHud();
 }
@@ -7135,6 +7233,954 @@ function reclampPanels(){
   sync();   // chay 1 lan luc nap: observer chi bao khi CO THAY DOI, khong bao trang thai dau tien
 })();
 
+</script>
+<script>
+"use strict";
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+   👑 ROYAL SMASH — game thứ hai của editor (2026-10-22)
+   Đọc / sửa / ghi level Royal Smash (Resources/levels/<bộ>/NNNNN.json của bản rip) bằng ĐÚNG các
+   công cụ của editor: bàn = Table_*, khối = mọi entity còn lại, stage = trường "Stage" (vắng = 1).
+   Hình vẽ lấy từ GÓI ART (art/royal-smash/rs-art.js, do 01-projects/hm-leveldesign-tool/tools/
+   royal-smash-bake/rs_bake.py sinh ra từ bản rip). Gói đó là art của game khác ⇒ chỉ nằm trên máy,
+   thư mục art/ bị git bỏ qua, KHÔNG bao giờ commit hay đưa lên Pages. Thiếu gói thì chọn game
+   Royal Smash sẽ hỏi file.
+
+   Ghi file: entity nào KHÔNG đổi (vị trí / góc / Custom / stage) được ghi lại ĐÚNG NGUYÊN VĂN chuỗi
+   gốc trong file (định dạng số thực của game giữ nguyên từng byte); chỉ entity bị sửa mới viết lại.
+   ContentHash giữ nguyên (chưa biết game tính thế nào — chưa kiểm chứng game có soát nó không).
+
+   Hệ toạ độ: file ghi toạ độ THẾ GIỚI. Editor giữ khối theo hệ của bàn (pos + yaw) ⇒ nạp thì đổi
+   thế giới → bàn, ghi thì đổi ngược. Bàn nghiêng (Rotation có x/z ≠ 0, 37 bàn trong bộ rip) giữ
+   nguyên quaternion, khối của nó dùng hệ không xoay.
+   Màu: game dựng ở không gian màu LINEAR (ProjectSettings m_ActiveColorSpace 1) — shader ở đây đổi
+   sRGB → linear lúc đọc ảnh/màu và đổi ngược lúc ra, khác hẳn Valley Smash (Gamma).
+   Shader: TCP2 Hybrid 2 (khối, cột bàn) theo cùng công thức với nhánh Valley Smash; OmniShade
+   Standard (lon, hộp gỗ, mặt bàn, TNT…) dựng lại theo TÊN thông số vì bản rip chỉ có shader rỗng —
+   độ khớp của nhánh này là SUY ĐOÁN (inferred), so mắt với ảnh game rồi chỉnh.
+   ═══════════════════════════════════════════════════════════════════════════════════════════ */
+const RS = (function(){
+  const PACK_URL = 'art/royal-smash/rs-art.js';
+  const ID0 = 5000;                                   // id nội bộ của editor cho entity Royal Smash
+  const FAM_ORDER = ['can','box','wood','stone','ice','column','colorbox','jar','bouncer','tnt','special','hazard','other'];
+  const FAM_LABEL = {can:'Lon (Can)',box:'Hộp gỗ (Box)',wood:'Gỗ (Wood)',stone:'Đá (Stone)',ice:'Băng (Ice)',column:'Cột (Column)',
+    colorbox:'Hộp màu (ColorBox)',jar:'Hũ mứt (Jam jar)',bouncer:'Lò xo (Bouncer)',tnt:'TNT',special:'Đặc biệt',hazard:'Chướng ngại (động)',other:'Khác'};
+  const TABLE_IDS = ['Table_Rect','Table_Round','Table_Wagon','Table_Boat'];
+  const R = { on:false, A:null, loading:null, ids:{}, byTid:{}, src:null, meta:null, bg:'auto' };
+  const isTableId = id => /^Table_/.test(id);
+  const deg = Math.PI/180;
+
+  /* ---------------- gói art ---------------- */
+  function parsePackText(txt){
+    const a = txt.indexOf('{'), b = txt.lastIndexOf('}');
+    if(a < 0 || b < a) throw new Error('không phải gói rs-art.js');
+    return JSON.parse(txt.slice(a, b+1));
+  }
+  function askPackFile(){
+    return new Promise((ok, no)=>{
+      const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.js,.json';
+      inp.onchange = ()=>{ const f = inp.files && inp.files[0]; if(!f){ no(new Error('chưa chọn file')); return; }
+        f.text().then(t=>{ try{ ok(parsePackText(t)); }catch(e){ no(e); } }, no); };
+      inp.click();
+    });
+  }
+  R.ensure = function(silent){
+    if(R.A) return Promise.resolve(R.A);
+    if(R.loading) return R.loading;
+    R.loading = new Promise((ok, no)=>{
+      if(window.RS_ART){ ok(window.RS_ART); return; }
+      const s = document.createElement('script'); s.src = PACK_URL;
+      s.onload = ()=> window.RS_ART ? ok(window.RS_ART) : no(new Error('gói rỗng'));
+      s.onerror = ()=>{
+        if(silent){ no(new Error('thiếu gói art '+PACK_URL)); return; }
+        if(!confirm('Chưa thấy gói art Royal Smash cạnh trang ('+PACK_URL+').\n\nGói được sinh trên máy bằng:\n  python -P 01-projects/hm-leveldesign-tool/tools/royal-smash-bake/rs_bake.py <thư mục rip>\n\nBấm OK để tự chọn file rs-art.js.')){ no(new Error('thiếu gói art')); return; }
+        askPackFile().then(ok, no); };
+      document.head.appendChild(s);
+    }).then(A=>{ R.A = A; window.RS_ART = A; registerTypes(); return A; })
+      .catch(e=>{ R.loading = null; throw e; });
+    return R.loading;
+  };
+
+  /* ---------------- loại khối ---------------- */
+  function labOf(t){ return t.fam==='special'?'★':t.fam==='hazard'?'⚠':t.shape==='cyl'?'⬤':t.shape==='cone'?'▲':t.shape==='jar'?'🫙':'■'; }
+  function prettyName(id){ return id.replace(/_(\d)$/,' ×$1').replace(/([a-z])([A-Z])/g,'$1 $2'); }
+  function regType(id, t){
+    if(R.ids[id]!=null) return R.ids[id];
+    const tid = ID0 + Object.keys(R.ids).length;
+    const sz = (t&&t.size)||[1,1,1];
+    TYPES[tid] = { name: prettyName(id), rs:id, fam:(t&&t.fam)||'other', shape:'box', rsShape:(t&&t.shape)||'box',
+      col:(t&&t.col)||'#6b7080', mass:(t&&t.mass!=null)?t.mass:0, lab:t?labOf(t):'?', fixed:true,
+      rsSize:sz.slice(), off:(t&&t.off)?t.off.slice():null, unknown:!t };
+    R.ids[id] = tid; R.byTid[tid] = id;
+    return tid;
+  }
+  function registerTypes(){
+    const T = R.A.types, ids = Object.keys(T).filter(id=>!isTableId(id));
+    ids.sort((a,b)=>(FAM_ORDER.indexOf(T[a].fam)-FAM_ORDER.indexOf(T[b].fam)) || a.localeCompare(b,undefined,{numeric:true}));
+    for(const id of ids) regType(id, T[id]);
+  }
+  R.tidOf = id => R.ids[id]!=null ? R.ids[id] : regType(id, R.A && R.A.types[id]);
+  R.isType = t => !!(TYPES[t] && TYPES[t].rs);
+  /* cỡ khung sửa của một khối = cỡ loại × Scale của entity (Scale âm = lật gương, cỡ vẫn dương) */
+  function sizeOf(tid, s){ const z = TYPES[tid].rsSize; s = s||{x:1,y:1,z:1};
+    return [z[0]*Math.abs(s.x), z[1]*Math.abs(s.y), z[2]*Math.abs(s.z)]; }
+  R.massOf = o => { const c = o.rs && o.rs.c; const m = c && c.physicsMass!=null ? +c.physicsMass : (TYPES[o.type]||{}).mass;
+    return +m || 0; };
+
+  /* ---------------- toán quaternion / hệ bàn ---------------- */
+  const qYaw = d => { const h = (+d||0)*deg/2; return {x:0,y:Math.sin(h),z:0,w:Math.cos(h)}; };
+  const qConj = q => ({x:-q.x,y:-q.y,z:-q.z,w:q.w});
+  const isPureYaw = q => !q || (Math.abs(q.x)<1e-4 && Math.abs(q.z)<1e-4);
+  function toLocal(t, p){ const a=(+t.yaw||0)*deg, c=Math.cos(a), s=Math.sin(a), dx=p.x-t.pos.x, dz=p.z-t.pos.z;
+    return {x:dx*c - dz*s, y:p.y-t.pos.y, z:dx*s + dz*c}; }
+  function toWorld(t, o){ const a=(+t.yaw||0)*deg, c=Math.cos(a), s=Math.sin(a);
+    return {x:t.pos.x + o.px*c + o.pz*s, y:t.pos.y + o.py, z:t.pos.z - o.px*s + o.pz*c}; }
+
+  /* ---------------- đọc chuỗi JSON giữ nguyên văn từng entity ---------------- */
+  /* Quét ĐÚNG MỘT LƯỢT chuỗi file: lấy [đầu,cuối) của từng giá trị cấp 1 và từng phần tử mảng Entities. */
+  function spans(text){
+    let i = 0; const n = text.length;
+    const ws = ()=>{ while(i<n && /\s/.test(text[i])) i++; };
+    function skipVal(){
+      ws(); const c = text[i];
+      if(c==='"'){ i++; while(i<n){ if(text[i]==='\\'){ i+=2; continue; } if(text[i]==='"'){ i++; return; } i++; } return; }
+      if(c==='{'||c==='['){ const close = c==='{'?'}':']'; i++; ws();
+        if(text[i]===close){ i++; return; }
+        for(;;){ if(c==='{'){ skipVal(); ws(); i++; } skipVal(); ws(); if(text[i]===','){ i++; continue; } i++; return; } }
+      while(i<n && !/[,\]\}\s]/.test(text[i])) i++;
+    }
+    function readStr(){ ws(); const s = i; skipVal(); return JSON.parse(text.slice(s, i)); }
+    ws(); if(text[i]!=='{') throw new Error('không phải object JSON'); i++;
+    const top = []; let ents = null;
+    ws(); if(text[i]==='}') return {top, ents:[]};
+    for(;;){
+      const k = readStr(); ws(); i++; ws();
+      const s = i;
+      if(k==='Entities' && text[i]==='['){ ents = []; i++; ws();
+        if(text[i]===']') i++;
+        else for(;;){ ws(); const a = i; skipVal(); ents.push(text.slice(a, i)); ws(); if(text[i]===','){ i++; continue; } i++; break; } }
+      else skipVal();
+      top.push({k, raw:text.slice(s, i)});
+      ws(); if(text[i]===','){ i++; continue; } break;
+    }
+    return {top, ents:ents||[]};
+  }
+
+  /* ---------------- NẠP level ---------------- */
+  function tableFromEnt(e, i, id){
+    const c = Object.assign({}, e.Custom||{});
+    const w = +c.w || 5, d = +c.d || 3;
+    const q = e.Rotation||null, pure = isPureYaw(q);
+    const t = mkTable(id, {x:+e.Position.x||0, y:+e.Position.y||0, z:+e.Position.z||0},
+      {yaw: pure ? quatToYawDeg(q) : 0, dimAuto:false, dim:{x:w, y:d, z:0}, ctrAuto:false, fromFile:true});
+    t.rs = {Id:e.Id, c, i, q: pure ? null : {x:q.x,y:q.y,z:q.z,w:q.w}};
+    return t;
+  }
+  function onTable(t, p){            // điểm thế giới p có nằm trên mặt bàn t không (cộng nửa ô lề)
+    const l = toLocal(t, p), w = (t.dim?t.dim.x:5)/2 + 0.6, d = (t.dim?t.dim.y:3)/2 + 0.6;
+    if(t.rs && t.rs.Id==='Table_Round') return (l.x*l.x)/(w*w) + (l.z*l.z)/(d*d) <= 1;
+    return Math.abs(l.x) <= w && Math.abs(l.z) <= d;
+  }
+  function pickTable(tbls, p){
+    let best = null, bs = -1e9;
+    for(const t of tbls){ if(!onTable(t, p)) continue;
+      const s = (p.y >= t.pos.y - 0.6 ? 1000 : 0) + t.pos.y;     // bàn cao nhất mà khối nằm TRÊN nó
+      if(s > bs){ bs = s; best = t; } }
+    if(best) return best;
+    let bd = 1e18;                                                // ngoài mọi bàn: bàn gần nhất theo mặt sàn
+    for(const t of tbls){ const d = (t.pos.x-p.x)**2 + (t.pos.z-p.z)**2; if(d < bd){ bd = d; best = t; } }
+    return best;
+  }
+  R.parse = function(text){
+    const L = JSON.parse(text), sp = spans(text);
+    const E = L.Entities || [];
+    const nSt = Math.max(1, ...E.map(e=>+e.Stage||1));
+    const st = []; for(let s=0; s<nSt; s++) st.push({tables:[], blockers:[]});
+    E.forEach((e,i)=>{ if(isTableId(e.Id)){ const S = st[(+e.Stage||1)-1]; S.tables.push(tableFromEnt(e, i, S.tables.length)); } });
+    st.forEach((S,si)=>{ if(S.tables.length) return;              // stage không có bàn: bàn ẢO để giữ khối, không ghi ra file
+      const ys = E.filter(e=>!isTableId(e.Id) && (+e.Stage||1)===si+1).map(e=>+e.Position.y||0);
+      const t = mkTable(0, {x:0, y:ys.length?Math.min(...ys)-0.5:2, z:0}, {dimAuto:false, dim:{x:6,y:4,z:0}, ctrAuto:false});
+      t.rs = {Id:'Table_Rect', c:{w:6, d:4}, virtual:true}; S.tables.push(t); });
+    E.forEach((e,i)=>{ if(isTableId(e.Id)) return;
+      const S = st[(+e.Stage||1)-1], p = {x:+e.Position.x||0, y:+e.Position.y||0, z:+e.Position.z||0};
+      const t = pickTable(S.tables, p), l = toLocal(t, p);
+      const tid = R.tidOf(e.Id), sz = sizeOf(tid, e.Scale);
+      const qw = e.Rotation ? qnorm({x:+e.Rotation.x,y:+e.Rotation.y,z:+e.Rotation.z,w:+e.Rotation.w}) : {x:0,y:0,z:0,w:1};
+      const ql = t.yaw ? qnorm(qmul(qConj(qYaw(t.yaw)), qw)) : qw;
+      const o = {type:tid, px:l.x, py:l.y, pz:l.z, sx:sz[0], sy:sz[1], sz:sz[2], rot:ql,
+                 rs:{i, c:JSON.parse(JSON.stringify(e.Custom||{}))}};
+      if(e.Scale) o.rs.s = {x:+e.Scale.x, y:+e.Scale.y, z:+e.Scale.z};
+      t.objs.push(o); });
+    R.src = {text, L, top:sp.top, ents:sp.ents};
+    return {L, stages:st};
+  };
+  R.blankText = function(n){
+    return JSON.stringify({Version:1, ContentHash:'', MoveCount:30, BackgroundIndex:-1,
+      Entities:[{Id:'Table_Rect', Position:{x:0,y:2,z:0}, Custom:{w:6, d:4}}]});
+  };
+  function applyParsed(P, keepHistory){
+    stages = P.stages; curStage = 0;
+    tables = stages[0].tables; cur = 0; objects = tables[0].objs; blockers = stages[0].blockers; curBlk = -1;
+    fMove.value = P.L.MoveCount!=null ? P.L.MoveCount : 30; setDiff(+P.L.Difficulty||0);
+    sel = {x:0,y:0,z:0}; clearSel();
+    renderStgBar(); renderTblBar(); pushMeta(); renderBlkBar(); pullBlkMeta();
+    if(!keepHistory){ history = []; redo = []; }
+    setView('front'); updateStats(); R.syncScene(); sync3D(); fitView(); draw();
+  }
+  R.loadLevel = function(json, idx, quiet){
+    const text = typeof json==='string' ? json : JSON.stringify(json);
+    const go = ()=>{ try{
+        if(!R.on) activate(true);
+        const P = R.parse(text);
+        fIndex.value = idx!=null ? idx : (+fIndex.value||1);
+        applyParsed(P); warn('');
+        if(quiet) return;
+        bootPopHide();
+        const nObj = stages.reduce((a,s)=>a+s.tables.reduce((b,t)=>b+t.objs.length,0),0);
+        const unk = Object.values(TYPES).filter(t=>t.rs&&t.unknown).length;
+        hint('👑 Đã nạp level Royal Smash '+fIndex.value+' — '+(stages.length>1?stages.length+' stage (đang xem Stage 1), ':'')
+          +stages[0].tables.length+' bàn, '+nObj+' khối'+(unk?' · '+unk+' loại chưa có trong gói art (hộp xám)':'')+'.');
+      }catch(err){ warn('Level Royal Smash hỏng: '+err.message); } };
+    if(R.A) go(); else R.ensure().then(go, e=>warn('Không mở được level Royal Smash: '+e.message));
+  };
+  R.looksLike = json => typeof json==='string' ? /"Entities"\s*:/.test(json) : !!(json && Array.isArray(json.Entities));
+
+  /* ---------------- GHI level ---------------- */
+  const r5 = v => +(+v).toFixed(5), r7 = v => +(+v).toFixed(7);
+  const near = (a,b,e) => Math.abs((+a||0)-(+b||0)) <= e;
+  function sameQ(a, b){                       // q và −q là cùng một góc
+    a = a || {x:0,y:0,z:0,w:1}; b = b || {x:0,y:0,z:0,w:1};
+    const d = Math.abs(a.x*b.x + a.y*b.y + a.z*b.z + a.w*b.w);
+    return d > 1 - 1e-7; }
+  function sameEnt(raw, e){
+    if(!raw || raw.Id!==e.Id) return false;
+    for(const k of ['x','y','z']) if(!near(raw.Position[k], e.Position[k], 2e-4)) return false;
+    if(!sameQ(raw.Rotation, e.Rotation)) return false;
+    const rs = raw.Scale||{x:1,y:1,z:1}, es = e.Scale||{x:1,y:1,z:1};
+    for(const k of ['x','y','z']) if(!near(rs[k], es[k], 1e-6)) return false;
+    if(JSON.stringify(raw.Custom||{}) !== JSON.stringify(e.Custom||{})) return false;
+    return (+raw.Stage||1) === (+e.Stage||1);
+  }
+  function entText(e, i){
+    const raw = (i!=null && R.src && R.src.L.Entities[i]) || null;
+    if(raw && sameEnt(raw, e)) return R.src.ents[i];          // không đổi ⇒ nguyên văn byte gốc
+    if(raw && raw.Id===e.Id){                                   // đổi một phần ⇒ phần KHÔNG đổi giữ đúng số cũ (diff gọn)
+      for(const k of ['x','y','z']) if(near(raw.Position[k], e.Position[k], 1e-5)) e.Position[k] = raw.Position[k];
+      if(raw.Rotation && e.Rotation && sameQ(raw.Rotation, e.Rotation)) e.Rotation = raw.Rotation;
+    }
+    return JSON.stringify(e);
+  }
+  function tableEnt(t, si, nSt){
+    const rs = t.rs || {Id:'Table_Rect', c:{}};
+    const c = {}, w = t.dim ? +t.dim.x : 5, d = t.dim ? +t.dim.y : 3;
+    const keep = (v, old) => (old!=null && near(v, old, 1e-5)) ? old : r5(v);   // chưa sửa ⇒ giữ đúng số cũ
+    if(!('w' in rs.c)) c.w = keep(w, null);
+    if(!('d' in rs.c)) c.d = keep(d, null);
+    for(const k of Object.keys(rs.c)) c[k] = k==='w' ? keep(w, rs.c.w) : k==='d' ? keep(d, rs.c.d) : rs.c[k];
+    const e = {Id: rs.Id, Position:{x:r5(t.pos.x), y:r5(t.pos.y), z:r5(t.pos.z)}};
+    const raw = rs.i!=null && R.src ? R.src.L.Entities[rs.i] : null;
+    const q = rs.q ? rs.q : qYaw(t.yaw||0);
+    if((raw && raw.Rotation) || Math.abs(+t.yaw||0) > 1e-4 || rs.q) e.Rotation = {x:r7(q.x), y:r7(q.y), z:r7(q.z), w:r7(q.w)};
+    e.Custom = c;
+    if(si > 0) e.Stage = si + 1;
+    return {i: rs.i, text: entText(e, rs.i)};
+  }
+  function objEnt(o, t, si){
+    const id = R.byTid[o.type] || (TYPES[o.type] && TYPES[o.type].rs) || 'StoneSquare_1';
+    const w = toWorld(t, o);
+    const q = qnorm(t.yaw ? qmul(qYaw(t.yaw), getRot(o)) : getRot(o));
+    const e = {Id:id, Position:{x:r5(w.x), y:r5(w.y), z:r5(w.z)}};
+    const ii = o.rs && o.rs.i, raw = ii!=null && R.src ? R.src.L.Entities[ii] : null;
+    if((raw && raw.Rotation) || !isIdent(q)) e.Rotation = {x:r7(q.x), y:r7(q.y), z:r7(q.z), w:r7(q.w)};
+    if(o.rs && o.rs.s) e.Scale = o.rs.s;
+    const tpl = R.A && R.A.types[id];
+    e.Custom = (o.rs && o.rs.c) ? o.rs.c : JSON.parse(JSON.stringify((tpl && tpl.custom) || {}));
+    if(si > 0) e.Stage = si + 1;
+    return {i: ii, text: entText(e, ii)};
+  }
+  R.buildText = function(){
+    pullMeta(); stageSaveCur();
+    const out = []; let seq = 0;
+    stages.forEach((S,si)=>{ for(const t of S.tables){
+      if(!(t.rs && t.rs.virtual)){ const x = tableEnt(t, si); x.k = x.i!=null ? x.i : 1e9 + seq++; out.push(x); }
+      for(const o of t.objs){ const x = objEnt(o, t, si); x.k = x.i!=null ? x.i : 1e9 + seq++; out.push(x); } } });
+    /* thứ tự cũ cho entity cũ; mỗi bản sao (nhân bản / dán) của cùng một entity gốc đứng ngay sau nó */
+    out.forEach((x,j)=>x.j=j); out.sort((a,b)=>a.k-b.k || a.j-b.j);
+    const ents = '[' + out.map(x=>x.text).join(',') + ']';
+    const diff = getDiff(), mc = Math.max(1, Math.round(+fMove.value||1));
+    const top = R.src ? R.src.top.slice() : [];
+    const has = k => top.some(x=>x.k===k);
+    const set = (k, raw)=>{ const x = top.find(y=>y.k===k); if(x) x.raw = raw; else top.push({k, raw}); };
+    if(!has('Version')) top.unshift({k:'Version', raw:'1'});
+    if(!has('ContentHash')) set('ContentHash', '""');
+    const L0 = R.src ? R.src.L : {};
+    if(+L0.MoveCount !== mc || !has('MoveCount')) set('MoveCount', String(mc));
+    if(!has('BackgroundIndex')) set('BackgroundIndex', '-1');
+    set('Entities', ents);
+    if(diff || has('Difficulty')){ if(+L0.Difficulty !== diff || !has('Difficulty')) set('Difficulty', String(diff)); }
+    /* thứ tự khoá: giữ y file gốc; file mới thì như các file của game */
+    return '{' + top.map(x=>JSON.stringify(x.k)+':'+x.raw).join(',') + '}';
+  };
+
+  /* ---------------- đổi game ---------------- */
+  const LS_KEY = 'hm_vs_editor_game';
+  function setTitles(){
+    const rs = R.on;
+    document.title = rs ? 'Royal Smash — Level Editor' : 'Valley Smash — Level Editor';
+    $('gmTitle').textContent = rs ? '👑 Royal Smash' : '⛰️ Valley Smash';
+    $('gmSub').textContent = rs ? 'Level Editor 2D · bản rip (chỉ máy này)' : 'Level Editor 2D · block-shot-2';
+    const gs = $('gameSel'); if(gs) gs.value = rs ? 'rs' : 'vs';
+  }
+  function leaveFolder(){
+    folderFiles = []; folderPos = -1; folderDir = null; lvOpenIt = null; fsHandle = null; fsName = ''; folderDirty = false;
+    syncSaveBtn(); renderFolderNav(); }
+  function activate(keepLevel){
+    R.on = true; document.body.classList.add('g-rs');
+    try{ localStorage.setItem(LS_KEY, 'rs'); }catch(e){}
+    setTitles(); buildPalette(); fillRepSelects();
+    const first = Object.keys(R.byTid).map(Number).find(t=>!TYPES[t].unknown);
+    if(first!=null) selectBrush(first);
+    if(!keepLevel) R.loadLevel(R.blankText(), 1, true);
+    /* 📚 có ref/RoyalSmashLevel/ mà chưa nhớ thư mục Royal Smash nào ⇒ mở luôn bộ đầu, khỏi chọn thư mục */
+    Promise.all([lastDirLoad(), R.loadRefIndex()]).then(()=>{
+      if(!keepLevel && R.on && !lastDir && !folderFiles.length && !fsHandle && R.refSets.length) R.openRef(R.refSets[0].set);
+      if(bootPopOpen()) bootPopRender(); });
+    if(bootPopOpen()) bootPopRender();
+  }
+  R.setGame = function(g, opts){
+    opts = opts||{};
+    const want = g==='rs';
+    if(want===R.on){ setTitles(); return Promise.resolve(); }
+    if(!opts.force && !folderLeaveOk()){ setTitles(); return Promise.resolve(); }
+    if(!opts.keepFolder) leaveFolder();
+    if(want) return R.ensure(opts.silent).then(()=>{ activate(false); if(!opts.silent) hint('👑 Đã chuyển sang Royal Smash — mở thư mục level (Resources/levels/rs 1) bằng 📁 Nạp thư mục.'); },
+                                   e=>{ setTitles(); if(!opts.silent) warn('Không bật được Royal Smash: '+e.message); });
+    try{ localStorage.setItem(LS_KEY, 'vs'); }catch(e){}
+    R.on = false; document.body.classList.remove('g-rs'); setTitles();
+    buildPalette(); fillRepSelects(); selectBrush(1); R.src = null;
+    resetTableState(); clearSel(); setView('front'); R.syncScene(); sync3D(); updateStats(); fitView(); draw(); lastDirLoad();
+    if(bootPopOpen()) bootPopRender();
+    hint('⛰️ Đã về Valley Smash.');
+    return Promise.resolve();
+  };
+  /* mở trang: nhớ game lần trước (hoặc ?game=rs). Thiếu gói art thì lặng lẽ ở lại Valley Smash. */
+  R.boot = function(){
+    let g = 'vs'; try{ g = localStorage.getItem(LS_KEY)||'vs'; }catch(e){}
+    if(/[?&]game=rs\b/.test(location.search)) g = 'rs';
+    if(g==='rs') R.setGame('rs', {force:true, silent:true});
+    else setTitles();
+  };
+  /* 🗑 RESET: một bàn trống, KHÔNG xoá lịch sử (Ctrl+Z lấy lại được như bên Valley Smash) */
+  R.resetState = function(){ const P = R.parse(R.blankText()); applyParsed(P, true); };
+  R.fileName = n => String(Math.max(0, Math.round(+n||0))).padStart(5, '0') + '.json';
+  R.newTable = (id, x) => { const t = mkTable(id, {x:x||0, y:2, z:0}, {dimAuto:false, dim:{x:6,y:4,z:0}, ctrAuto:false}); t.rs = {Id:'Table_Rect', c:{w:6, d:4}}; return t; };
+
+  /* ═══════════════════════════ ĐỒ HOẠ ═══════════════════════════ */
+  const geoms = new Map(), texs = new Map(), mats = new Map(), sliced = new Map();
+  function b64f(s){ const bin = atob(s), u = new Uint8Array(bin.length); for(let j=0;j<bin.length;j++) u[j] = bin.charCodeAt(j); return u.buffer; }
+  function geo(name){
+    if(geoms.has(name)) return geoms.get(name);
+    const md = R.A.meshes[name]; if(!md){ geoms.set(name, null); return null; }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(b64f(md.v)), 3));
+    if(md.n) g.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(b64f(md.n)), 3));
+    if(md.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(b64f(md.uv)), 2));
+    if(md.t) g.setAttribute('tangent', new THREE.BufferAttribute(new Float32Array(b64f(md.t)), 4));
+    g.setIndex(new THREE.BufferAttribute(md.i32 ? new Uint32Array(b64f(md.i)) : new Uint16Array(b64f(md.i)), 1));
+    (md.sub||[[0, g.index.count]]).forEach((s,k)=>g.addGroup(s[0], s[1], k));
+    if(!md.n) g.computeVertexNormals();
+    g.computeBoundingSphere();
+    geoms.set(name, g); return g;
+  }
+  let texWaiting = 0, texTimer = 0;
+  function texReady(){ texWaiting--; if(texTimer) return;
+    texTimer = setTimeout(()=>{ texTimer = 0; mats.clear(); spClear(); ICON.clear();
+      try{ if(three) build3D(false); }catch(e){} try{ draw(); }catch(e){} R.paintIcons(); }, 60); }
+  function tex(name){
+    if(!name) return null;
+    if(texs.has(name)) return texs.get(name);
+    const url = R.A.tex[name]; if(!url){ texs.set(name, null); return null; }
+    const im = new Image(), t = new THREE.Texture(im);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = typeof ART_ANISO!=='undefined' ? ART_ANISO : 4;
+    t.userData = {ready:false};
+    texWaiting++;
+    im.onload = ()=>{ t.needsUpdate = true; t.userData.ready = true; texReady(); };
+    im.onerror = ()=>{ texReady(); };
+    im.src = url;
+    texs.set(name, t); return t;
+  }
+  const readyTex = n => { const t = tex(n); return t && t.userData.ready ? t : null; };
+
+  /* ---- ánh sáng của Gameplay.unity ---- */
+  function lightDir(L){ const q = new THREE.Quaternion(L.rot[0], L.rot[1], L.rot[2], L.rot[3]);
+    const f = new THREE.Vector3(0,0,1).applyQuaternion(q);
+    return new THREE.Vector3(-f.x, -f.y, f.z).normalize(); }   // hướng TỚI đèn, hệ hiển thị (lật Z)
+  function lin(hex, k){ const c = new THREE.Color(hex); return new THREE.Color(Math.pow(c.r,2.2)*(k||1), Math.pow(c.g,2.2)*(k||1), Math.pow(c.b,2.2)*(k||1)); }
+  function lights(){
+    const S = R.A.scene, Ls = S.lights||[];
+    const L0 = Ls[0] || {rot:[0.2385,-0.0869,0.1035,0.9617], color:'#ffffff', intensity:1, shadow:0.75};
+    const L1 = Ls[1] || {rot:[0.1478,0,0,0.989], color:'#ffffff', intensity:0.4, shadow:0};
+    return {d0:lightDir(L0), c0:lin(L0.color, L0.intensity), d1:lightDir(L1), c1:lin(L1.color, L1.intensity),
+            shadow:L0.shadow||0, amb:lin((S.amb&&S.amb.sky)||'#929098')}; }
+
+  /* ---- shader ---- */
+  const VS_SRC = [
+    '#include <common>', '#include <shadowmap_pars_vertex>',
+    'attribute vec4 tangent;',
+    'varying vec3 vN; varying vec3 vV; varying vec2 vUv; varying vec4 vT; varying vec3 vVP;',
+    'void main(){',
+    '  vUv = uv;',
+    '  vec3 transformedNormal = normalMatrix * normal; vN = normalize(transformedNormal);',
+    '  vT = vec4(normalMatrix * tangent.xyz, tangent.w);',
+    '  vec4 worldPosition = modelMatrix * vec4(position, 1.0);',
+    '  vec4 mv = viewMatrix * worldPosition; vVP = mv.xyz; vV = normalize(-mv.xyz);',
+    '  gl_Position = projectionMatrix * mv;',
+    '  #include <shadowmap_vertex>',
+    '}'].join('\n');
+  const FS_HEAD = [
+    '#include <common>', '#include <packing>', '#include <shadowmap_pars_fragment>',
+    'varying vec3 vN; varying vec3 vV; varying vec2 vUv; varying vec4 vT; varying vec3 vVP;',
+    'uniform vec3 l0, l1, c0, c1, amb, emissive; uniform float shadowK, opacity, flipSign;',
+    'uniform sampler2D map, nrm; uniform float hasMap, hasNrm, bumpScale; uniform vec4 mapST;',
+    'vec3 toLin(vec3 c){ return pow(max(c, 0.0), vec3(2.2)); }',
+    'float shadowAt(){ float s = 1.0;',
+    '  #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0',
+    '    DirectionalLightShadow dls = directionalLightShadows[ 0 ];',
+    '    s = getShadow( directionalShadowMap[ 0 ], dls.shadowMapSize, dls.shadowBias, dls.shadowRadius, vDirectionalShadowCoord[ 0 ] );',
+    '  #endif',
+    '  return mix(1.0, s, shadowK); }',
+    'vec3 nrmAt(vec2 uv){ vec3 n = normalize(vN); if(!gl_FrontFacing) n = -n;',
+    '  if(hasNrm > 0.5 && dot(vT.xyz, vT.xyz) > 0.01){ vec3 t = normalize(vT.xyz); vec3 b = cross(n, t) * vT.w * flipSign;',
+    '    vec3 m = texture2D(nrm, uv).xyz * 2.0 - 1.0; m.xy *= bumpScale; n = normalize(mat3(t, b, n) * m); }',
+    '  return n; }',
+    'vec2 matcapUV(vec3 n){ vec3 v = normalize(vVP); vec3 x = normalize(vec3(v.z, 0.0, -v.x)); vec3 y = cross(v, x);',
+    '  return vec2(dot(x, n), dot(y, n)) * 0.495 + 0.5; }'
+  ].join('\n');
+  /* TCP2 Hybrid 2 — cùng công thức nhánh Valley Smash (tcp2Material), cộng: bóng đổ, đèn phụ, normal map, LINEAR. */
+  const FS_TCP2 = FS_HEAD + '\n' + [
+    'uniform sampler2D matcap, mask; uniform float hasMatcap, hasMask, maskCh, matcapType;',
+    'uniform vec3 tint, hcol, scol, matcapCol, rimCol, specCol;',
+    'uniform float rampThr, rampSmooth, shadowLight, rimOn, rimMin, rimMax, rimLight, specOn, specRough, indirect;',
+    /* ⚠ CHỈNH THEO ẢNH (không phải số của game) — xem bảng RS_LOOK_OVERRIDE: mặc định 1 / 0 = đúng shader gốc */
+    'uniform float tGain, tS, tAmb, tFill, tSpec, tThr, tSm;',
+    'void main(){',
+    '  vec2 uv = vUv * mapST.xy + mapST.zw;',
+    '  vec3 n = nrmAt(uv), v = normalize(vV), l = normalize(l0);',
+    '  vec3 albedo = tint; if(hasMap > 0.5) albedo *= toLin(texture2D(map, uv).rgb);',
+    '  vec3 emission = vec3(0.0);',
+    '  if(hasMatcap > 0.5){ vec3 mc = toLin(texture2D(matcap, matcapUV(n)).rgb) * matcapCol; float mk = 1.0;',
+    '    if(hasMask > 0.5){ vec4 mt = texture2D(mask, vUv); mk = maskCh >= 2.5 ? mt.a : (maskCh >= 1.5 ? mt.b : (maskCh >= 0.5 ? mt.g : mt.r)); }',
+    '    if(matcapType >= 0.5) albedo = mix(albedo, mc, mk); else emission += mc * mk; }',
+    '  float sh = shadowAt();',
+    '  float ndlRaw = dot(n, l), ndl = clamp(ndlRaw, 0.0, 1.0), rs = rampSmooth * tSm * 0.5, rt = rampThr + tThr;',
+    '  float ramp = smoothstep(rt - rs, rt + rs, ndlRaw * 0.5 + 0.5) * sh;',
+    '  vec3 hl = shadowLight > 0.5 ? hcol : hcol * c0;',
+    '  vec3 rc = mix(scol * tS, hl, ramp); if(shadowLight > 0.5) rc *= c0;',
+    '  vec3 col = albedo * rc * tGain + amb * albedo * indirect * tAmb;',
+    '  float ramp1 = smoothstep(rt - rs, rt + rs, dot(n, normalize(l1)) * 0.5 + 0.5);',
+    '  col += albedo * hcol * c1 * ramp1 * tFill;',
+    '  float ndv = 1.0 - max(0.0, dot(v, n));',
+    '  if(rimOn > 0.5){ vec3 rm = rimLight > 0.5 ? vec3(ramp) * c0 : vec3(1.0); emission += rm * smoothstep(rimMin, rimMax, ndv) * rimCol; }',
+    /* CalculateSpecular của TCP2 Hybrid 2, đúng từng số hạng: GGX(nh, r²)·π·0,05 · 1/(r⁴+1). Epsilon 1e-4 là nhánh
+       SHADER_API_MOBILE (game chạy trên điện thoại) — nó chặn đỉnh vệt sáng: với hũ (roughness 0,25) đỉnh thấp ~4,5 lần
+       so với epsilon 1e-5 của bản trước, vốn làm hũ bóng loáng hơn game (owner 2026-10-22). */
+    '  if(specOn > 0.5){ float r = max(0.00001, specRough), rg = r*r, a2 = rg*rg;',
+    '    float nh = clamp(dot(n, normalize(l + v)), 0.0, 1.0), d = (nh * a2 - nh) * nh + 1.0;',
+    '    float sp = a2 / (d * d + 1e-4) * 0.05 / (rg*rg + 1.0);',
+    '    emission += sp * ndl * sh * c0 * specCol * tSpec; }',
+    '  col += emission + emissive;',
+    '  gl_FragColor = vec4(pow(max(col, 0.0), vec3(1.0/2.2)), opacity);',
+    '}'].join('\n');
+  /* OmniShade Standard — dựng lại theo tên thông số (shader gốc không có trong rip). SUY ĐOÁN. */
+  const FS_OMNI = FS_HEAD + '\n' + [
+    'uniform sampler2D matcap; uniform float hasMatcap, mcContrastOn, mcContrast, mcBright, mcBlend;',
+    'uniform vec3 color, matcapCol, specCol, rimCol, emis;',
+    'uniform float bright, contrastOn, contrast, satOn, sat, diffOn, wrap, dBright, dContrast, ambOn, ambBright,',
+    '              specOn, specBright, specSmooth, rimOn, rimAmount, rimContrast;',
+    'void main(){',
+    '  vec2 uv = vUv * mapST.xy + mapST.zw;',
+    '  vec3 n = nrmAt(uv), v = normalize(vV), l = normalize(l0);',
+    '  vec3 base = color; if(hasMap > 0.5) base *= toLin(texture2D(map, uv).rgb);',
+    '  if(contrastOn > 0.5) base = max((base - 0.5) * contrast + 0.5, 0.0);',
+    '  base *= bright;',
+    '  if(satOn > 0.5){ float lu = dot(base, vec3(0.2126, 0.7152, 0.0722)); base = max(mix(vec3(lu), base, sat), 0.0); }',
+    '  if(hasMatcap > 0.5){ vec3 mc = toLin(texture2D(matcap, matcapUV(n)).rgb);',
+    '    if(mcContrastOn > 0.5) mc = max((mc - 0.5) * mcContrast + 0.5, 0.0);',
+    '    mc *= mcBright * matcapCol;',
+    '    base = mcBlend > 0.5 ? max(base, base * mc) : base * mc; }',
+    '  float sh = shadowAt();',
+    '  vec3 light = vec3(0.0);',
+    '  if(diffOn > 0.5){',
+    '    float d0 = clamp((dot(n, l) + wrap) / (1.0 + wrap), 0.0, 1.0);',
+    '    float d1 = clamp((dot(n, normalize(l1)) + wrap) / (1.0 + wrap), 0.0, 1.0);',
+    '    d0 = pow(d0, dContrast); d1 = pow(d1, dContrast);',
+    '    light += (c0 * d0 * sh + c1 * d1) * dBright; }',
+    '  else light += c0;',
+    '  if(ambOn > 0.5) light += amb * ambBright;',
+    '  vec3 col = base * light;',
+    '  if(specOn > 0.5){ float s = pow(max(dot(n, normalize(l + v)), 0.0), specSmooth); col += s * specBright * specCol * c0 * sh; }',
+    '  if(rimOn > 0.5){ float ndv = 1.0 - max(0.0, dot(v, n)); col += pow(ndv, rimContrast) * rimAmount * rimCol; }',
+    '  col += emis + emissive;',
+    '  gl_FragColor = vec4(pow(max(col, 0.0), vec3(1.0/2.2)), opacity);',
+    '}'].join('\n');
+
+  /* ═══════════════ ⚠ RS_LOOK_OVERRIDE — CHỈNH THEO ẢNH GAMEPLAY, KHÔNG PHẢI DỮ LIỆU CỦA GAME ═══════════════
+     Owner yêu cầu 2026-10-22. Với đúng material + đèn của bản rip, hũ mứt sáng hơn ảnh gameplay của owner (sân lâu đài —
+     sân này không có trong bản rip: 4 bundle bị mã hoá, đèn/hậu kỳ của sân đọc không được): mép thân hũ trong game
+     tối ~116, tool ~194; giữa thân game ~213, tool cháy 255. Bảng này nắn shader TCP2 của các khối CONG (hũ, khối trụ)
+     cho khớp ảnh: tGain × ánh sáng đèn chính · tS × màu bóng (_SColor) · tAmb × ambient · tFill × đèn phụ · tSpec ×
+     vệt sáng · tThr cộng vào _RampThreshold · tSm × _RampSmoothing. Giá trị khớp bằng cách so lưới 9×9 điểm trên một
+     hũ đỏ và một hũ vàng của ảnh (owner, 2026-10-22) với cùng lưới trên tool, cùng camera game (xem README).
+     Tắt được bằng ô "Chỉnh theo ảnh" ở bảng 👑 để xem số thô của bản rip. Hộp màu (mặt phẳng) đã khớp ảnh nên không chỉnh. */
+  const LOOK_NEUTRAL = {tGain:1, tS:1, tAmb:1, tFill:1, tSpec:1, tThr:0, tSm:1};
+  /* Khớp 2026-10-22 (dò toạ độ tuần tự, 7 tham số): sai lệch trung bình hàng/cột của lưới 9×9 trên hũ đỏ + hũ vàng giảm
+     26,3 → 19,7 mức sRGB. Phần còn lại: mép ngoài cùng hũ đỏ vẫn sáng hơn game ~30–50, nhãn trong ảnh to hơn chút.
+     Khối trụ TCP2 dùng chung bộ số của hũ theo yêu cầu owner — CHƯA có ảnh gameplay nào để đối chiếu riêng. */
+  const JAR_FIT = {tGain:0.8, tS:0.7, tAmb:0.7, tFill:1, tSpec:0, tThr:0, tSm:2.6};
+  const RS_LOOK_OVERRIDE = {
+    jars:      {match:/^JamJar_/, v:JAR_FIT},
+    cylinders: {match:/^(StoneCylinder|Ice_Cylinder|Wood|ColumnCylinder|Bouncer)$/, v:JAR_FIT},
+  };
+  R.LOOK = RS_LOOK_OVERRIDE;
+  R.lookOn = true; try{ R.lookOn = localStorage.getItem('hm_rs_look') !== '0'; }catch(e){}
+  function lookOverride(name){
+    if(R.lookOn) for(const g of Object.values(R.LOOK)) if(g.match.test(name)) return Object.assign({}, LOOK_NEUTRAL, g.v);
+    return LOOK_NEUTRAL; }
+  R.setLook = function(on){ R.lookOn = !!on; try{ localStorage.setItem('hm_rs_look', on?'1':'0'); }catch(e){}
+    mats.clear(); spClear(); ICON.clear(); sync3D(); draw(); R.paintIcons(); };
+  const F = (m,k,d) => (m.f && m.f[k]!=null) ? +m.f[k] : d;
+  /* Màu của material: Unity (project Linear) đổi sRGB → linear khi đưa lên GPU, TRỪ màu gắn [HDR] — loại đó vốn đã
+     lưu ở linear. Đổi nhầm cả màu HDR làm mọi hộp màu tối đi ~1/3 (_MatCapColor quyết định màu hộp): so ảnh game
+     của owner 2026-10-22, mặt đỏ game 225 · tool đổi nhầm 167 · sau khi sửa dự đoán 224. */
+  const HDR_DEF = ['_MatCapColor','_SpecularColor','_RimColor','_OutlineColor','_ReflectionColor','_Emissive',
+                   '_AnimeColor1','_AnimeColor2','_AnimeColor3','_ShadowColor'];   // gói art cũ chưa ghi m.hdr
+  const isHdr = (m,k) => (m.hdr || HDR_DEF).indexOf(k) >= 0;
+  const CL = (m,k,d) => { const c = (m.c && m.c[k]) || d || [1,1,1,1];
+    if(isHdr(m,k)) return new THREE.Color(Math.max(0,c[0]), Math.max(0,c[1]), Math.max(0,c[2]));
+    return new THREE.Color(Math.pow(Math.max(0,c[0]),2.2), Math.pow(Math.max(0,c[1]),2.2), Math.pow(Math.max(0,c[2]),2.2)); };
+  const KW = (m,k) => (m.kw||[]).indexOf(k) >= 0;
+  function stOf(m, key){ const t = m.tex && m.tex[key]; return t ? new THREE.Vector4(t.st[0], t.st[1], t.st[2], t.st[3]) : new THREE.Vector4(1,1,0,0); }
+  /* opt: {sel, see, opacity} — khoá cache tính cả việc ảnh đã giải mã chưa (ảnh tới sau thì dựng lại) */
+  function material(name, opt){
+    opt = opt||{};
+    const m = R.A.mats[name] || {sh:'omni', f:{}, c:{}, kw:[], tex:{}};
+    const texKey = Object.values(m.tex||{}).map(t=>readyTex(t.n)?1:0).join('');
+    /* opt.sprite: bản RIÊNG cho renderer ảnh 2D / ô bảng màu. ShaderMaterial lights:true giữ mảng đèn + bóng trong
+       uniforms của CHÍNH nó; dùng chung một material cho khung 3D (có đèn đổ bóng) và renderer ảnh (không đèn) thì
+       renderer này ghi đè mảng của renderer kia ⇒ three ném "reading 'shadowBias'" và khung 3D trống trơn. */
+    const key = name+'|'+(opt.sel?1:0)+(opt.see?'T'+opt.opacity:'O')+(opt.sprite?'|s':'')+(R.lookOn?'|L':'')+'|'+texKey;
+    if(mats.has(key)) return mats.get(key);
+    const Lt = lights();
+    const U = THREE.UniformsUtils.merge([THREE.UniformsLib.lights, {
+      l0:{value:Lt.d0.clone()}, l1:{value:Lt.d1.clone()}, c0:{value:Lt.c0}, c1:{value:Lt.c1}, amb:{value:Lt.amb},
+      shadowK:{value:Lt.shadow}, opacity:{value:opt.see ? (opt.opacity!=null?opt.opacity:0.3) : 1}, flipSign:{value:-1},
+      emissive:{value:new THREE.Color(opt.sel ? 0x3a2e00 : 0x000000)},
+      map:{value:null}, hasMap:{value:0}, nrm:{value:null}, hasNrm:{value:0}, bumpScale:{value:F(m,'_BumpScale',1)},
+      mapST:{value:new THREE.Vector4(1,1,0,0)} }]);
+    let fs;
+    const mapKey = m.sh==='tcp2' ? '_BaseMap' : '_MainTex';
+    const mt = m.tex[mapKey] && readyTex(m.tex[mapKey].n);
+    U.map.value = mt; U.hasMap.value = mt ? 1 : 0; U.mapST.value = stOf(m, mapKey);
+    const nk = m.sh==='tcp2' ? (KW(m,'_NORMALMAP') && '_BumpMap') : (KW(m,'NORMAL_MAP') && '_NormalTex');
+    const nt = nk && m.tex[nk] && readyTex(m.tex[nk].n);
+    U.nrm.value = nt || null; U.hasNrm.value = nt ? 1 : 0;
+    if(m.sh==='tcp2'){
+      fs = FS_TCP2;
+      /* Matcap CÓ mask (mọi hũ mứt, Bouncer): trong game KHÔNG thấy matcap — ảnh gameplay owner gửi 2026-10-22 cho thấy
+         nhãn trái cây + dải sáng vẽ sẵn của texture thân hũ và nắp sọc, trong khi mask jar_purple_mask (kênh R) phủ kín
+         thân hũ ⇒ nếu áp như shader gốc thì matcap đè mất nhãn (bản trước của tool). Coi mask như "black" (giá trị mặc
+         định của _MatCapMask) — SUY ĐOÁN khớp ảnh: có thể bản build dùng texture mask khác hẳn bản rip. */
+      const mc = KW(m,'TCP2_MATCAP') && !KW(m,'TCP2_MATCAP_MASK') && m.tex._MatCapTex && readyTex(m.tex._MatCapTex.n);
+      const mk = KW(m,'TCP2_MATCAP_MASK') && m.tex._MatCapMask && readyTex(m.tex._MatCapMask.n);
+      Object.assign(U, {
+        matcap:{value:mc||null}, hasMatcap:{value:mc?1:0}, mask:{value:mk||null}, hasMask:{value:mk?1:0},
+        maskCh:{value:F(m,'_MatCapMaskChannel',0)}, matcapType:{value:F(m,'_MatCapType',0)},
+        tint:{value:CL(m,'_BaseColor')}, hcol:{value:CL(m,'_HColor')}, scol:{value:CL(m,'_SColor',[0.5,0.5,0.5,1])},
+        matcapCol:{value:CL(m,'_MatCapColor')}, rimCol:{value:CL(m,'_RimColor')}, specCol:{value:CL(m,'_SpecularColor',[0.5,0.5,0.5,1])},
+        rampThr:{value:F(m,'_RampThreshold',0.5)}, rampSmooth:{value:F(m,'_RampSmoothing',0.5)},
+        shadowLight:{value:KW(m,'TCP2_SHADOW_LIGHT_COLOR')?1:0},
+        rimOn:{value:KW(m,'TCP2_RIM_LIGHTING')?1:0}, rimMin:{value:F(m,'_RimMin',0.5)}, rimMax:{value:F(m,'_RimMax',1)},
+        rimLight:{value:KW(m,'TCP2_RIM_LIGHTING_LIGHTMASK')?1:0},
+        specOn:{value:KW(m,'TCP2_SPECULAR')?1:0}, specRough:{value:F(m,'_SpecularRoughness',0.5)},
+        indirect:{value:F(m,'_IndirectIntensity',1)} });
+      const ov = lookOverride(name);                    // ⚠ chỉnh theo ảnh gameplay, không phải số của game
+      for(const k of ['tGain','tS','tAmb','tFill','tSpec','tThr','tSm']) U[k] = {value: ov[k]};
+    }else{
+      fs = FS_OMNI;
+      const mc = KW(m,'MATCAP') && m.tex._MatCapTex && readyTex(m.tex._MatCapTex.n);
+      const em = (m.c && m.c._Emissive) || [0,0,0,0];
+      Object.assign(U, {
+        matcap:{value:mc||null}, hasMatcap:{value:mc?1:0}, mcContrastOn:{value:KW(m,'MATCAP_CONTRAST')?1:0},
+        mcContrast:{value:F(m,'_MatCapContrast',1)}, mcBright:{value:F(m,'_MatCapBrightness',1)}, mcBlend:{value:F(m,'_MatCapBlend',0)},
+        color:{value:CL(m,'_Color')}, matcapCol:{value:CL(m,'_MatCapColor')}, specCol:{value:CL(m,'_SpecularColor')},
+        rimCol:{value:CL(m,'_RimColor')}, emis:{value:new THREE.Color(Math.max(0,em[0]), Math.max(0,em[1]), Math.max(0,em[2]))},   // [HDR]: đã linear
+        bright:{value:F(m,'_Brightness',1)}, contrastOn:{value:KW(m,'BASE_CONTRAST')?1:0}, contrast:{value:F(m,'_Contrast',1)},
+        satOn:{value:KW(m,'BASE_SATURATION')?1:0}, sat:{value:F(m,'_Saturation',1)},
+        diffOn:{value:KW(m,'DIFFUSE')?1:0}, wrap:{value:Math.max(-0.95, F(m,'_DiffuseWrap',0))},
+        dBright:{value:F(m,'_DiffuseBrightness',1)}, dContrast:{value:F(m,'_DiffuseContrast',1)},
+        ambOn:{value:KW(m,'AMBIENT')?1:0}, ambBright:{value:F(m,'_AmbientBrightness',1)},
+        specOn:{value:KW(m,'SPECULAR')?1:0}, specBright:{value:F(m,'_SpecularBrightness',1)}, specSmooth:{value:F(m,'_SpecularSmoothness',20)},
+        rimOn:{value:KW(m,'RIM')?1:0}, rimAmount:{value:F(m,'_RimAmount',1)}, rimContrast:{value:F(m,'_RimContrast',5)} });
+    }
+    const cull = F(m,'_Cull',2);
+    const mat = new THREE.ShaderMaterial({ uniforms:U, vertexShader:VS_SRC, fragmentShader:fs, lights:true,
+      transparent:!!opt.see, depthWrite:!opt.see, side: cull===0 ? THREE.DoubleSide : THREE.FrontSide });
+    mat.userData.rsDirs = [Lt.d0.clone(), Lt.d1.clone()];
+    mat.userData.rsName = name;                          // tên material của game (dò lỗi, chỉnh RS_LOOK_OVERRIDE)
+    mats.set(key, mat); return mat;
+  }
+  /* hướng đèn của shader tính trong KHÔNG GIAN MẮT ⇒ quy đổi mỗi khung hình (như celBind) */
+  function bind(mesh, list){
+    mesh.onBeforeRender = function(r, sc, cam){
+      for(const m of list){ const d = m.userData.rsDirs; if(!d) continue;
+        m.uniforms.l0.value.copy(d[0]).transformDirection(cam.matrixWorldInverse);
+        m.uniforms.l1.value.copy(d[1]).transformDirection(cam.matrixWorldInverse); } };
+  }
+  function partMesh(p, opt, geoOverride, matOverride){
+    const g = geoOverride || geo(p.mesh); if(!g) return null;
+    const names = matOverride ? [matOverride] : (p.mats && p.mats.length ? p.mats : ['?']);
+    const list = g.groups.map((_,k)=>material(names[Math.min(k, names.length-1)], opt));
+    const m = new THREE.Mesh(g, list.length > 1 ? list : list[0]);
+    if(p.m){ m.matrixAutoUpdate = false; m.matrix.fromArray(p.m).transpose(); }
+    m.castShadow = !opt.see; m.receiveShadow = true;
+    bind(m, list);
+    return m;
+  }
+  /* Khối: group mang các mesh của prefab (ma trận tới gốc prefab), nhân Scale của entity */
+  R.obj3D = function(o, opt){
+    const id = R.byTid[o.type], T = R.A && R.A.types[id];
+    const g = new THREE.Group();
+    if(!T || !T.parts || !T.parts.length) return null;
+    const hm = id==='Hammer' ? hammerFix(T, o.rs && o.rs.c) : null;
+    for(const p of T.parts){ const q = hm ? hm(p) : p; if(!q) continue; const m = partMesh(q, opt); if(m) g.add(m); }
+    if(o.rs && o.rs.s) g.scale.set(o.rs.s.x, o.rs.s.y, o.rs.s.z);
+    return g;
+  };
+  /* 🔨 Hammer: con lắc treo ở Position. Script game dựng lại nó từ Custom (code IL2CPP bị khoá, chưa đọc được) ⇒
+     ở đây áp theo cách hiểu trực tiếp nhất — SUY ĐOÁN: Handle của prefab giãn y 1,75 = rodLength mặc định ⇒ giãn
+     theo rodLength/1,75 quanh điểm treo; đầu búa (0,74367 trong prefab) theo hammer1Scale; twoHeads=false ⇒ bỏ đầu
+     nằm TRÊN điểm treo, giữ đầu buông xuống. */
+  function hammerFix(T, c){
+    c = c || {};
+    const ky = (+c.rodLength || 1.75) / 1.75, ks = (+c.hammer1Scale || 0.74367) / 0.74367, two = !!c.twoHeads;
+    return p=>{
+      if(!p.m) return p;
+      const m = p.m.slice();                                  // hàng-trước (row-major): tịnh tiến ở 3, 7, 11
+      if(p.go!=='HammerHead'){ for(let k=4;k<8;k++) m[k] *= ky; return Object.assign({}, p, {m}); }   // cán: giãn Y quanh điểm treo
+      /* đầu búa: mesh nằm lệch xa gốc của nó ⇒ tính theo TÂM thật. Tâm hạ theo cán (×ky), hình không méo,
+         to/nhỏ theo hammer1Scale. Đầu có tâm TRÊN điểm treo là đầu thứ hai (Hammer2, xoay 180°). */
+      const b = R.A.meshes[p.mesh].bb, c = [(b[0]+b[3])/2, (b[1]+b[4])/2, (b[2]+b[5])/2];
+      const P = r => m[r]*c[0] + m[r+1]*c[1] + m[r+2]*c[2] + m[r+3];
+      const pc = [P(0), P(4)*ky, P(8)];
+      if(!two && pc[1] > 0) return null;
+      for(const r of [0,4,8]) for(let k=0;k<3;k++) m[r+k] *= ks;
+      [0,4,8].forEach((r,i)=>{ m[r+3] = pc[i] - (m[r]*c[0] + m[r+1]*c[1] + m[r+2]*c[2]); });
+      return Object.assign({}, p, {m});
+    };
+  }
+  /* Mặt bàn 8×8 của game được GIÃN 9 mảnh: mép giữ nguyên dày, phần giữa kéo theo w×d. Bàn tròn: elip. */
+  function sliceGeo(name, w, d, round){
+    const key = name+'|'+w+'|'+d+'|'+(round?1:0);
+    if(sliced.has(key)) return sliced.get(key);
+    const src = geo(name); if(!src) return null;
+    const g = src.clone(), P = g.attributes.position;
+    for(let j=0;j<P.count;j++){ let x = P.getX(j), z = P.getZ(j);
+      if(round){ const r = Math.hypot(x, z);
+        if(r > 3.4){ const c = x/r, s = z/r, e = r - 4; x = c*(w/2 + e); z = s*(d/2 + e); }
+        else { x *= w/8; z *= d/8; } }
+      else{ if(Math.abs(x) > 3) x += Math.sign(x)*(w/2 - 4); else x *= w/8;
+            if(Math.abs(z) > 3) z += Math.sign(z)*(d/2 - 4); else z *= d/8; }
+      P.setX(j, x); P.setZ(j, z); }
+    P.needsUpdate = true; g.computeBoundingSphere();
+    /* mỗi cỡ bàn một mesh ⇒ lật nhiều level là đẻ mãi (đo 2026-10-22: +25 mesh / 40 level). Giữ 48 cái gần nhất. */
+    if(sliced.size >= 48){ const old = sliced.keys().next().value; const og = sliced.get(old); sliced.delete(old); if(og) og.dispose(); }
+    sliced.set(key, g); return g;
+  }
+  R.table3D = function(t, current){
+    const id = (t.rs && t.rs.Id) || 'Table_Rect', T = R.A && R.A.types[id]; if(!T) return null;
+    const diff = String(getDiff()||0), g = new THREE.Group(), opt = {sel:false};
+    const w = t.dim ? +t.dim.x : 5, d = t.dim ? +t.dim.y : 3;
+    if(T.surface){
+      const s = T.surface[diff] || T.surface['0'];
+      const sg = sliceGeo(s.mesh, w, d, id==='Table_Round');
+      if(sg){ const m = partMesh({mesh:s.mesh, mats:[s.mat]}, opt, sg); m.position.y = s.y||0; m.matrixAutoUpdate = true; g.add(m); }
+    }
+    const pv = T.poleVar && T.poleVar[diff];
+    for(const p of T.parts||[]){
+      const v = pv && pv[p.mesh];
+      const m = v ? partMesh({mesh:v.mesh, mats:[v.mat], m:p.m}, opt) : partMesh(p, opt);
+      if(m) g.add(m); }
+    if(t.rs && t.rs.q){ g.quaternion.set(t.rs.q.x, t.rs.q.y, t.rs.q.z, t.rs.q.w); }
+    g.traverse(o=>{ o.raycast = ()=>{}; });
+    return g;
+  };
+
+  /* ---- cảnh: nền game, đèn đổ bóng, mặt đất hứng bóng ---- */
+  let scn = null;
+  function bgName(){
+    const S = R.A.scene, want = R.bg;
+    if(want==='none') return null;
+    if(want!=='auto') return S.bg[want] || null;
+    const ids = new Set(); stages.forEach(s=>s.tables.forEach(t=>ids.add(t.rs&&t.rs.Id)));
+    return ids.has('Table_Boat') ? S.bg.water : ids.has('Table_Wagon') ? S.bg.desert : S.bg.forest; }   // suy theo loại bàn (inferred)
+  R.syncScene = function(){
+    if(!three) return;
+    const sc = three.scene, cv3 = three.renderer.domElement;
+    if(!scn){ scn = {vsBg:sc.background, vsFog:sc.fog}; }
+    /* mốc ▲ PHÁO của Valley Smash (z = −8) đứng chắn ngay giữa góc camera game của Royal Smash ⇒ giấu đi */
+    for(const k of ['cannon','camLine','camLbl']) if(three[k]) three[k].visible = !(R.on && R.A);
+    if(typeof mini!=='undefined' && mini.ren){ mini.ren.shadowMap.enabled = !!(R.on && R.A); mini.ren.shadowMap.type = THREE.PCFSoftShadowMap;   // preview nhỏ: cùng cảnh, cùng bóng
+      mini.ren.setClearColor((R.on && R.A && R.A.scene.clear) || '#000000', 1); }   // Royal Smash không có scene.background ⇒ nền màu trời của game thay vì đen
+    if(!R.on || !R.A){
+      sc.background = scn.vsBg; sc.fog = scn.vsFog; cv3.style.background = '';
+      three.renderer.shadowMap.enabled = false;
+      if(scn.sun) scn.sun.visible = false; if(scn.ground) scn.ground.visible = false;
+      return; }
+    if(!scn.sun){
+      const Lt = lights();
+      const sun = new THREE.DirectionalLight(0xffffff, 0); sun.castShadow = true;
+      sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.02; sun.shadow.radius = 2;
+      sc.add(sun); sc.add(sun.target); scn.sun = sun; scn.dir = Lt.d0.clone();
+      const gm = new THREE.ShadowMaterial({color:new THREE.Color(0.214, 0.425, 0.082), opacity:0.6});
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), gm);
+      ground.rotation.x = -Math.PI/2; ground.position.y = -0.3 - TBL_Y0; ground.receiveShadow = true; ground.raycast = ()=>{};
+      sc.add(ground); scn.ground = ground;
+    }
+    scn.sun.visible = true; scn.ground.visible = true;
+    three.renderer.shadowMap.enabled = true; three.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    sc.fog = null;
+    const bn = bgName(), url = bn && R.A.tex[bn];
+    sc.background = null;
+    cv3.style.background = url ? 'url('+url+') center bottom / cover no-repeat, '+(R.A.scene.clear||'#0167f6') : (R.A.scene.clear||'#0167f6');
+    three.renderer.setClearColor(0x000000, 0);
+    const b = three.bounds || {x:0,y:2,z:0,r:12}, rr = Math.max(8, b.r*0.75);
+    const tz = -(b.z||0);
+    scn.sun.target.position.set(b.x||0, 0, tz);
+    scn.sun.position.set((b.x||0) + scn.dir.x*60, scn.dir.y*60, tz + scn.dir.z*60);
+    const cam = scn.sun.shadow.camera;
+    cam.left = -rr; cam.right = rr; cam.top = rr; cam.bottom = -rr; cam.near = 1; cam.far = 160; cam.updateProjectionMatrix();
+  };
+  /* 🎥 đúng camera Gameplay.unity: (0, 8.85, −40), chúc 5°, FOV 30 */
+  R.gameCam = function(){
+    const C = R.A.scene.cam || {pos:[0,8.85,-40], rot:[0.0436,0,0,0.999], fov:30};
+    const q = new THREE.Quaternion(C.rot[0], C.rot[1], C.rot[2], C.rot[3]);
+    const f = new THREE.Vector3(0,0,1).applyQuaternion(q), dist = 40;
+    const tg = {x:C.pos[0]+f.x*dist, y:C.pos[1]+f.y*dist, z:C.pos[2]+f.z*dist};
+    const off = new THREE.Vector3(C.pos[0]-tg.x, C.pos[1]-tg.y, -(C.pos[2]-tg.z));      // hệ hiển thị (lật Z)
+    cam3.target.set(tg.x, tg.y - TBL_Y0, -tg.z);
+    cam3.r = off.length(); cam3.phi = Math.acos(off.y/cam3.r); cam3.theta = Math.atan2(off.x, off.z);
+    if(three.camera.fov !== C.fov){ three.camera.fov = C.fov; three.camera.updateProjectionMatrix(); }
+    applyCam3();
+    hint('🎥 Đúng camera Gameplay.unity của Royal Smash: (0, 8.85, −40), chúc 5°, FOV '+C.fov+'.');
+  };
+
+  /* ---- ảnh 2D: vẽ sống từ mesh + shader như khung 3D (giống rotSprite của Valley Smash) ---- */
+  const SP = new Map(), ICON = new Map(), BUDGET = {t:0, n:0};
+  let SP_PX = 0;                                         // tổng điểm ảnh đang giữ trong SP (trần bộ nhớ, xem sprite())
+  function spClear(){ for(const c of SP.values()) if(c){ c.width = c.height = 0; } SP.clear(); SP_PX = 0; }
+  let ren = null, rt = null, redrawT = 0;
+  function renderer(){
+    if(!ren){ ren = new THREE.WebGLRenderer({canvas:document.createElement('canvas'), antialias:false, alpha:true, preserveDrawingBuffer:true});
+      ren.setClearColor(0x000000, 0); }
+    return ren; }
+  function snap(scene, cam, W, H){
+    const RW = Math.min(1024, W*2), RH = Math.min(1024, H*2);
+    if(!rt || rt.width!==RW || rt.height!==RH){ if(rt) rt.dispose(); rt = new THREE.WebGLRenderTarget(RW, RH); }
+    const r = renderer(); r.setRenderTarget(rt); r.clear(); r.render(scene, cam); r.setRenderTarget(null);
+    const buf = new Uint8Array(RW*RH*4); r.readRenderTargetPixels(rt, 0, 0, RW, RH, buf);
+    const big = document.createElement('canvas'); big.width = RW; big.height = RH;
+    const bc = big.getContext('2d'), id = bc.createImageData(RW, RH);
+    for(let y=0;y<RH;y++) id.data.set(buf.subarray((RH-1-y)*RW*4, (RH-y)*RW*4), y*RW*4);
+    bc.putImageData(id, 0, 0);
+    const out = document.createElement('canvas'); out.width = W; out.height = H;
+    const c2 = out.getContext('2d'); c2.imageSmoothingEnabled = true; c2.imageSmoothingQuality = 'high'; c2.drawImage(big, 0, 0, W, H);
+    return out; }
+  function budget(){ const now = performance.now();
+    if(now - BUDGET.t > 50){ BUDGET.t = now; BUDGET.n = 0; }
+    if(BUDGET.n >= 14){ if(!redrawT) redrawT = setTimeout(()=>{ redrawT = 0; draw(); }, 60); return false; }
+    BUDGET.n++; return true; }
+  function sprite(o, V, wH, wV){
+    if(!window.THREE){ if(!R._askedThree){ R._askedThree = true; ensureThree(()=>draw()); } return null; }
+    const q = getRot(o), s = (o.rs && o.rs.s) || {x:1,y:1,z:1};
+    const dpr = Math.min(2, window.devicePixelRatio||1);
+    const bucket = Math.max(32, Math.min(512, Math.pow(2, Math.ceil(Math.log2(Math.max(wH, wV)*cell*dpr)))));
+    const key = [o.type, V.h+V.v, s.x, s.y, s.z, Math.round(q.x*1000), Math.round(q.y*1000), Math.round(q.z*1000), Math.round(q.w*1000), bucket, texWaiting>0?'w':''].join('|');
+    if(SP.has(key)) return SP.get(key);
+    if(!budget()) return null;
+    const scene = new THREE.Scene(), flip = new THREE.Group(); flip.scale.z = -1; scene.add(flip);
+    const oc = new THREE.Group(); oc.quaternion.set(q.x, q.y, q.z, q.w); flip.add(oc);
+    const g = R.obj3D(o, {sprite:true}); if(!g) return null;
+    const off = TYPES[o.type].off; if(off) g.position.set(-off[0], -off[1], -off[2]);
+    oc.add(g);
+    const AX = {x:[1,0,0], y:[0,1,0], z:[0,0,1]}, Rr = AX[V.h], U = AX[V.v];
+    const Fv = [Rr[1]*U[2]-Rr[2]*U[1], Rr[2]*U[0]-Rr[0]*U[2], Rr[0]*U[1]-Rr[1]*U[0]];
+    const cam = new THREE.OrthographicCamera(-wH/2, wH/2, wV/2, -wV/2, 0.01, 200);
+    cam.position.set(-Fv[0]*60, -Fv[1]*60, Fv[2]*60); cam.up.set(U[0], U[1], -U[2]); cam.lookAt(0,0,0);
+    scene.updateMatrixWorld(true);
+    const W = wH >= wV ? bucket : Math.max(8, Math.round(bucket*wH/wV)), H = wV >= wH ? bucket : Math.max(8, Math.round(bucket*wV/wH));
+    const out = snap(scene, cam, W, H);
+    /* trần theo BỘ NHỚ, không theo số ảnh: phóng to thì mỗi ảnh tới 512² px (~1 MB, nằm ngoài heap JS) — 800 ảnh là
+       ~800 MB. Giữ ≤ 24 triệu px (~96 MB); vượt thì bỏ ảnh cũ nhất cho tới khi đủ chỗ. */
+    SP_PX += W*H;
+    while((SP_PX > 24e6 || SP.size > 800) && SP.size){ const k = SP.keys().next().value, c = SP.get(k); SP.delete(k); if(c){ SP_PX -= c.width*c.height; c.width = c.height = 0; } }
+    SP.set(key, out); return out;
+  }
+  /* 2D: khung sửa (sx×sy×sz) là cỡ lưới của game; mesh thật hơi tràn (0,01–0,05) nên chừa lề 0,12 mỗi bên */
+  R.draw2D = function(o, V, alpha){
+    if(!R.A) return false;
+    try{
+      const mg = 0.24, eH = rotExt(o, V.h), eV = rotExt(o, V.v), wH = eH + mg, wV = eV + mg;
+      const c = sprite(o, V, wH, wV); if(!c) return false;
+      const tl = toScreen(fC(o,V.h)-wH/2, fC(o,V.v)+wV/2);
+      ctx.save(); ctx.globalAlpha = alpha; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(c, tl.x, tl.y, wH*cell, wV*cell); ctx.restore(); ctx.globalAlpha = 1;
+      return true;
+    }catch(e){ console.warn('sprite Royal Smash:', e && e.message); return false; }
+  };
+  /* ô bảng màu: ảnh 3/4 dựng sống, làm một lần cho mỗi loại */
+  function icon(tid){
+    if(ICON.has(tid)) return ICON.get(tid);
+    const id = R.byTid[tid], T = R.A.types[id]; if(!T || !T.parts || !T.parts.length) return null;
+    const scene = new THREE.Scene(), flip = new THREE.Group(); flip.scale.z = -1; scene.add(flip);
+    const g = R.obj3D({type:tid}, {sprite:true}); if(!g) return null;
+    const bb = T.bb, c = [(bb[0]+bb[3])/2, (bb[1]+bb[4])/2, (bb[2]+bb[5])/2], ext = Math.max(bb[3]-bb[0], bb[4]-bb[1], bb[5]-bb[2]);
+    g.position.set(-c[0], -c[1], -c[2]); flip.add(g);
+    const cam = new THREE.OrthographicCamera(-ext*0.75, ext*0.75, ext*0.75, -ext*0.75, 0.01, 500);
+    cam.position.set(ext*1.6, ext*1.3, ext*2.2); cam.lookAt(0,0,0);
+    scene.updateMatrixWorld(true);
+    const cv = snap(scene, cam, 96, 96), url = cv.toDataURL('image/png');
+    ICON.set(tid, url); return url;
+  }
+  R.paintIcons = function(){
+    if(!R.on || !R.A) return;
+    if(!window.THREE){ ensureThree(()=>R.paintIcons()); return; }
+    const sws = [...document.querySelectorAll('#rsPal .sw')];
+    let k = 0;
+    (function step(){
+      const t0 = performance.now();
+      while(k < sws.length && performance.now() - t0 < 30){
+        const d = sws[k++], url = icon(+d.dataset.t);
+        if(url){ d.style.backgroundColor = '#171b26'; d.style.backgroundImage = 'url('+url+')';
+          d.style.backgroundSize = ''; d.style.backgroundPosition = ''; d.style.backgroundRepeat = ''; d.classList.add('hasart'); } }
+      if(k < sws.length) requestAnimationFrame(step);
+    })();
+  };
+  /* bảng màu: một nhóm <details> cho mỗi họ */
+  R.buildPalette = function(){
+    let box = $('rsPal');
+    if(!box){ box = document.createElement('div'); box.id = 'rsPal'; box.className = 'rs-only';
+      const anchor = $('palEmpty'); anchor.parentNode.insertBefore(box, anchor.nextSibling); }
+    box.innerHTML = '';
+    if(!R.A || !R.on) return;                         // ở Valley Smash: không để ô Royal Smash nào trong trang (ô tìm khối, .sw…)
+    const by = {};
+    for(const tid of Object.keys(R.byTid).map(Number)){ const t = TYPES[tid]; (by[t.fam] = by[t.fam]||[]).push(tid); }
+    for(const fam of FAM_ORDER){ const list = by[fam]; if(!list) continue;
+      const d = document.createElement('details'); d.className = 'grp'; d.open = ['can','box','wood','stone','ice','colorbox','jar'].includes(fam);
+      const s = document.createElement('summary'); s.className = 'gt'; s.textContent = FAM_LABEL[fam]||fam;
+      s.title = 'Royal Smash · số đuôi ×N = dài N ô (prefab riêng, mesh chạy theo +Y). Khối lượng = physicsMass trong level.';
+      const sw = document.createElement('div'); sw.className = 'swatches';
+      for(const tid of list){ const t = TYPES[tid];
+        const dd = document.createElement('div'); dd.className = 'sw'; dd.dataset.t = tid; dd.style.background = t.col;
+        dd.title = t.rs + ' · ' + (t.unknown ? 'chưa có trong gói art' : 'KL ' + (t.mass||'?')) + ' · cỡ ' + t.rsSize.join('×');
+        dd.innerHTML = '<span class="shape">'+(t.lab||'◆')+'</span>'+t.name;
+        dd.onclick = ()=>selectBrush(tid); sw.appendChild(dd); }
+      d.append(s, sw); box.appendChild(d); }
+    document.querySelectorAll('.sw').forEach(s=>s.classList.toggle('active', +s.dataset.t===brush));
+    R.paintIcons();
+  };
+
+  /* ---- bảng 🧩 Royal Smash (bảng phải): loại bàn, nền, Custom JSON ---- */
+  function target(){ return selObj ? {kind:'obj', o:selObj} : (curT() ? {kind:'tbl', t:curT()} : null); }
+  R.syncPanel = function(){
+    if(!R.on) return;
+    const tk = $('rsTblKind'), ta = $('rsCustom'), lab = $('rsCustLab'), bg = $('rsBg'), info = $('rsInfo');
+    if(!ta) return;
+    const t = curT();
+    if(tk){ tk.value = (t && t.rs && t.rs.Id) || 'Table_Rect'; tk.disabled = !t || !!(t.rs && t.rs.virtual); }
+    if(bg) bg.value = R.bg;
+    const T = target();
+    if(document.activeElement !== ta){
+      if(!T){ ta.value = ''; lab.textContent = '—'; }
+      else if(T.kind==='obj'){ const o = T.o; lab.textContent = 'Khối · ' + (R.byTid[o.type]||'?') + (selObjs.length>1?' (chọn '+selObjs.length+' — sửa khối chính)':'');
+        const tpl = R.A && R.A.types[R.byTid[o.type]];
+        ta.value = JSON.stringify((o.rs && o.rs.c) || (tpl && tpl.custom) || {}, null, 1); }
+      else { const rs = T.t.rs || {c:{}}; lab.textContent = 'Bàn ' + T.t.id + ' · ' + (rs.Id||'Table_Rect') + ' (w, d lấy ở ô Rộng X / Sâu Z)';
+        const c = Object.assign({}, rs.c); delete c.w; delete c.d; ta.value = JSON.stringify(c, null, 1); } }
+    if(info && R.src){ const L = R.src.L;
+      info.textContent = 'ContentHash ' + (L.ContentHash||'—') + ' (giữ nguyên) · BackgroundIndex ' + L.BackgroundIndex
+        + (L.Arena!=null ? ' · Arena ' + L.Arena : '') + (L.PhysicsQuality!=null ? ' · PhysicsQuality ' + L.PhysicsQuality : ''); }
+    else if(info) info.textContent = 'Level mới — ContentHash để trống.';
+  };
+  R.applyCustom = function(){
+    const ta = $('rsCustom'), T = target(); if(!ta || !T) return;
+    let c; try{ c = JSON.parse(ta.value || '{}'); if(!c || typeof c!=='object' || Array.isArray(c)) throw new Error('phải là object {…}'); }
+    catch(e){ warn('Custom không hợp lệ: '+e.message); return; }
+    pushHistory();
+    if(T.kind==='obj'){ for(const o of (selObjs.length ? selObjs : [T.o])){ o.rs = o.rs || {}; o.rs.c = JSON.parse(JSON.stringify(c)); } }
+    else { const t = T.t; t.rs = t.rs || {Id:'Table_Rect', c:{}};
+      const n = {}; if('w' in t.rs.c || !Object.keys(t.rs.c).length) n.w = t.dim ? t.dim.x : 5; if('d' in t.rs.c || !Object.keys(t.rs.c).length) n.d = t.dim ? t.dim.y : 3;
+      t.rs.c = Object.assign(n, c); }
+    warn(''); hint('🧩 Đã ghi Custom cho ' + (T.kind==='obj' ? (selObjs.length||1) + ' khối' : 'Bàn ' + T.t.id) + '. Ctrl+Z hoàn tác.');
+    R.syncPanel(); sync3D();
+  };
+  R.setTableKind = function(id){
+    const t = curT(); if(!t) return; pushHistory();
+    t.rs = t.rs || {c:{w:t.dim?t.dim.x:5, d:t.dim?t.dim.y:3}}; t.rs.Id = id;
+    if((id==='Table_Wagon' || id==='Table_Boat') && t.dim){ t.dim.x = 6; t.dim.y = 4; pushMeta(); }
+    R.syncScene(); sync3D(); draw(); R.syncPanel();
+  };
+  /* ---- 📚 level có sẵn: ref/RoyalSmashLevel/ (rs_bake.py chép từ bản rip, git bỏ qua) ----
+     Trang file:// không liệt kê được thư mục ⇒ mỗi bộ có một script gói sẵn mọi file (rs-1.js…) và index.js.
+     Mở bộ = nạp như một thư mục chỉ-đọc (◀ ▶, ô số level, ⬇️ Tải về); 💾 Lưu đè cần mở thư mục đó bằng 📁 một lần. */
+  const REF_DIR = 'ref/RoyalSmashLevel/';
+  const loadScript = src => new Promise(ok=>{ const s = document.createElement('script'); s.src = src;
+    s.onload = ()=>ok(true); s.onerror = ()=>ok(false); document.head.appendChild(s); });
+  R.refSets = null;
+  R.loadRefIndex = function(){
+    if(R.refSets) return Promise.resolve(R.refSets);
+    if(window.RS_LEVEL_SETS) return Promise.resolve(R.refSets = window.RS_LEVEL_SETS);
+    return loadScript(REF_DIR + 'index.js').then(()=>R.refSets = window.RS_LEVEL_SETS || []);
+  };
+  R.refOpen = null;                                   // tên bộ đang mở từ ref (null = không)
+  R.openRef = async function(set){
+    const sets = await R.loadRefIndex();
+    if(!sets.length){ warn('Chưa có ref/RoyalSmashLevel/ cạnh trang — chạy rs_bake.py (nó chép level của bản rip vào đó).'); return; }
+    const S = sets.find(x=>x.set===set) || sets[0];
+    if(!folderLeaveOk()) return;
+    if(!R.on) await R.setGame('rs', {force:true});
+    if(!R.on) return;
+    if(!(window.RS_LEVELS && RS_LEVELS[S.set])){
+      hint('📚 Đang nạp bộ "'+S.set+'" ('+S.n+' level)…');
+      if(!(await loadScript(REF_DIR + S.js)) || !(window.RS_LEVELS && RS_LEVELS[S.set])){ warn('Không đọc được '+REF_DIR+S.js+'.'); return; }
+    }
+    const T = RS_LEVELS[S.set];
+    folderFiles = Object.keys(T).map(name=>({name, file:new File([T[name]], name, {type:'application/json'}), idx:lvIdxOf(name)}));
+    lvSort(); lvOpenIt = null; folderDir = null; folderDirName = S.set;
+    folderPos = -1; folderDirty = false; fsHandle = null; fsName = ''; syncSaveBtn(); renderFolderNav();
+    R.refOpen = S.set; lvScanDiff();
+    folderShow(0);
+    hint('📚 Đã mở bộ "'+S.set+'" có sẵn — '+folderFiles.length+' level, lật bằng ◀ ▶ hoặc gõ số. Lưu: ⬇️ Tải về (muốn 💾 Lưu đè thì mở thư mục ref/RoyalSmashLevel/'+S.set+' bằng 📁).');
+  };
+  /* nút 📚: chưa mở bộ nào → bộ đầu; đang mở một bộ → sang bộ kế */
+  R.refNext = async function(){
+    const sets = await R.loadRefIndex();
+    const k = sets.findIndex(x=>x.set===R.refOpen && folderFiles.length && !folderDir);
+    return R.openRef(sets.length ? sets[(k+1) % sets.length].set : null);
+  };
+  R.setBg = function(v){ R.bg = v; try{ localStorage.setItem('hm_rs_bg', v); }catch(e){} R.syncScene(); };
+  try{ R.bg = localStorage.getItem('hm_rs_bg') || 'auto'; }catch(e){}
+  return R;
+})();
+
+/* nút của bảng 🧩 và ô chọn game */
+$('gameSel').addEventListener('change', e=>RS.setGame(e.target.value));
+$('rsApply').onclick = RS.applyCustom;
+$('btnRsRef').onclick = ()=>{ RS.refNext().catch(e=>warn(e.message)); };
+$('rsLook').checked = RS.lookOn;
+$('rsLook').addEventListener('change', e=>RS.setLook(e.target.checked));
+$('rsTblKind').addEventListener('change', e=>RS.setTableKind(e.target.value));
+$('rsBg').addEventListener('change', e=>RS.setBg(e.target.value));
+$('rsCustom').addEventListener('keydown', e=>{ e.stopPropagation(); if(e.key==='Enter' && (e.ctrlKey||e.metaKey)){ e.preventDefault(); RS.applyCustom(); } });
+RS.boot();
 </script>
 </body>
 </html>

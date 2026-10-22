@@ -39,6 +39,85 @@ save check, as before. The crate (📦, `crates[]`) and wood plank (🪏,
 `planks[]`) code is still in the page but hidden: Valley Smash has no crates, and
 planks were dropped on 2026-09-08. No level in `ver_0`–`ver_3` uses either.
 
+## Royal Smash levels (since 2026-10-22, local machines only)
+
+A **Game** picker (header and start pop-up) adds a second game: Royal Smash, a
+competitor's physics puzzle, read from a RipStation rip
+(`assets/ExportedProject/Assets/Resources/levels/rs 1` and `rs1 loop`, files
+`00001.json`…). Opening a file that has `"Entities"` switches to it by itself; a
+Valley Smash file switches back. Each game remembers its own last folder.
+
+**The art never enters this repo.** Royal Smash's meshes, materials and textures
+are baked into `art/royal-smash/rs-art.js` (about 5.7 MB), inside the ignored
+`art/` folder, by a script that lives in the brain, not here:
+
+```bash
+python -P 01-projects/hm-leveldesign-tool/tools/royal-smash-bake/rs_bake.py "<RipStation output folder of Royal Smash>"
+```
+
+Without that file (on the Pages site, or a fresh clone) picking Royal Smash asks
+for the file instead, and the page stays on Valley Smash at start-up.
+
+The same run copies the rip's level sets, byte for byte, into
+`ref/RoyalSmashLevel/` (`rs 1/`, `rs1 loop/`, 2,380 files), also ignored by git
+(`tools/*/ref/`). A `file://` page cannot list a folder, so the baker also writes
+one script per set (`rs-1.js`, `rs1-loop.js`) and `index.js`. With those in
+place, switching to Royal Smash opens `rs 1` level 1 directly when no Royal Smash
+folder is remembered yet; **📚 Level RS** on the toolbar steps through the sets,
+and the start pop-up lists them. A set opened this way is read-only: flip with
+◀ ▶ or the level number, save with ⬇️ Tải về. To save in place, open the folder
+`ref/RoyalSmashLevel/<set>` once with 📁 Nạp thư mục; the page remembers it.
+`--no-levels` skips the copy.
+
+How a level maps onto the editor:
+
+| Royal Smash file | Editor |
+|---|---|
+| `Table_Rect` / `Table_Round` / `Table_Wagon` / `Table_Boat` entity | a table (Bàn); `Custom.w` / `d` are the Rộng X / Sâu Z boxes; yaw from `Rotation` |
+| any other entity (`StoneSquare_3`, `JamJarRed_1`, `Hammer`, `Pinata`…) | a block of id 5000+, fixed size from its prefab (`_N` = N cells long along +Y) |
+| `Stage` (absent = 1) | stages S1, S2, S3 |
+| world `Position` | table-local position (each block goes to the table under it) |
+| `MoveCount`, `Difficulty` | 🎯 Move, 🔥 difficulty |
+| `Custom`, `Scale` | kept on the block; edit `Custom` as JSON in the 👑 Royal Smash panel |
+
+Saving writes every entity you did not change **byte for byte as it was in the
+file** (Unity's float text included); only edited entities are re-serialised.
+All 2,380 levels of the rip load and save back byte-identical. `ContentHash` is
+kept as it was: how the game computes it, and whether it checks it, is unknown.
+Tables tilted on x/z (37 in the rip) keep their quaternion; their blocks use an
+unrotated frame.
+
+Rendering follows the game: `Gameplay.unity` camera (0, 8.85, −40), pitch 5°,
+FOV 30 (🎥 Góc game), its main and fill directional lights, flat ambient, shadows
+from the main light at strength 0.75, a ground shadow catcher with the ground's
+green shadow colour, and the arena backdrop behind the canvas (boat → water,
+wagon → desert, otherwise forest: inferred from the table type). Royal Smash
+renders in **Linear** colour space, so its shaders convert sRGB in and out.
+Toony Colors Pro 2 materials (jars, colour boxes, stone, ice, wood, columns, table
+poles) reuse the Valley Smash TCP2 port. OmniShade materials (cans, boxes, table
+tops, TNT, pumpkin, blockers) are rebuilt from the property names only, since the
+rip carries no shader source: close, not exact. Table tops are the game's 8×8
+meshes nine-sliced to `w` × `d`; hard and super-hard tables (`Difficulty` 1 / 2)
+use their own meshes.
+
+**🎨 Look override, tuned to a gameplay screenshot, not taken from the game.** The
+owner's screenshots are in an arena the rip does not contain (its lighting and
+post-processing sit in encrypted bundles). Against them, jars still lit too bright
+with the rip's own values, so `RS_LOOK_OVERRIDE` in the page scales the TCP2
+shader of curved blocks: main light ×0.8, shadow colour ×0.7, ambient ×0.7,
+specular off, ramp smoothing ×2.6. The values were fitted by comparing a 9×9
+grid of points on a red and a yellow jar in the screenshot with the same grid in
+the editor, from the game camera (row and column means, error 26.3 → 19.7 sRGB
+levels). The TCP2 cylinders (stone, ice, wood, column, bouncer) use the same
+values without a screenshot of their own. The tick box **🎨 Chỉnh theo ảnh
+gameplay** in the 👑 panel turns it off to show the rip's raw values; colour boxes
+already matched and are never touched. Also matched to the screenshots: jam jars
+draw without their masked matcap (the rip's mask would paint the label over).
+
+Valley Smash-only tools are hidden in Royal Smash mode: size bar, split/merge,
+ring, crates, blockers panel, import, and the table motion rows (table motion is
+in the table's `Custom`).
+
 ## Saving a level back over the file you opened
 
 Load with **📂 Nạp file** or **📁 Nạp thư mục** and the **⬇️ Tải về** button
