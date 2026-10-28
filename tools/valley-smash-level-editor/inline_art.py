@@ -175,7 +175,9 @@ def main():
                 row["base"] = e["base"]
             if e.get("shape"):
                 row["shape"] = e["shape"]
-            for k in ("mesh", "tex", "shade"):
+            # mrot (2026-10-28): goc xoay cua mesh trong prefab goc, khi khac 0 (TNT_Box quay
+            # 180 do quanh Y). Bien the khong mang: editor tu xoay chung (bakedQuat / varMeshQuat).
+            for k in ("mesh", "tex", "shade", "mrot"):
                 if e.get(k):
                     row[k] = e[k]
             if e.get("mesh"):

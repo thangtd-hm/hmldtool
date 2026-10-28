@@ -37,7 +37,12 @@ Block Shoot is gone: no picker, and the block set is Valley Smash's 30 ids (1, 2
 and 238), plus **130 TNT** since 2026-10-28 in the last group, **Khối đặc biệt
 (Special Block)**: prefab `TNT_Box` (BombTarget), mass 1, 1×1×1 only, with its
 art already in the bake. The editor places it; it does not simulate the
-explosion. Any other id in a file draws as a grey "KHÔNG RÕ" box and blocks the
+explosion. Also since 2026-10-28, the group **Khối màu (Color Block)** holds
+ids 250–259: one prefab `Block_Box` (a maple-leaf box, behaviour cloned from
+the square fish can), with a colour per material: 250 yellow, 251 orange,
+252 red, 253 green, 254 blue, 255 pink, 256 purple, 257 white, 258 dark blue and
+259 brown. Mass 1, every length up to 5 on x, y and z. In the team repo they
+come from branch `feature/them-block` (2026-10-28), not yet on `dev/main`. Any other id in a file draws as a grey "KHÔNG RÕ" box and blocks the
 save check, as before. The crate (📦, `crates[]`) and wood plank (🪏,
 `planks[]`) code is still in the page but hidden: Valley Smash has no crates, and
 planks were dropped on 2026-09-08. No level in `ver_0`–`ver_3` uses either.
@@ -95,13 +100,28 @@ python inline_art.py
 The Export Art log prints the full path it wrote to and the exact `inline_art.py`
 command for step 2, so you can copy it straight out of the Unity console.
 
-**Run step 1 from the open editor, never headless.** A batch-mode run
+**Run step 1 from the open editor, or headless only through `ExportArtBatch`.**
+A batch-mode run of the menu method
 (`Unity.exe -batchmode -executeMethod LevelEditorArtExporter.ExportArt`) finishes
 without errors but draws some palette icons before their shader or textures are
 ready. On 2026-09-24 two headless runs gave ids 1, 2, 12 and 130 a magenta, pink,
 green or untextured 3/4 icon, a different set each run, while their
 front/top/side views were fine. The same export clicked in the editor was clean.
-Every export, clicked or not, also rewrites `humanDescription.globalScale` in
+Since 2026-10-28 the exporter has a batch entry that fixes this, `ExportArtBatch`:
+it turns off async shader compilation and makes a throwaway render of each object
+first. With `-artIds` it bakes only some ids into a folder of their own, to merge
+into `art/` (without `-nographics`):
+
+```
+Unity.exe -batchmode -quit -projectPath <block-shot-2> -executeMethod LevelEditorArtExporter.ExportArtBatch -artOut <folder> -artIds 250-259
+```
+
+Its run of id 3 matched the clicked export pixel for pixel. The exporter also
+writes `mrot`, the turn of a prefab's main mesh when it isn't zero. Only TNT
+(130) has one among the editor's ids: its prefab turns the model 180° around Y,
+so the label faces the cannon. The 3D view applies it to the 1×1 mesh; long
+variants keep the editor's own rotation. Every export
+(clicked or not), clicked or not, also rewrites `humanDescription.globalScale` in
 ~28 `.fbx.meta` files of the Unity repo when it toggles mesh readability. That is
 importer churn, not a real change: `git checkout` those files afterwards.
 
