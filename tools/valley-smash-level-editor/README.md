@@ -34,7 +34,10 @@ The editor used to serve two games on one engine, Ocean Block Shoot (`obs`) and
 Valley Smash (`vs`), with a **Game** picker that swapped the block set. Ocean
 Block Shoot is gone: no picker, and the block set is Valley Smash's 30 ids (1, 2,
 3, 11–15, 21, 22, 41, 42, 61, 62, the jar shades 220–237 without 228 and 234,
-and 238). Any other id in a file draws as a grey "KHÔNG RÕ" box and blocks the
+and 238), plus **130 TNT** since 2026-10-28 in the last group, **Khối đặc biệt
+(Special Block)**: prefab `TNT_Box` (BombTarget), mass 1, 1×1×1 only, with its
+art already in the bake. The editor places it; it does not simulate the
+explosion. Any other id in a file draws as a grey "KHÔNG RÕ" box and blocks the
 save check, as before. The crate (📦, `crates[]`) and wood plank (🪏,
 `planks[]`) code is still in the page but hidden: Valley Smash has no crates, and
 planks were dropped on 2026-09-08. No level in `ver_0`–`ver_3` uses either.

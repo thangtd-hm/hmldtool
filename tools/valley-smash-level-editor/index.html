@@ -679,6 +679,7 @@ window.ART={"provisional":false,"generated":"2026-09-24T18:27:16","light":{"eule
     <details class="grp"><summary class="gt" title="id 21/22, mass 4.5, dài tới 5.">Đá (Stone) 4.5</summary><div class="swatches" id="pal-stone"></div></details>
     <details class="grp"><summary class="gt" title="id 61/62, mass 3, dài tới 5.">Băng (Ice) 3</summary><div class="swatches" id="pal-ice"></div></details>
     <details class="grp"><summary class="gt" title="11 blue · 12 red · 14 purple · 238 yellow, then shades 1 → 6 (light → dark): green 220–225 · orange 226, 227, 13, 229–231 · pink 232, 233, 15, 235–237. Same prefab Jar_Cylinder, different verticalMaterial. Lengths up to 5. No id 16, 228 or 234.">Jar (Hũ) 3 — 22 màu</summary><div class="swatches" id="pal-jar"></div></details>
+    <details class="grp"><summary class="gt" title="Khối có cơ chế riêng. 130 TNT (prefab TNT_Box, mass 1, chỉ cỡ 1×1×1): trúng đạn, va chạm mạnh hoặc bị Rocket phá thì NỔ — đẩy văng, phá khối quanh nó, kích nổ dây chuyền. Editor chỉ đặt khối, không mô phỏng vụ nổ.">Khối đặc biệt (Special Block)</summary><div class="swatches" id="pal-special"></div></details>
     <!-- 🪏 thanh gỗ: Valley Smash không dùng (chốt 08/09/2026). Giữ ẩn vì code còn gắn nút Dán mép lúc nạp trang. -->
     <details class="grp" style="display:none"><summary class="gt" title="🪏 mã NỘI BỘ của editor nay là 901, KHÔNG còn 230 (id 230 từ 07/09/2026 là ☢ Nuclear bomb — khối THẬT của game). File xuất KHÔNG đổi: planks[].type vẫn ghi 1. Tấm ván MỎNG: mọi thứ như khối thường (đặt/kéo dài/xoay y hệt), chỉ CHIỀU SÂU (trục Z) bằng 0,25 lần khối 1×1. Nhìn mặt Trước vẫn vuông 1×1, nhìn mặt Bên mới thấy mỏng. Xếp sát nhau được: chỉnh Bước = ¼. GẮN LIỀN với bè: đạn chặn lại nhưng không vỡ, KHÔNG tính vào remain object. Xuất ra mảng RIÊNG planks[] nên cỡ TỰ DO — cao bao nhiêu cũng được, không dính trần 1..5 và không cần prefab biến thể.">🪏 Thanh gỗ (planks[]) — gắn liền bè · cỡ tự do</summary><div class="swatches" id="pal-plank"></div>
       <div class="plankAnchorRow" title="Thanh gỗ chỉ dày 0,25 trong ô rộng 1 nên còn chỗ trống theo chiều SÂU (Z). Chọn dán nó vào mép nào của ô. Ở mặt TRÊN nhìn ra là trên/dưới, ở mặt BÊN là trái/phải, ở mặt TRƯỚC thì không thấy (Z là chiều sâu).">
@@ -1188,6 +1189,11 @@ const TYPES = {
   236:{name:'Jar pink 5',  shape:'jar', col:'#e6428f',mass:3,  lab:'🌸'},
   237:{name:'Jar pink 6',  shape:'jar', col:'#d93591',mass:3,  lab:'🌸'},
   238:{name:'Jar yellow',  shape:'jar', col:'#f1aa05',mass:3,  lab:'🍍'},   // ThangTD 877180980
+  /* ── KHỐI ĐẶC BIỆT (2026-10-28) ──
+     130 TNT = prefab TNT_Box (BombTarget), mass 1, CHỈ prefab gốc 1×1×1 (2x..5z để trống) — ObjectDataTest.asset
+     trên dev/main, gd-leveldesign và release/aab như nhau. Trúng đạn, va chạm mạnh hoặc bị Rocket phá thì nổ:
+     đẩy văng, phá khối quanh nó, nổ dây chuyền (ExplosiveTarget). Editor chỉ đặt khối, không mô phỏng nổ. */
+  130:{name:'TNT',         shape:'box', col:'#c83b36',mass:1,  lab:'🧨'},
   /* ── MÃ NỘI BỘ, KHÔNG có trong bảng màu (code còn giữ nhưng Valley Smash không dùng) ──
      901 THANH GỖ: ra mảng planks[] (file ghi type 1, PLANK_OUT). User chốt BỎ ở Valley Smash 08/09/2026,
          objIssue chặn Export. fsc = hệ số nhân với size: mỏng 0,25 theo trục Z.
@@ -1197,7 +1203,8 @@ const TYPES = {
 };
 /* nhóm nào rỗng thì buildPalette ẩn luôn cả khối .grp */
 const PAL={'pal-can':[1,2,3],'pal-box':[41,42],'pal-stone':[21,22],'pal-ice':[61,62],
-  'pal-jar':[11,12,14,238, 220,221,222,223,224,225, 226,227,13,229,230,231, 232,233,15,235,236,237]};
+  'pal-jar':[11,12,14,238, 220,221,222,223,224,225, 226,227,13,229,230,231, 232,233,15,235,236,237],
+  'pal-special':[130]};
 /* ============================================================
    PREFAB VARIANT CÓ THẬT TRONG GAME  →  cỡ dài tối đa mỗi id
    (đọc kèm TargetController.cs:160-190)
@@ -1216,6 +1223,7 @@ const MAXLEN={};
 [220,221,222,223,224,225,226,227,229,230,231,232,233,235,236,237,238]
   .forEach(id=>MAXLEN[id]=5);              // jar shades + yellow 2026-09-24: prefab2..5 on x/y/z
 MAXLEN[2]=1;                               // nón: asset chỉ có prefab gốc
+MAXLEN[130]=1;                             // TNT: asset chỉ có prefab gốc (TNT_Box)
 // 🪏 Thanh gỗ 901 CỐ Ý KHÔNG có trong MAXLEN: nó ra planks[], không qua prefab variant nên không có trần.
 /* 🪏 THANH GỖ (raft part): khối GẮN LIỀN với bè, đạn chặn lại nhưng KHÔNG vỡ, KHÔNG tính vào
    remain object. Trong game nó KHÔNG đi qua Raft.SpawnObject nên tự động nằm ngoài mọi thống kê
