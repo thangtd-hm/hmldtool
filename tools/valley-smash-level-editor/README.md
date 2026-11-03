@@ -42,7 +42,13 @@ ids 250–259: one prefab `Block_Box` (a maple-leaf box, behaviour cloned from
 the square fish can), with a colour per material: 250 yellow, 251 orange,
 252 red, 253 green, 254 blue, 255 pink, 256 purple, 257 white, 258 dark blue and
 259 brown. Mass 1, every length up to 5 on x, y and z. In the team repo they
-come from branch `feature/them-block` (2026-10-28), not yet on `dev/main`. Any other id in a file draws as a grey "KHÔNG RÕ" box and blocks the
+come from branch `feature/them-block` (2026-10-28), not yet on `dev/main`. Since 2026-11-03 the last group, **Creative**, holds blocks
+from Creative branches, which are not in the main game: a level with them only
+plays on that branch. Today it holds **260 Shark Box**, prefab `Shark_Box`
+(`SharkTarget`), mass 5, 1×1×1 only, from branch
+`Creative/RemakeOBSMultilevelObstacle` (commit `52731634b` moved it from id 250 to
+260). A shot that hits the bite zone of a side face is eaten and the box stays;
+the editor places the block and does not simulate the bite. Any other id in a file draws as a grey "KHÔNG RÕ" box and blocks the
 save check, as before. The crate (📦, `crates[]`) and wood plank (🪏,
 `planks[]`) code is still in the page but hidden: Valley Smash has no crates, and
 planks were dropped on 2026-09-08. No level in `ver_0`–`ver_3` uses either.
@@ -129,6 +135,13 @@ The exporter still bakes Valley Smash's table under two game keys, `obs` and
 `vs`, from the days this editor also served Ocean Block Shoot. `inline_art.py`
 embeds only `vs`.
 
+**After a full export, run `python bake_shark.py` before `inline_art.py`.** The
+exporter strips Spine components, so it cannot draw the Shark Box's four mouths,
+and an export from a branch without the block drops it from `manifest.json`. The
+script reads the real `sharp_box.fbx` and BaseColor with `git show`, and maps the
+tutorial icon `shark_block_icon.png` onto the four sides in place of the Spine
+faces. So the mouth is the icon's drawing, not a render of the Spine idle pose.
+
 Add `--no-textures --no-meshes` if you only want the 2D palette/canvas art and
 a smaller file (~1.6 MB instead of ~7.9 MB) — the 3D view then falls back to
 primitives.
@@ -146,6 +159,7 @@ rewritten, so you can still hand-edit everything else.
 | `index.html` | The tool. Single file, self-contained. |
 | `art/` | Baked output: `icons/`, `meshes/`, `textures/`, `manifest.json`. |
 | `inline_art.py` | Embeds `art/` into the HTML. Idempotent. |
+| `bake_shark.py` | Bakes the Shark Box (260) into `art/` from the team repo's files, without Unity. |
 | `extract_registry.py` | Reads the Unity `.asset`/`.prefab`/`.meta` YAML directly and writes `art/registry.json` (id → prefab → mesh → material → albedo). No Unity needed. |
 | `provisional_bake.py` | Draws stand-in icons with Pillow so the tool works before anyone opens Unity. Marked `provisional: true`. |
 | `block-shot-2/Assets/_BaseCode/Editor/LevelEditorArtExporter.cs` (in the brain's Valley Smash project) | The real exporter (the Unity menu item). |
