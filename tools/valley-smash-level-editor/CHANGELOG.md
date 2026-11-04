@@ -16,6 +16,12 @@ on this tool:
 
 Versions up to v1.5.1 were backfilled on 2026-11-04 from the commits, one per day. Earlier history is in the brain's git.
 
+## v1.7.2 · 2026-11-04
+
+### Fixes
+
+- 3D group drag on a yawed table snaps to the table grid `88556f9`
+
 ## v1.7.1 · 2026-11-04
 
 ### Fixes

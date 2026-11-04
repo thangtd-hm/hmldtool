@@ -3,6 +3,12 @@
 Bản tiếng Việt của `CHANGELOG.md`. Hộp chào của `index.html` hiện nội dung file này. Quy tắc đánh số phiên bản nằm ở đầu
 `CHANGELOG.md`.
 
+## v1.7.2 · 2026-11-04
+
+### Thay đổi
+
+- Kéo nhóm khối trong 3D trên bàn xoay giờ bám lưới của bàn, hết số lẻ như 0.866 `88556f9`
+
 ## v1.7.1 · 2026-11-04
 
 ### Thay đổi
