@@ -71,12 +71,17 @@ save. The rules live in `<script id="autofix">` (`VSAutoFix`), which holds no pa
 
 | Step | Blocks that round to a 90 degree pose | Designed tilts (more than about 7.5 degrees) |
 |---|---|---|
-| Clean | rotation to the nearest 90 degrees, position to the nearest 0.5 | rotation to the nearest 5 degrees, position to the nearest 0.05 |
-| Separate | if still hitting, the nearest free 0.5 grid spot within 1 unit, sideways or up, with something underneath | never moved further; if rounding would go deeper into a neighbour, the block keeps its first pose, un-rounded |
+| Clean | rotation to the nearest 90 degrees, position to the nearest 0.5 | rotation to the nearest 5 degrees, position to 3 decimals, which leaves a resting stack as it was |
+| Separate | if still hitting, the nearest free 0.5 grid spot within 1 unit, sideways or up, with something underneath | a hit up to 0.25 deep is pushed apart along its shortest way out, at most 0.5 in one pass; in a stack only the upper block rises; never through the table |
 | Flag | no free spot: selected for a hand fix | still hitting: selected for a hand fix |
 
+The two passes repeat until nothing changes, because a move can free room for another block; that is why a second click finds
+nothing to do.
+
 "Hitting" is the test behind the orange outline, so a fixed block loses its outline. It treats round blocks as boxes,
-as the outline always has. Crates, planks and blocks inside a crate never change. Ids, sizes, block count, tables and
+as the outline always has. An id the game lacks (the grey "KHÔNG RÕ" box) collides with nothing: Unity skips it and its
+real shape is unknown, so it draws no outline and moves nothing, though it is still rounded and still listed in "Soát lỗi
+game". Giving it a real id brings the outline and the fix back. Crates, planks and blocks inside a crate never change. Ids, sizes, block count, tables and
 blockers never change. A second run changes nothing. The check that the jam is gone in play is Unity's: this page does
 not simulate physics.
 

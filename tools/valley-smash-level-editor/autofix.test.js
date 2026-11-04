@@ -49,12 +49,12 @@ test('a small tilt snaps to the nearest 90 degree rotation', () => {
   assert.equal(r.items[0].rot.z, 0);
 });
 
-test('a designed tilt keeps its angle, rounded to 5 degrees, position to 0.05', () => {
-  const r = AF.fixTable([cube(0.123, 2.02, 0, { rot: yaw(31.1) })]);
+test('a designed tilt keeps its angle, rounded to 5 degrees, position to 3 decimals', () => {
+  const r = AF.fixTable([cube(0.1234567, 2.0200001, 0, { rot: yaw(31.1) })]);
   const q = r.items[0].rot, target = yaw(30);
   near(q.y, target.y, 'y');
   near(q.w, target.w, 'w');
-  assert.deepEqual(r.items[0].pos, { x: 0.1, y: 2, z: 0 });
+  assert.deepEqual(r.items[0].pos, { x: 0.123, y: 2.02, z: 0 });
 });
 
 test('a jammed block moves to a free spot and the lower one stays', () => {
@@ -106,20 +106,47 @@ test('two designed tilts that hit are both flagged', () => {
   assert.equal(r.moved, 0);
 });
 
-test('a designed tilt that rounding would push into its neighbour keeps its original pose', () => {
-  // Corners 0.01 apart along the diagonal; rounding x to 1.4 makes the two overlap.
-  const r = AF.fixTable([cube(0, 0.5, 0, { rot: YAW45 }), cube(1.424, 0.5, 0, { rot: YAW45 })]);
-  assert.equal(r.items[1].pos.x, 1.424);
+test('two designed tilts with a shallow overlap are pushed apart', () => {
+  const r = AF.fixTable([cube(0, 0.5, 0, { rot: YAW45 }), cube(1.4, 0.5, 0, { rot: YAW45 })]);
   assert.deepEqual(r.flagged, []);
-  assert.equal(r.kept, 1);
-  assert.equal(r.rounded, 0);
+  assert.equal(r.pushed, 2);
+  assert.equal(AF.countHits(r.items), 0);
+  assert.ok(Math.abs(r.items[1].pos.x - 1.4) < 0.05, 'a small push, x ' + r.items[1].pos.x);
 });
 
-test('a designed tilt keeps the rounded pose when rounding makes it no worse', () => {
-  const r = AF.fixTable([cube(0, 0.5, 0, { rot: YAW45 }), cube(5.03, 0.5, 0, { rot: YAW45 })]);
-  assert.equal(r.items[1].pos.x, 5.05);
-  assert.equal(r.kept, 0);
-  assert.equal(r.rounded, 1);
+test('a designed tilt sunk into a grid block rises, the grid block stays', () => {
+  const r = AF.fixTable([cube(0, 0.5, 0), cube(0, 1.45, 0, { rot: YAW45 })]);
+  assert.deepEqual(r.items[0].pos, { x: 0, y: 0.5, z: 0 });
+  assert.ok(r.items[1].pos.y >= 1.5, 'y ' + r.items[1].pos.y);
+  assert.deepEqual(r.flagged, []);
+});
+
+test('in a tilted stack only the upper block rises', () => {
+  const r = AF.fixTable([cube(0, 0.5, 0, { rot: YAW45 }), cube(0, 1.45, 0, { rot: YAW45 })]);
+  assert.equal(r.items[0].pos.y, 0.5);
+  assert.ok(r.items[1].pos.y >= 1.5, 'y ' + r.items[1].pos.y);
+  assert.equal(AF.countHits(r.items), 0);
+});
+
+test('a push never goes through the table', () => {
+  const r = AF.fixTable([cube(0, 0.5, 0, { rot: YAW45 }), cube(0, 1.4, 0, { pinned: true })]);
+  assert.equal(r.items[0].pos.y, 0.5);
+  assert.deepEqual(r.flagged, [0, 1]);
+});
+
+test('a block needing a long push stays flagged and keeps its pose', () => {
+  const r = AF.fixTable([cube(0, 0.5, 0, { rot: YAW45 }), cube(0.5, 0.5, 0, { rot: YAW45 })]);
+  assert.equal(r.pushed, 0);
+  assert.deepEqual(r.flagged, [0, 1]);
+});
+
+test('a second run after a push changes nothing', () => {
+  const blocks = [cube(0, 0.5, 0, { rot: YAW45 }), cube(1.4, 0.5, 0, { rot: YAW45 }), cube(0, 1.45, 0, { rot: YAW45 })];
+  const first = AF.fixTable(blocks);
+  const second = AF.fixTable(first.items.map((it, i) => Object.assign({}, blocks[i], { pos: it.pos, rot: it.rot })));
+  assert.equal(second.pushed, 0);
+  assert.equal(second.rounded, 0);
+  second.items.forEach((it, i) => assert.deepEqual(it.pos, first.items[i].pos));
 });
 
 test('a pinned block keeps every number, and other blocks move away from it', () => {

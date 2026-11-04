@@ -857,7 +857,7 @@ window.ART={"provisional":false,"generated":"2026-09-24T18:27:16","light":{"eule
       <div id="issueDock">
         <div id="ovLine" style="display:none">
           <span id="ovTxt"></span>
-          <button class="tb" id="ovFix" title="Làm tròn vị trí và góc xoay của cả level (mọi stage, mọi bàn), tách các khối đâm nhau sang chỗ trống gần nhất trong vòng 1 ô, rồi chọn sẵn những khối còn kẹt để sửa tay. Chưa ghi file cho tới khi bấm Lưu; Ctrl+Z để hoàn tác.">🧹 Tự sửa khối kẹt</button>
+          <button class="tb" id="ovFix" title="Làm tròn vị trí và góc xoay của cả level (mọi stage, mọi bàn), tách các khối đâm nhau sang chỗ trống gần nhất trong vòng 1 ô, đẩy nhẹ khối nghiêng, rồi chọn sẵn những khối còn kẹt để sửa tay. Chưa ghi file cho tới khi bấm Lưu; Ctrl+Z để hoàn tác.">🧹 Tự sửa khối kẹt</button>
           <button class="tb" id="ovToggle" title="Bật/tắt viền cam nét đứt đánh dấu khối đâm nhau (cả khung 2D lẫn 3D). Tắt đi để nhìn rõ hình khối khi level có nhiều chỗ chồng.">👁 viền</button>
         </div>
         <details class="field k-warn" id="valPanel" open><summary id="valHead" title="Game bỏ qua khối có cỡ sai luật hoặc chưa có prefab variant — vào chơi khối biến mất mà không báo gì">🚫 Soát lỗi game (khối sẽ biến mất)</summary>
@@ -1152,7 +1152,8 @@ window.ART={"provisional":false,"generated":"2026-09-24T18:27:16","light":{"eule
    The hit test is the one behind the orange outline (obbHit in the main script), so a fixed block loses its outline. */
 (function (root) {
   'use strict';
-  const GRID = 0.5, TILT_GRID = 0.05, ANGLE_STEP = 5, AXIS_TILT = 5.01, MAX_MOVE = 1, REST_GAP = 0.02, SAME = 1e-9;
+  const GRID = 0.5, TILT_GRID = 0.001, ANGLE_STEP = 5, AXIS_TILT = 5.01, MAX_MOVE = 1, REST_GAP = 0.02, SAME = 1e-9;
+  const PUSH_DEPTH = 0.25, PUSH_MAX = 0.5, PUSH_GAP = 0.003, PUSH_ROUNDS = 40, RUNS = 8;
   const IDENT = { x: 0, y: 0, z: 0, w: 1 }, DEG = Math.PI / 180, S = Math.SQRT1_2;
   // The 24 rotations of a cube, with the same sign rule as canon().
   const AXIS_ROTS = [[0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0],
@@ -1229,16 +1230,17 @@ window.ART={"provisional":false,"generated":"2026-09-24T18:27:16","light":{"eule
       if (Math.abs(t[i2] * R[i1][j] - t[i1] * R[i2][j]) > A.h[i1] * Ab[i2][j] + A.h[i2] * Ab[i1][j] + B.h[j1] * Ab[i][j2] + B.h[j2] * Ab[i][j1] - EPS) return false; }
     return true; }
 
-  // How far a pair must move to separate, 0 when it does not hit. Only ever compared, so it may use the slower true axes.
-  function depthOf(A, B) { if (!boxHit(A, B)) return 0;
+  // How far a pair must move to separate, and along which axis (n points from A to B). Depth 0 when it does not hit.
+  function pushOf(A, B) { if (!boxHit(A, B)) return { depth: 0, n: null };
     const d = [B.c[0] - A.c[0], B.c[1] - A.c[1], B.c[2] - A.c[2]], axes = [...A.a, ...B.a];
     const dot = (u, v) => u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
     for (const u of A.a) for (const v of B.a) { const c = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]], n = Math.hypot(c[0], c[1], c[2]);
       if (n > 1e-6) axes.push([c[0] / n, c[1] / n, c[2] / n]); }
-    let min = Infinity;
+    let min = Infinity, best = null;
     for (const n of axes) { const reach = (X) => X.h[0] * Math.abs(dot(X.a[0], n)) + X.h[1] * Math.abs(dot(X.a[1], n)) + X.h[2] * Math.abs(dot(X.a[2], n));
-      min = Math.min(min, reach(A) + reach(B) - Math.abs(dot(d, n))); }
-    return Math.max(0, min); }
+      const p = reach(A) + reach(B) - Math.abs(dot(d, n));
+      if (p < min) { min = p; best = dot(d, n) < 0 ? [-n[0], -n[1], -n[2]] : n; } }
+    return { depth: Math.max(0, min), n: best }; }
 
   function hitPairs(boxes, exempt) { const out = [];
     for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++)
@@ -1246,7 +1248,7 @@ window.ART={"provisional":false,"generated":"2026-09-24T18:27:16","light":{"eule
     return out; }
   function countHits(items, opts) { return hitPairs(items.map((it) => boxOf(it.pos, it.rot, it)), opts && opts.exempt).length; }
 
-  function fixTable(items, opts) {
+  function fixOnce(items, opts) {
     const exempt = (opts && opts.exempt) || null, skip = (i, j) => i === j || (exempt && exempt(Math.min(i, j), Math.max(i, j)));
     const cur = items.map(cleanOf), boxes = cur.map((c, i) => boxOf(c.pos, c.rot, items[i]));
     const hitsAny = (b, i, set) => { for (const j of set) if (!skip(i, j) && boxHit(b, boxes[j])) return true; return false; };
@@ -1263,20 +1265,47 @@ window.ART={"provisional":false,"generated":"2026-09-24T18:27:16","light":{"eule
         const p = cur[i].pos; cur[i].pos = { x: p.x + m.x, y: p.y + m.y, z: p.z + m.z };
         break; }
       placed.push(i); }
-    /* Tilted blocks often rest on each other (Carnival levels were saved after physics ran), so rounding one can push it in.
-       A fix never makes a block worse: if its first pose goes less deep, it keeps that pose, un-rounded. */
-    const kept = new Set(), deepest = (b, i) => { let m = 0; for (const j of all) if (!skip(i, j)) m = Math.max(m, depthOf(b, boxes[j])); return m; };
-    for (const i of all) { if (!cur[i].tilted) continue;
-      const now = deepest(boxes[i], i); if (!now) continue;
-      const first = boxOf(items[i].pos, items[i].rot, items[i]);
-      if (deepest(first, i) < now) { boxes[i] = first; cur[i] = { pos: items[i].pos, rot: items[i].rot, tilted: true }; kept.add(i); } }
+    /* Shallow hits on a tilted block are pushed apart along their shortest way out. Grid blocks and pinned blocks hold still;
+       in a stack only the upper block rises, as it would settle. A block short of room stays flagged. */
+    const pushed = new Set(), start = new Map();
+    const canPush = (i) => cur[i].tilted && !items[i].pinned;
+    const tryPush = (i, v) => { const p = cur[i].pos, to = { x: snap(p.x + v[0], 0.001), y: snap(p.y + v[1], 0.001), z: snap(p.z + v[2], 0.001) };
+      if (!start.has(i)) start.set(i, p);
+      const s0 = start.get(i), b = boxOf(to, cur[i].rot, items[i]);
+      if (Math.hypot(to.x - s0.x, to.y - s0.y, to.z - s0.z) > PUSH_MAX) return false;
+      if (bottomOf(b) < -REST_GAP && bottomOf(b) < bottomOf(boxes[i])) return false; // not through the table
+      cur[i] = { pos: to, rot: cur[i].rot, tilted: true }; boxes[i] = b; pushed.add(i); return true; };
+    for (let round = 0; round < PUSH_ROUNDS; round++) { let any = false;
+      for (const [i, j] of hitPairs(boxes, exempt)) { if (!canPush(i) && !canPush(j)) continue;
+        const { depth, n } = pushOf(boxes[i], boxes[j]); if (!depth || depth > PUSH_DEPTH) continue;
+        const go = depth + PUSH_GAP, upright = Math.abs(n[1]) > 0.7, upper = n[1] > 0 ? j : i;
+        const along = (k, amount) => [n[0] * amount, n[1] * amount, n[2] * amount].map((v) => (k === i ? -v : v));
+        if (canPush(i) && canPush(j) && !upright) { const a = tryPush(i, along(i, go / 2)), b = tryPush(j, along(j, go / 2)); any = any || a || b; }
+        else { const mover = upright && canPush(upper) ? upper : canPush(j) ? j : i; any = tryPush(mover, along(mover, go)) || any; } }
+      if (!any) break; }
     const flagged = new Set();
     for (const [i, j] of hitPairs(boxes, exempt)) { flagged.add(i); flagged.add(j); }
     let rounded = 0;
     const out = items.map((it, i) => { const c = cur[i], d = moved.get(i) || 0, was = it.rot || IDENT;
-      if (!it.pinned && !kept.has(i) && !isClean(it)) rounded++;
-      return { pos: c.pos, rot: c.rot, half: it.half, off: it.off, moved: moved.has(i), dist: d, changed: !samePos(c.pos, it.pos) || !sameRot(c.rot || IDENT, was) }; });
-    return { items: out, rounded, kept: kept.size, moved: moved.size, far: [...moved.values()].filter((d) => d > GRID).length, flagged: [...flagged].sort((a, b) => a - b) }; }
+      if (!it.pinned && !isClean(it)) rounded++;
+      return { pos: c.pos, rot: c.rot, half: it.half, off: it.off, tilted: c.tilted, pushed: pushed.has(i), moved: moved.has(i), dist: d, changed: !samePos(c.pos, it.pos) || !sameRot(c.rot || IDENT, was) }; });
+    return { items: out, rounded, pushed: pushed.size, moved: moved.size, far: [...moved.values()].filter((d) => d > GRID).length, flagged: [...flagged].sort((a, b) => a - b) }; }
+
+  /* A push or a move can free room for a block that had none, so it runs until nothing changes. That is also why a second
+     click finds nothing to do. The limit only guards against two blocks trading places for ever. */
+  function fixTable(items, opts) {
+    const first = fixOnce(items, opts), moved = new Set(), pushed = new Set(); let last = first;
+    const note = (r, wasPushed) => r.items.forEach((it, i) => { if (it.moved) moved.add(i); if (wasPushed(i, it, r)) pushed.add(i); });
+    const pushedIn = (input) => (i, it) => !it.moved && !input[i].pinned && it.tilted && !samePos(it.pos, input[i].pos) && it.pushed;
+    note(first, pushedIn(items));
+    for (let n = 0; n < RUNS; n++) {
+      const input = last.items.map((it, i) => Object.assign({}, items[i], { pos: it.pos, rot: it.rot }));
+      const r = fixOnce(input, opts);
+      if (!r.items.some((it) => it.changed)) break;
+      note(r, pushedIn(input)); last = r; }
+    const out = last.items.map((it, i) => { const was = items[i], d = Math.hypot(it.pos.x - was.pos.x, it.pos.y - was.pos.y, it.pos.z - was.pos.z);
+      return Object.assign({}, it, { moved: moved.has(i), dist: moved.has(i) ? d : 0, changed: !samePos(it.pos, was.pos) || !sameRot(it.rot || IDENT, was.rot || IDENT) }); });
+    return { items: out, rounded: first.rounded, pushed: pushed.size, moved: moved.size, far: out.filter((it) => it.moved && it.dist > GRID).length, flagged: last.flagged }; }
 
   root.VSAutoFix = { fixTable, countHits, isClean };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -1771,8 +1800,11 @@ function obbHit(A,B){
 }
 /* Hai khối có ĐÂM VÀO NHAU không (chạm mép không tính). Lọc thô bằng hộp bao rồi mới SAT:
    hộp bao là bao ngoài nên loại sớm không bao giờ bỏ sót cặp thật. */
+/* An id the game lacks (grey "KHÔNG RÕ" box): Unity skips it and its real shape is unknown, so it collides with nothing. Giving it
+   a real id brings the outline and the auto-fix back. "Soát lỗi game" still lists it. */
+const noCollide=o=>!!(TYPES[o.type]&&TYPES[o.type].unknown);
 function objHit(a,b){
-  if(crPair(a,b))return false;
+  if(crPair(a,b)||noCollide(a)||noCollide(b))return false;
   for(const k of ['x','y','z'])
     if(Math.abs(fC(a,k)-fC(b,k))>=(aabbSize(a,k)+aabbSize(b,k))/2-1e-9)return false;
   return obbHit(obbOf(a),obbOf(b));
@@ -5499,7 +5531,7 @@ function afItem(o){ const t=TYPES[o.type];
 function afLevelTables(){ const out=[]; stages.forEach((st,si)=>{ for(const t of (si===curStage?tables:st.tables)) out.push({t,si}); }); return out; }
 function autoFixUnrounded(){ let n=0; for(const {t} of afLevelTables()) for(const o of t.objs) if(!VSAutoFix.isClean(afItem(o)))n++; return n; }
 function autoFixPlan(){ return afLevelTables().map(({t,si})=>{ const objs=t.objs;
-  return {objs,si,r:VSAutoFix.fixTable(objs.map(afItem),{exempt:(i,j)=>crPair(objs[i],objs[j])})}; }); }
+  return {objs,si,r:VSAutoFix.fixTable(objs.map(afItem),{exempt:(i,j)=>crPair(objs[i],objs[j])||noCollide(objs[i])||noCollide(objs[j])})}; }); }
 (function(){ const b=$('ovFix'); if(!b)return;
   b.onclick=()=>{ const plan=autoFixPlan(), sum=k=>plan.reduce((s,p)=>s+p.r[k],0);
     const changed=plan.some(p=>p.r.items.some(it=>it.changed));
@@ -5512,9 +5544,8 @@ function autoFixPlan(){ return afLevelTables().map(({t,si})=>{ const objs=t.objs
     draw(); updateStats(); sync3D();
     // The hint bar holds one line: keep it short, the still-jammed count early.
     const stuck=here.length+elsewhere, parts=[];
-    parts.push(changed?'🧹 Đã làm tròn '+sum('rounded')+', dời '+sum('moved')+(sum('far')?' ('+sum('far')+' dời xa, nên xem lại)':'')+'.':'Không còn gì để tự sửa.');
+    parts.push(changed?'🧹 Đã làm tròn '+sum('rounded')+', dời '+sum('moved')+(sum('far')?' ('+sum('far')+' dời xa, nên xem lại)':'')+', đẩy nhẹ '+sum('pushed')+'.':'Không còn gì để tự sửa.');
     if(stuck) parts.push('Còn '+stuck+' khối kẹt'+(elsewhere?' ('+elsewhere+' ở stage khác)':'')+(here.length?', đã chọn sẵn.':'.'));
-    if(sum('kept')) parts.push(sum('kept')+' khối nghiêng giữ số cũ.');
     if(changed) parts.push('Ctrl+Z để hoàn tác.');
     hint(parts.join(' ')); };
 })();
