@@ -919,7 +919,7 @@ window.ART={"provisional":false,"generated":"2026-09-24T18:27:16","light":{"eule
 
       <div class="subnote" id="objInfo" style="color:var(--dim);margin-top:8px"></div>
       <div class="subnote" id="objWarn" style="display:none;color:var(--move)">⚠ Khối đã xoay quanh NHIỀU trục — ba ô góc chỉ là số gần đúng đọc ngược từ quaternion. Dùng nút xoay 90° cho chắc.</div>
-      <div class="helptx"><b style="color:var(--txt)">Chọn nhiều:</b> Ctrl+bấm, hoặc kéo vùng chọn trên nền trống.<br>Phím: <b style="color:var(--txt)">x/y/z</b> xoay (Shift=ngược) · <b style="color:var(--txt)">↑↓←→</b> dời · <b style="color:var(--txt)">Ctrl+D</b> nhân bản · <b style="color:var(--txt)">Del</b> xoá.<br><b style="color:var(--accent2)">Ctrl+C</b> chép · <b style="color:var(--accent2)">Ctrl+X</b> cắt · <b style="color:var(--accent2)">Ctrl+V</b> dán ngay tại chỗ đang dí chuột. Chấm xanh = "đầu".</div>
+      <div class="helptx"><b style="color:var(--txt)">Chọn nhiều:</b> Ctrl+bấm, kéo vùng chọn trên nền trống, hoặc <b style="color:var(--txt)">Ctrl+A</b> chọn tất cả.<br>Phím: <b style="color:var(--txt)">x/y/z</b> xoay (Shift=ngược) · <b style="color:var(--txt)">↑↓←→</b> dời · <b style="color:var(--txt)">Ctrl+D</b> nhân bản · <b style="color:var(--txt)">Del</b> xoá.<br><b style="color:var(--accent2)">Ctrl+C</b> chép · <b style="color:var(--accent2)">Ctrl+X</b> cắt · <b style="color:var(--accent2)">Ctrl+V</b> dán ngay tại chỗ đang dí chuột. Chấm xanh = "đầu".</div>
     </details>
     <!-- 🎬 Stage: đã chuyển lên THANH 2 (#topbar2) -->
     <details class="field k-info" open><summary>Bàn (table)
@@ -1127,7 +1127,7 @@ window.ART={"provisional":false,"generated":"2026-09-24T18:27:16","light":{"eule
       <b style="color:var(--txt)">Bước</b> = độ mịn khi KHÔNG dính khối nào (1 ô…tự do) → xếp "hơi lệch".<br>
       <b style="color:var(--accent)">Xếp CAO</b>: kéo chuột lên chạm mép trên → khung <b>tự cuộn</b> (xếp bao nhiêu tầng cũng được) · lăn chuột để thu nhỏ.<br>
       <b style="color:var(--accent2)">Đổi chế độ</b>: <b>Ctrl+1</b> 🖌️ Vẽ · <b>Ctrl+2</b> 🧽 Xoá · <b>Ctrl+3</b> ✋ Di chuyển (dùng được cả khi con trỏ đang ở trong ô nhập).<br>
-      <b style="color:var(--accent2)">Phím tắt (không còn nút riêng)</b>: <b>Ctrl+Z</b> hoàn tác · <b>Ctrl+Y</b> (hoặc Ctrl+Shift+Z) làm lại · <b>Ctrl+C</b> chép · <b>Ctrl+X</b> cắt · <b>Ctrl+V</b> dán · <b>G</b> gộp hàng khối đang chọn thành 1 khối dài (panel 🔗 Gộp bên phải).<br>
+      <b style="color:var(--accent2)">Phím tắt (không còn nút riêng)</b>: <b>Ctrl+A</b> chọn tất cả khối · <b>Ctrl+Z</b> hoàn tác · <b>Ctrl+Y</b> (hoặc Ctrl+Shift+Z) làm lại · <b>Ctrl+C</b> chép · <b>Ctrl+X</b> cắt · <b>Ctrl+V</b> dán · <b>G</b> gộp hàng khối đang chọn thành 1 khối dài (panel 🔗 Gộp bên phải).<br>
       Nạp level gốc GIỮ NGUYÊN vị trí, không ép lưới.<br>
       <b style="color:var(--accent2)">Xem cả thư mục</b>: 📁 chọn thư mục level → <b>◀ ▶</b>, <b>PageUp/PageDown</b> hoặc <b>Alt+←/→</b> để lật lần lượt; gõ số vào ô giữa để nhảy thẳng tới level đó.
     </div></details>
@@ -1465,6 +1465,10 @@ function wholeSelTbls(){ if(!selObjs.length)return [];
 function focusTbl(i){ if(i===cur||!tables[i])return;
   pullMeta(); cur=i; objects=curT().objs; pushMeta(); renderTblBar(); pullBlkMeta(); }
 
+// Ctrl/Cmd+A: every block of the stage on screen, across its tables (a selection cannot span stages).
+function selectAllBlocks(){ const all=tables.reduce((a,t)=>a.concat(t.objs),[]);
+  if(!all.length){ hint('Level này chưa có khối nào để chọn.'); return; }
+  setTool('move'); setSel(all); hint('Đã chọn tất cả '+all.length+' khối (Ctrl+A).'); draw(); sync3D(); }
 function clearSel(){ selObj=null; selObjs=[]; selTi=new Map(); rotDegDirty=false; objBoxDirty=false;
   if(typeof refreshRepSel==='function')refreshRepSel(); const b=$('selBox'); if(b)b.style.display='none';
   if(typeof refreshObjBox==='function')refreshObjBox(); }
@@ -4478,6 +4482,10 @@ window.addEventListener('keydown',e=>{
     if(d){ e.preventDefault();
       const T={'1':['paint','🖌️ Vẽ'],'2':['erase','🧽 Xoá'],'3':['move','✋ Di chuyển']}[d];
       setTool(T[0]); hint('Chế độ: '+T[1]+'  (Ctrl+1 Vẽ · Ctrl+2 Xoá · Ctrl+3 Di chuyển)'); return; } }
+  // Ctrl/Cmd+A selects blocks, not the page's text. A field being typed in keeps its own select-all.
+  if(CM&&!e.altKey&&!e.shiftKey&&e.key.toLowerCase()==='a'){ const el=e.target||{}, tg=(el.tagName||'').toLowerCase();
+    const typing=tg==='textarea'||el.isContentEditable||(tg==='input'&&!/^(checkbox|radio|range|button|color|file)$/.test(el.type||''));
+    if(!typing){ e.preventDefault(); selectAllBlocks(); return; } }
   const tag=(e.target.tagName||'').toLowerCase(); if(tag==='input'||tag==='textarea'||tag==='select')return;
   if(CM&&e.key.toLowerCase()==='d'){e.preventDefault();dupSel();return;}   // Ctrl+D = nhân bản khối đang chọn
   // CHÉP/CẮT/DÁN khối. Ctrl+C nhường lại cho trình duyệt khi user đang bôi đen CHỮ trên trang (copy text bình thường).
@@ -4497,6 +4505,11 @@ window.addEventListener('keydown',e=>{
   else if(k==='ArrowLeft'){pushHistory();for(const o of selObjs)o[PK[V.h]]-=snapStep;}
   else did=false;
   if(did){e.preventDefault();draw();updateStats();sync3D();}});
+
+// A press on the board releases the field last typed in (the canvas handlers keep focus), so its value commits and
+// the block shortcuts above reach the board instead of the field.
+window.addEventListener('pointerdown',e=>{ if((e.target.tagName||'').toLowerCase()!=='canvas')return;
+  const f=document.activeElement, tg=(f&&f.tagName||'').toLowerCase(); if(tg==='input'||tg==='textarea'||tg==='select')f.blur(); },true);
 
 /* ---------- export / import — GIỮ float ---------- */
 function computeBounds(){if(!objects.length)return null;let a=1e9,b=-1e9,c=1e9,d=-1e9,y=-1e9;
