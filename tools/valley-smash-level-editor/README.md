@@ -43,10 +43,9 @@ the square fish can), with a colour per material: 250 yellow, 251 orange,
 252 red, 253 green, 254 blue, 255 pink, 256 purple, 257 white, 258 dark blue and
 259 brown. Mass 1, every length up to 5 on x, y and z. In the team repo they
 come from branch `feature/them-block` (2026-10-28), not yet on `dev/main`. Since 2026-11-03 the last group, **Creative/Experiment (not ingame)**, holds
-every other block of `ObjectDataTest.asset`, for experiments: 4–9 (can skins and
-cones), 31 Wormhole, 100–129 ceramic jars (up to length 3), 140 Magma, 150 Bullet
-Jar, 160 Rocket Jar, 170 Breakable Stone, 200/201 Black Stone and 210–215 Oil
-Drum. Their art comes from the normal bake. The game spawns wood 41 in place of 31
+blocks of `ObjectDataTest.asset` for experiments: 31 Wormhole, 140 Magma, 150 Bullet
+Jar, 160 Rocket Jar, 170 Breakable Stone and 210–215 Oil Drum. The can skins 4–9,
+ceramic jars 100–129 and Black Stone 200/201 are left out on purpose. Their art comes from the normal bake. The game spawns wood 41 in place of 31
 unless remote config `remoteWormholeConfig` is on. The group also holds **260 Shark
 Box**, prefab `Shark_Box` (`SharkTarget`), mass 5, 1×1×1 only, which is only on branch
 `Creative/RemakeOBSMultilevelObstacle` (commit `52731634b` moved it from id 250 to

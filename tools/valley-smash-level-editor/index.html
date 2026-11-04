@@ -681,7 +681,7 @@ window.ART={"provisional":false,"generated":"2026-09-24T18:27:16","light":{"eule
     <details class="grp"><summary class="gt" title="11 blue · 12 red · 14 purple · 238 yellow, then shades 1 → 6 (light → dark): green 220–225 · orange 226, 227, 13, 229–231 · pink 232, 233, 15, 235–237. Same prefab Jar_Cylinder, different verticalMaterial. Lengths up to 5. No id 16, 228 or 234.">Jar (Hũ) 3 — 22 màu</summary><div class="swatches" id="pal-jar"></div></details>
     <details class="grp"><summary class="gt" title="250 yellow · 251 orange · 252 red · 253 green · 254 blue · 255 pink · 256 purple · 257 white · 258 dark blue · 259 brown. Same prefab Block_Box (maple-leaf box), different material. Mass 1, lengths up to 5 on x/y/z. Team branch feature/them-block, not yet on dev/main.">Khối màu (Color Block) 1</summary><div class="swatches" id="pal-block"></div></details>
     <details class="grp"><summary class="gt" title="Khối có cơ chế riêng. 130 TNT (prefab TNT_Box, mass 1, chỉ cỡ 1×1×1): trúng đạn, va chạm mạnh hoặc bị Rocket phá thì NỔ — đẩy văng, phá khối quanh nó, kích nổ dây chuyền. Editor chỉ đặt khối, không mô phỏng vụ nổ.">Khối đặc biệt (Special Block)</summary><div class="swatches" id="pal-special"></div></details>
-    <details class="grp"><summary class="gt" title="Blocks for experiments, outside the live level set; the editor only places them and simulates no mechanic. 4–7 corn and tomato cans (mass 1, up to 5) · 8, 9 cones (1×1×1 only) · 31 Wormhole (1×1×1 only; the game spawns wood 41 instead unless remote config remoteWormholeConfig is on) · 100–129 ceramic jars (mass 3, up to 3; 100, 102 and 122–129 share one material) · 140 Magma (mass 5) · 150 Bullet Jar, 160 Rocket Jar (mass 3, 1×1×1 only) · 170 Breakable Stone (mass 5) · 200, 201 Black Stone · 210–215 Oil Drum (mass 6). 260 Shark Box (prefab Shark_Box, mass 5, 1×1×1 only; only on branch Creative/RemakeOBSMultilevelObstacle, a level with it plays only there): a shot that hits the bite zone of one of its 4 side faces is eaten and the box stays put; the top, the bottom and the edge outside the bite zone hit like a solid box, and Huge Ball is never bitten. ">Creative/Experiment (not ingame)</summary><div class="swatches" id="pal-creative"></div></details>
+    <details class="grp"><summary class="gt" title="Blocks for experiments, outside the live level set; the editor only places them and simulates no mechanic. 31 Wormhole (1×1×1 only; the game spawns wood 41 instead unless remote config remoteWormholeConfig is on) · 140 Magma (mass 5) · 150 Bullet Jar, 160 Rocket Jar (mass 3, 1×1×1 only) · 170 Breakable Stone (mass 5) · 210–215 Oil Drum (mass 6). 260 Shark Box (prefab Shark_Box, mass 5, 1×1×1 only; only on branch Creative/RemakeOBSMultilevelObstacle, a level with it plays only there): a shot that hits the bite zone of one of its 4 side faces is eaten and the box stays put; the top, the bottom and the edge outside the bite zone hit like a solid box, and Huge Ball is never bitten. ">Creative/Experiment (not ingame)</summary><div class="swatches" id="pal-creative"></div></details>
     <!-- 🪏 thanh gỗ: Valley Smash không dùng (chốt 08/09/2026). Giữ ẩn vì code còn gắn nút Dán mép lúc nạp trang. -->
     <details class="grp" style="display:none"><summary class="gt" title="🪏 mã NỘI BỘ của editor nay là 901, KHÔNG còn 230 (id 230 từ 07/09/2026 là ☢ Nuclear bomb — khối THẬT của game). File xuất KHÔNG đổi: planks[].type vẫn ghi 1. Tấm ván MỎNG: mọi thứ như khối thường (đặt/kéo dài/xoay y hệt), chỉ CHIỀU SÂU (trục Z) bằng 0,25 lần khối 1×1. Nhìn mặt Trước vẫn vuông 1×1, nhìn mặt Bên mới thấy mỏng. Xếp sát nhau được: chỉnh Bước = ¼. GẮN LIỀN với bè: đạn chặn lại nhưng không vỡ, KHÔNG tính vào remain object. Xuất ra mảng RIÊNG planks[] nên cỡ TỰ DO — cao bao nhiêu cũng được, không dính trần 1..5 và không cần prefab biến thể.">🪏 Thanh gỗ (planks[]) — gắn liền bè · cỡ tự do</summary><div class="swatches" id="pal-plank"></div>
       <div class="plankAnchorRow" title="Thanh gỗ chỉ dày 0,25 trong ô rộng 1 nên còn chỗ trống theo chiều SÂU (Z). Chọn dán nó vào mép nào của ô. Ở mặt TRÊN nhìn ra là trên/dưới, ở mặt BÊN là trái/phải, ở mặt TRƯỚC thì không thấy (Z là chiều sâu).">
@@ -1148,7 +1148,7 @@ window.ART={"provisional":false,"generated":"2026-09-24T18:27:16","light":{"eule
    ⛰️ BỘ KHỐI VALLEY SMASH (block-shot-2, ProjectSettings productName "Valley Smash").
    USER CHỐT 08/09/2026: chỉ các id dùng thật trong level ver_N — 1/2/3 lon cá · 11-15 Jar · 21/22 đá ·
    41/42 gỗ · 61/62 băng; 2026-09-24 thêm 16 sắc Jar (220-237, không có 228 / 234) + 238 Jar yellow.
-   2026-11-03: owner's decision, every other id of the asset is offered in the Creative/Experiment group.
+   2026-11-03: owner's decision, 31, 140, 150, 160, 170, 210-215 and 260 are offered in the Creative/Experiment group.
    Mọi id khác không có trong MAXLEN ⇒ panel "Soát lỗi game"
    CHẶN Export; khối đó vẽ ra hộp xám "KHÔNG RÕ (id N)".
      • 11-15 = Jar_Cylinder + verticalMaterial Jar_<màu>_mat. Không có id 16.
@@ -1198,57 +1198,19 @@ const TYPES = {
      đẩy văng, phá khối quanh nó, nổ dây chuyền (ExplosiveTarget). Editor chỉ đặt khối, không mô phỏng nổ. */
   130:{name:'TNT',         shape:'box', col:'#c83b36',mass:1,  lab:'🧨'},
   /* ── CREATIVE / EXPERIMENT (2026-11-03) ──
-     Every block of ObjectDataTest.asset outside the set above, for experiments (owner's decision): not part of the
-     live level set. Same prefab, mass and size cap as the asset on gd-leveldesign f5cb7c7e6; art comes from the bake.
+     Blocks of ObjectDataTest.asset for experiments (owner's decision): not part of the live level set. The can skins
+     4-9, ceramic jars 100-129 and Black Stone 200/201 are left out on purpose. Same prefab, mass and size cap as the asset on gd-leveldesign f5cb7c7e6; art comes from the bake.
      Swatch colours = median of the 30% most saturated pixels of the front render, like the jars.
      31 Wormhole: the game spawns remoteWormholeConfig.fallbackId (41) instead unless that config is on
      (ObjectDataTest.ShouldFallbackWormhole).
      260 Shark Box = prefab Shark_Box (SharkTarget), mass 5, base prefab only; only on branch
      Creative/RemakeOBSMultilevelObstacle (commit 52731634b moved it from 250 to 260).
      The editor only places these blocks and simulates none of their mechanics. */
-  4:{name:'Corn can square', shape:'box', col:'#429f66',mass:1,  lab:'■'},
-  5:{name:'Corn can cylinder', shape:'cyl', col:'#379557',mass:1,  lab:'⬤'},
-  6:{name:'Tomato can square', shape:'box', col:'#ca4354',mass:1,  lab:'■'},
-  7:{name:'Tomato can cylinder', shape:'cyl', col:'#c23f4f',mass:1,  lab:'⬤'},
-  8:{name:'Cone green', shape:'cone', col:'#42996f',mass:1,  lab:'▲'},
-  9:{name:'Cone red', shape:'cone', col:'#c4455e',mass:1,  lab:'▲'},
   31:{name:'Wormhole', shape:'box', col:'#021d87',mass:1,  lab:'🌀'},
-  100:{name:'Ceramic green', shape:'jar', col:'#459f12',mass:3,  lab:'🏺'},
-  101:{name:'Ceramic green 02', shape:'jar', col:'#74aa21',mass:3,  lab:'🏺'},
-  102:{name:'Ceramic green', shape:'jar', col:'#459f12',mass:3,  lab:'🏺'},
-  103:{name:'Ceramic green 06', shape:'jar', col:'#1f8c0b',mass:3,  lab:'🏺'},
-  104:{name:'Ceramic green 05', shape:'jar', col:'#197409',mass:3,  lab:'🏺'},
-  105:{name:'Ceramic green 04', shape:'jar', col:'#115a04',mass:3,  lab:'🏺'},
-  106:{name:'Ceramic orange 02', shape:'jar', col:'#db8e54',mass:3,  lab:'🏺'},
-  107:{name:'Ceramic orange 01', shape:'jar', col:'#db7438',mass:3,  lab:'🏺'},
-  108:{name:'Ceramic orange', shape:'jar', col:'#e16a22',mass:3,  lab:'🏺'},
-  109:{name:'Ceramic orange 03', shape:'jar', col:'#d14f10',mass:3,  lab:'🏺'},
-  110:{name:'Ceramic orange 05', shape:'jar', col:'#ce3e08',mass:3,  lab:'🏺'},
-  111:{name:'Ceramic orange 06', shape:'jar', col:'#ca3905',mass:3,  lab:'🏺'},
-  112:{name:'Ceramic pink 03', shape:'jar', col:'#e4747c',mass:3,  lab:'🏺'},
-  113:{name:'Ceramic pink 02', shape:'jar', col:'#d9556b',mass:3,  lab:'🏺'},
-  114:{name:'Ceramic pink', shape:'jar', col:'#d63e5a',mass:3,  lab:'🏺'},
-  115:{name:'Ceramic pink 04', shape:'jar', col:'#cb334d',mass:3,  lab:'🏺'},
-  116:{name:'Ceramic pink 05', shape:'jar', col:'#c5213b',mass:3,  lab:'🏺'},
-  117:{name:'Ceramic pink 06', shape:'jar', col:'#b6172b',mass:3,  lab:'🏺'},
-  118:{name:'Ceramic purple', shape:'jar', col:'#8341e3',mass:3,  lab:'🏺'},
-  119:{name:'Ceramic red', shape:'jar', col:'#d42a2f',mass:3,  lab:'🏺'},
-  120:{name:'Ceramic yellow', shape:'jar', col:'#eca400',mass:3,  lab:'🏺'},
-  121:{name:'Ceramic blue', shape:'jar', col:'#1f7dcf',mass:3,  lab:'🏺'},
-  122:{name:'Ceramic green', shape:'jar', col:'#459f12',mass:3,  lab:'🏺'},
-  123:{name:'Ceramic green', shape:'jar', col:'#459f12',mass:3,  lab:'🏺'},
-  124:{name:'Ceramic green', shape:'jar', col:'#459f12',mass:3,  lab:'🏺'},
-  125:{name:'Ceramic green', shape:'jar', col:'#459f12',mass:3,  lab:'🏺'},
-  126:{name:'Ceramic green', shape:'jar', col:'#459f12',mass:3,  lab:'🏺'},
-  127:{name:'Ceramic green', shape:'jar', col:'#459f12',mass:3,  lab:'🏺'},
-  128:{name:'Ceramic green', shape:'jar', col:'#459f12',mass:3,  lab:'🏺'},
-  129:{name:'Ceramic green', shape:'jar', col:'#459f12',mass:3,  lab:'🏺'},
   140:{name:'Magma', shape:'box', col:'#8f4b41',mass:5,  lab:'🌋'},
   150:{name:'Bullet Jar', shape:'jar', col:'#cb4027',mass:3,  lab:'🔫'},
   160:{name:'Rocket Jar', shape:'jar', col:'#c93c28',mass:3,  lab:'🚀'},
   170:{name:'Breakable Stone', shape:'box', col:'#857fa4',mass:5,  lab:'🪨'},
-  200:{name:'Black Stone square', shape:'box', col:'#5b61a5',mass:6,  lab:'⚡'},
-  201:{name:'Black Stone cylinder', shape:'cyl', col:'#424e9d',mass:6,  lab:'⚡'},
   210:{name:'Oil Drum blue square', shape:'box', col:'#3071ff',mass:6,  lab:'🛢'},
   211:{name:'Oil Drum blue cylinder', shape:'cyl', col:'#0f4ad3',mass:6,  lab:'🛢'},
   212:{name:'Oil Drum red square', shape:'box', col:'#e03c35',mass:6,  lab:'🛢'},
@@ -1283,9 +1245,7 @@ const PAL={'pal-can':[1,2,3],'pal-box':[41,42],'pal-stone':[21,22],'pal-ice':[61
   'pal-jar':[11,12,14,238, 220,221,222,223,224,225, 226,227,13,229,230,231, 232,233,15,235,236,237],
   'pal-block':[250,251,252,253,254,255,256,257,258,259],
   'pal-special':[130],
-  'pal-creative':[4,5,6,7,8,9,31,
-    100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,
-    140,150,160,170,200,201,210,211,212,213,214,215,260]};
+  'pal-creative':[31,140,150,160,170,210,211,212,213,214,215,260]};
 /* ============================================================
    PREFAB VARIANT CÓ THẬT TRONG GAME  →  cỡ dài tối đa mỗi id
    (đọc kèm TargetController.cs:160-190)
@@ -1308,10 +1268,9 @@ const MAXLEN={};
 MAXLEN[2]=1;                               // nón: asset chỉ có prefab gốc
 MAXLEN[130]=1;                             // TNT: asset chỉ có prefab gốc (TNT_Box)
 MAXLEN[260]=1;                             // Shark Box: asset chỉ có prefab gốc (Shark_Box)
-[4,5,6,7,140,170,200,201,210,211,212,213,214,215]
+[140,170,210,211,212,213,214,215]
   .forEach(id=>MAXLEN[id]=5);              // Creative/Experiment 2026-11-03: prefab2..5 on x/y/z
-[8,9,31,150,160].forEach(id=>MAXLEN[id]=1); // Creative/Experiment: base prefab only
-for(let id=100;id<=129;id++)MAXLEN[id]=3;  // Creative/Experiment: ceramic jars, Chum_Cylinder_2x..3z
+[31,150,160].forEach(id=>MAXLEN[id]=1);    // Creative/Experiment: base prefab only
 // 🪏 Thanh gỗ 901 CỐ Ý KHÔNG có trong MAXLEN: nó ra planks[], không qua prefab variant nên không có trần.
 /* 🪏 THANH GỖ (raft part): khối GẮN LIỀN với bè, đạn chặn lại nhưng KHÔNG vỡ, KHÔNG tính vào
    remain object. Trong game nó KHÔNG đi qua Raft.SpawnObject nên tự động nằm ngoài mọi thống kê
