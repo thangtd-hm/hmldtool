@@ -15,6 +15,17 @@ on this tool:
 
 Versions up to v1.5.1 were backfilled on 2026-11-04 from the commits, one per day. Earlier history is in the brain's git.
 
+## v1.6.0 · 2026-11-04
+
+### Features
+
+- Add changelog and versioning, shown in the start pop-up `5429d7b`
+
+### Fixes
+
+- Ctrl/Cmd+A selects all blocks; a board press releases the typed field `7a80f45`
+
+
 ## v1.5.1 · 2026-11-04
 
 ### Fixes
