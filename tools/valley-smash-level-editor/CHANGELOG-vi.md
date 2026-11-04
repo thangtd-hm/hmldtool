@@ -3,6 +3,12 @@
 Bản tiếng Việt của `CHANGELOG.md`. Hộp chào của `index.html` hiện nội dung file này. Quy tắc đánh số phiên bản nằm ở đầu
 `CHANGELOG.md`.
 
+## v1.6.1 · 2026-11-04
+
+### Thay đổi
+
+- Changelog hiện bằng tiếng Việt `84218fd`
+
 ## v1.6.0 · 2026-11-04
 
 ### Tính năng

@@ -16,6 +16,12 @@ on this tool:
 
 Versions up to v1.5.1 were backfilled on 2026-11-04 from the commits, one per day. Earlier history is in the brain's git.
 
+## v1.6.1 · 2026-11-04
+
+### Fixes
+
+- Changelog box in Vietnamese `84218fd`
+
 ## v1.6.0 · 2026-11-04
 
 ### Features
