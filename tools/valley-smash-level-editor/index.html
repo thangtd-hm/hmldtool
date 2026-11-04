@@ -3344,7 +3344,7 @@ function grpBox(list){ const a={x:1e9,y:1e9,z:1e9},b={x:-1e9,y:-1e9,z:-1e9};
 function copySel(cut){
   if(!selObjs.length){ hint('Chưa chọn khối nào — chuyển công cụ ✋ Di chuyển, bấm khối (hoặc kéo vùng chọn) rồi Ctrl+'+(cut?'X':'C')+'.'); return false; }
   const V=VIEWS[view], g=grpBox(selObjs);
-  clip={ n:selObjs.length, dAxis:V.d, dVal:sel[V.d],                       // lớp sâu lúc chép
+  clip={ t:Date.now(), n:selObjs.length, dAxis:V.d, dVal:sel[V.d],                       // lớp sâu lúc chép
     at:{x:g.c.x,y:g.c.y,z:g.c.z},
     half:{x:(g.b.x-g.a.x)/2,y:(g.b.y-g.a.y)/2,z:(g.b.z-g.a.z)/2},
     items:selObjs.map(o=>{ const q=getRot(o); const it={type:o.type,sx:o.sx,sy:o.sy,sz:o.sz,
@@ -3362,11 +3362,12 @@ function copySel(cut){
   hint((cut?'✂️ Đã CẮT ':'📋 Đã chép ')+clip.n+' khối vào bộ nhớ tạm — dí chuột tới chỗ muốn đặt rồi Ctrl+V để dán.');
   return true;
 }
-/* clip trong RAM ưu tiên; chưa có thì lấy bản đã ghi localStorage (tab khác / trước khi F5) */
-function getClip(){ if(clip&&clip.items&&clip.items.length)return clip;
-  try{ const s=localStorage.getItem(CLIP_KEY); if(s){ const c=JSON.parse(s);
-    if(c&&c.items&&c.items.length){ clip=c; return clip; } } }catch(e){}
-  return null; }
+/* The newest copy wins, from any tab: every copy stamps `t` and writes localStorage. This tab's own copy only stays
+   ahead when the write failed (clip too big for the storage quota) or another tab's stamp is older. */
+function getClip(){ const has=c=>!!(c&&c.items&&c.items.length);
+  try{ const s=localStorage.getItem(CLIP_KEY), c=s&&JSON.parse(s);
+    if(has(c)&&(!has(clip)||(c.t||0)>(clip.t||0))) clip=c; }catch(e){}
+  return has(clip)?clip:null; }
 /* toạ độ thế giới dưới con trỏ — CHỈ khi chuột thật sự nằm trong khung vẽ 2D (không phải 3D / preview / panel) */
 function mouse2DWorld(){ if(show3d)return null;
   const r=cv.getBoundingClientRect(), mx=lastMouse.x-r.left, my=lastMouse.y-r.top;
