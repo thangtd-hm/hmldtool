@@ -32,7 +32,7 @@ views look like the game instead of like coloured boxes.
 
 The editor used to serve two games on one engine, Ocean Block Shoot (`obs`) and
 Valley Smash (`vs`), with a **Game** picker that swapped the block set. Ocean
-Block Shoot is gone: no picker, and the block set is Valley Smash's 30 ids (1, 2,
+Block Shoot is gone: no picker, and the core block set is Valley Smash's 30 ids (1, 2,
 3, 11–15, 21, 22, 41, 42, 61, 62, the jar shades 220–237 without 228 and 234,
 and 238), plus **130 TNT** since 2026-10-28 in the last group, **Khối đặc biệt
 (Special Block)**: prefab `TNT_Box` (BombTarget), mass 1, 1×1×1 only, with its
@@ -42,13 +42,17 @@ ids 250–259: one prefab `Block_Box` (a maple-leaf box, behaviour cloned from
 the square fish can), with a colour per material: 250 yellow, 251 orange,
 252 red, 253 green, 254 blue, 255 pink, 256 purple, 257 white, 258 dark blue and
 259 brown. Mass 1, every length up to 5 on x, y and z. In the team repo they
-come from branch `feature/them-block` (2026-10-28), not yet on `dev/main`. Since 2026-11-03 the last group, **Creative**, holds blocks
-from Creative branches, which are not in the main game: a level with them only
-plays on that branch. Today it holds **260 Shark Box**, prefab `Shark_Box`
-(`SharkTarget`), mass 5, 1×1×1 only, from branch
+come from branch `feature/them-block` (2026-10-28), not yet on `dev/main`. Since 2026-11-03 the last group, **Creative/Experiment (not ingame)**, holds
+every other block of `ObjectDataTest.asset`, for experiments: 4–9 (can skins and
+cones), 31 Wormhole, 100–129 ceramic jars (up to length 3), 140 Magma, 150 Bullet
+Jar, 160 Rocket Jar, 170 Breakable Stone, 200/201 Black Stone and 210–215 Oil
+Drum. Their art comes from the normal bake. The game spawns wood 41 in place of 31
+unless remote config `remoteWormholeConfig` is on. The group also holds **260 Shark
+Box**, prefab `Shark_Box` (`SharkTarget`), mass 5, 1×1×1 only, which is only on branch
 `Creative/RemakeOBSMultilevelObstacle` (commit `52731634b` moved it from id 250 to
-260). A shot that hits the bite zone of a side face is eaten and the box stays;
-the editor places the block and does not simulate the bite. Any other id in a file draws as a grey "KHÔNG RÕ" box and blocks the
+260), so a level with it only plays there. A shot that hits the bite zone of a side
+face is eaten and the box stays. The editor places these blocks and simulates none
+of their mechanics. Any other id in a file draws as a grey "KHÔNG RÕ" box and blocks the
 save check, as before. The crate (📦, `crates[]`) and wood plank (🪏,
 `planks[]`) code is still in the page but hidden: Valley Smash has no crates, and
 planks were dropped on 2026-09-08. No level in `ver_0`–`ver_3` uses either.
