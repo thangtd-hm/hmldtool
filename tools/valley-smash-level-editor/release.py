@@ -140,7 +140,7 @@ def main():
 
     md = read(MD)
     first = md.index("## v")
-    write(MD, md[:first] + text + "\n" + md[first:])
+    write(MD, md[:first] + text + md[first:])
     embed()
     msg = ["-m", f"Valley Smash editor: release v{next_version}", "-m", "Tool-Change: none"]
     if args.trailer:
