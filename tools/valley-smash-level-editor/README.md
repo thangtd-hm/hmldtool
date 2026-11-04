@@ -31,8 +31,8 @@ views look like the game instead of like coloured boxes.
 ## Versions (since 2026-11-04)
 
 `CHANGELOG.md` holds every version, vX.Y.Z by the workspace brain's rules (written at its top), one bump per push. The
-start pop-up shows it in a scrollable box, embedded in the page. Before a push: `python release.py` (new entry, embed,
-commit, tag), then `git push --follow-tags`. A commit line `Tool-Change: major|feature|fix|none` sets its level.
+start pop-up shows its Vietnamese copy, `CHANGELOG-vi.md`, in a scrollable box, embedded in the page. Before a push: `python release.py` (new entry, embed,
+commit, tag), then `git push --follow-tags`. A commit line `Tool-Change: major|feature|fix|none` sets its level, and `Vi: <text>` its Vietnamese entry.
 
 ## Valley Smash only (since 2026-10-19)
 

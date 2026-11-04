@@ -11,7 +11,8 @@ on this tool:
   or "new" is a feature and anything else a fix.
 - Entries are written from commit subjects and may be edited by hand; a release only adds a new entry on top. After an
   edit, put the text back into the page: `python release.py embed`.
-- The start pop-up of `index.html` shows this file, embedded in the page, in a scrollable box.
+- The start pop-up of `index.html` shows the Vietnamese copy, `CHANGELOG-vi.md`, embedded in the page, in a scrollable box.
+  A commit line `Vi: <text>` is its entry there; without one the entry stays English.
 
 Versions up to v1.5.1 were backfilled on 2026-11-04 from the commits, one per day. Earlier history is in the brain's git.
 

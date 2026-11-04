@@ -5,17 +5,19 @@
     python release.py --dry-run        show the next version and its entry, change nothing
     python release.py --major "why"    a complete overhaul: next X
     python release.py embed            put CHANGELOG.md back into index.html (after a hand edit)
-    python release.py check            exit 1 if the page and CHANGELOG.md differ
+    python release.py check            exit 1 if the page and the changelogs differ
+
+The page's box shows CHANGELOG-vi.md. A commit line "Vi: <text>" is its entry there; without one the entry stays English.
 
 Then push with the tags: git push --follow-tags
 """
 import argparse, datetime, io, json, os, re, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-MD, HTML = os.path.join(HERE, "CHANGELOG.md"), os.path.join(HERE, "index.html")
+MD, MD_VI, HTML = (os.path.join(HERE, n) for n in ("CHANGELOG.md", "CHANGELOG-vi.md", "index.html"))
 TAG = "valley-smash-level-editor-v"
 BEGIN, END = "<!--CHANGELOG:BEGIN-->", "<!--CHANGELOG:END-->"
-SECTIONS = (("major", "Overhaul"), ("feature", "Features"), ("fix", "Fixes"))
+SECTIONS = (("major", "Overhaul", "Cập nhật lớn"), ("feature", "Features", "Tính năng"), ("fix", "Fixes", "Thay đổi"))
 RANK = {"none": 0, "fix": 1, "feature": 2, "major": 3}
 SUBJECT_PREFIX = re.compile(r"^Valley Smash (level )?editor: ")
 
@@ -52,7 +54,8 @@ def pending(version):
     commits = []
     for rec in filter(str.strip, out.split("\x1e")):
         sha, subject, body = rec.strip().split("\x1f")
-        commits.append({"sha": sha, "subject": subject, "level": classify(subject, body)})
+        vi = re.search(r"^Vi:\s*(.+?)\s*$", body, re.M)
+        commits.append({"sha": sha, "subject": subject, "level": classify(subject, body), "vi": vi.group(1) if vi else ""})
     return [c for c in commits if c["level"] != "none"]
 
 
@@ -61,22 +64,23 @@ def bump(version, level):
     return {"major": f"{x + 1}.0.0", "feature": f"{x}.{y + 1}.0", "fix": f"{x}.{y}.{z + 1}"}[level]
 
 
-def entry(version, commits, why=""):
+def entry(version, commits, why="", vi=False):
     out = [f"## v{version} · {datetime.date.today().isoformat()}", ""]
-    for level, title in SECTIONS:
+    for level, title_en, title_vi in SECTIONS:
+        title = title_vi if vi else title_en
         lines = [f"- {why}"] if why and level == "major" else []
         for c in commits:
             if c["level"] == level:
-                text = SUBJECT_PREFIX.sub("", c["subject"])
+                text = (vi and c["vi"]) or SUBJECT_PREFIX.sub("", c["subject"])
                 lines.append(f"- {text[:1].upper()}{text[1:]} `{c['sha']}`")
         if lines:
             out += [f"### {title}", "", *lines, ""]
     return "\n".join(out) + "\n"
 
 
-def parsed():
+def parsed(path=MD_VI):
     versions = []
-    for line in read(MD).splitlines():
+    for line in read(path).splitlines():
         m = re.match(r"## (v\d+\.\d+\.\d+) · (\S+)", line)
         if m:
             versions.append({"v": m.group(1), "date": m.group(2), "sections": []})
@@ -118,8 +122,12 @@ def main():
     if args.action == "check":
         html = read(HTML)
         a, b = embedded(html)
+        en, vi = [v["v"] for v in parsed(MD)], [v["v"] for v in parsed(MD_VI)]
+        if en != vi:
+            print("CHANGELOG.md and CHANGELOG-vi.md list different versions")
+            return 1
         same = html[a:b] == block()
-        print("page and CHANGELOG.md match" if same else "page differs from CHANGELOG.md: python release.py embed")
+        print("page and changelogs match" if same else "page differs from CHANGELOG-vi.md: python release.py embed")
         return 0 if same else 1
 
     version = last_version()
@@ -131,21 +139,25 @@ def main():
         return 0
     level = "major" if args.major else max((c["level"] for c in commits), key=RANK.get)
     next_version = bump(version, level)
-    text = entry(next_version, commits, args.major)
+    text, text_vi = entry(next_version, commits, args.major), entry(next_version, commits, args.major, vi=True)
+    for c in commits:
+        if not c["vi"]:
+            print(f"no Vi: line in {c['sha']}, its entry stays English in the box (edit CHANGELOG-vi.md, then embed)")
     if args.dry_run:
-        print(text)
+        print(text + text_vi)
         return 0
     if git("status", "--porcelain", "--", ".").strip():
         sys.exit("this folder has uncommitted changes: commit them first")
 
-    md = read(MD)
-    first = md.index("## v")
-    write(MD, md[:first] + text + md[first:])
+    for path, new in ((MD, text), (MD_VI, text_vi)):
+        md = read(path)
+        first = md.index("## v")
+        write(path, md[:first] + new + md[first:])
     embed()
     msg = ["-m", f"Valley Smash editor: release v{next_version}", "-m", "Tool-Change: none"]
     if args.trailer:
         msg += ["-m", args.trailer]
-    git("commit", *msg, "--", "CHANGELOG.md", "index.html")
+    git("commit", *msg, "--", "CHANGELOG.md", "CHANGELOG-vi.md", "index.html")
     git("tag", "-a", TAG + next_version, "-m", f"Valley Smash level editor v{next_version}")
     print(f"released v{next_version}; push with: git push --follow-tags")
     return 0
