@@ -62,6 +62,24 @@ save check, as before. The crate (📦, `crates[]`) and wood plank (🪏,
 `planks[]`) code is still in the page but hidden: Valley Smash has no crates, and
 planks were dropped on 2026-09-08. No level in `ver_0`–`ver_3` uses either.
 
+## Auto-fix for jammed blocks (🧹 Tự sửa khối kẹt)
+
+The button sits in the warning box at the bottom left and shows when the level has overlapping blocks or un-rounded
+values. One click runs over the whole level, every stage and table, as one Ctrl+Z step, and writes nothing until you
+save. The rules live in `<script id="autofix">` (`VSAutoFix`), which holds no page code; tests:
+`node --test tools/valley-smash-level-editor/autofix.test.js`.
+
+| Step | Blocks that round to a 90 degree pose | Designed tilts (more than about 7.5 degrees) |
+|---|---|---|
+| Clean | rotation to the nearest 90 degrees, position to the nearest 0.5 | rotation to the nearest 5 degrees, position to the nearest 0.05 |
+| Separate | if still hitting, the nearest free 0.5 grid spot within 1 unit, sideways or up, with something underneath | never moved further; if rounding would go deeper into a neighbour, the block keeps its first pose, un-rounded |
+| Flag | no free spot: selected for a hand fix | still hitting: selected for a hand fix |
+
+"Hitting" is the test behind the orange outline, so a fixed block loses its outline. It treats round blocks as boxes,
+as the outline always has. Crates, planks and blocks inside a crate never change. Ids, sizes, block count, tables and
+blockers never change. A second run changes nothing. The check that the jam is gone in play is Unity's: this page does
+not simulate physics.
+
 ## Saving a level back over the file you opened
 
 Load with **📂 Nạp file** or **📁 Nạp thư mục** and the **⬇️ Tải về** button

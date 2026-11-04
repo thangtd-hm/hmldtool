@@ -857,6 +857,7 @@ window.ART={"provisional":false,"generated":"2026-09-24T18:27:16","light":{"eule
       <div id="issueDock">
         <div id="ovLine" style="display:none">
           <span id="ovTxt"></span>
+          <button class="tb" id="ovFix" title="Làm tròn vị trí và góc xoay của cả level (mọi stage, mọi bàn), tách các khối đâm nhau sang chỗ trống gần nhất trong vòng 1 ô, rồi chọn sẵn những khối còn kẹt để sửa tay. Chưa ghi file cho tới khi bấm Lưu; Ctrl+Z để hoàn tác.">🧹 Tự sửa khối kẹt</button>
           <button class="tb" id="ovToggle" title="Bật/tắt viền cam nét đứt đánh dấu khối đâm nhau (cả khung 2D lẫn 3D). Tắt đi để nhìn rõ hình khối khi level có nhiều chỗ chồng.">👁 viền</button>
         </div>
         <details class="field k-warn" id="valPanel" open><summary id="valHead" title="Game bỏ qua khối có cỡ sai luật hoặc chưa có prefab variant — vào chơi khối biến mất mà không báo gì">🚫 Soát lỗi game (khối sẽ biến mất)</summary>
@@ -1143,6 +1144,143 @@ window.ART={"provisional":false,"generated":"2026-09-24T18:27:16","light":{"eule
     </div></details>
   </div>
 </div>
+
+<script id="autofix">
+/* VSAutoFix: rounds block data to one standard, separates jammed blocks, lists the rest for a hand fix.
+   No page code here: the editor's button and valley-smash/configs/fix-carnival-levels.js run the same block.
+   An item is {pos, rot, half, off?, pinned?} (half = half size before rotation, off = box centre minus pos).
+   The hit test is the one behind the orange outline (obbHit in the main script), so a fixed block loses its outline. */
+(function (root) {
+  'use strict';
+  const GRID = 0.5, TILT_GRID = 0.05, ANGLE_STEP = 5, AXIS_TILT = 5.01, MAX_MOVE = 1, REST_GAP = 0.02, SAME = 1e-9;
+  const IDENT = { x: 0, y: 0, z: 0, w: 1 }, DEG = Math.PI / 180, S = Math.SQRT1_2;
+  // The 24 rotations of a cube, with the same sign rule as canon().
+  const AXIS_ROTS = [[0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0],
+    [S, 0, 0, S], [-S, 0, 0, S], [0, S, 0, S], [0, -S, 0, S], [0, 0, S, S], [0, 0, -S, S],
+    [.5, .5, .5, .5], [-.5, -.5, -.5, .5], [.5, -.5, .5, .5], [-.5, .5, -.5, .5],
+    [.5, .5, -.5, .5], [-.5, -.5, .5, .5], [.5, -.5, -.5, .5], [-.5, .5, .5, .5],
+    [S, S, 0, 0], [S, -S, 0, 0], [S, 0, S, 0], [S, 0, -S, 0], [0, S, S, 0], [0, S, -S, 0]]
+    .map(([x, y, z, w]) => ({ x, y, z, w }));
+  // Nearest first; on a tie up before sideways, and depth before width, which keeps the shape seen from the cannon.
+  const MOVES = (() => { const out = [], st = [-1, -0.5, 0, 0.5, 1];
+    for (const x of st) for (const y of [0, 0.5, 1]) for (const z of st) {
+      const d = Math.hypot(x, y, z); if (d > 0 && d <= MAX_MOVE) out.push({ x, y, z, d }); }
+    return out.sort((a, b) => a.d - b.d || b.y - a.y || Math.abs(b.z) - Math.abs(a.z) || a.x - b.x || a.z - b.z); })();
+
+  // Divide by the whole count per unit: 101 * 0.05 is 5.050000000000001, 101 / 20 is 5.05.
+  const snap = (v, step) => Math.round(v / step) / Math.round(1 / step) + 0;
+  const round7 = (v) => Math.round(v * 1e7) / 1e7 + 0;
+  const samePos = (a, b) => Math.abs(a.x - b.x) <= SAME && Math.abs(a.y - b.y) <= SAME && Math.abs(a.z - b.z) <= SAME;
+  const sameRot = (a, b) => Math.abs(a.x - b.x) <= SAME && Math.abs(a.y - b.y) <= SAME && Math.abs(a.z - b.z) <= SAME && Math.abs(a.w - b.w) <= SAME;
+  function unit(q) { const n = Math.hypot(q.x, q.y, q.z, q.w) || 1; return { x: q.x / n, y: q.y / n, z: q.z / n, w: q.w / n }; }
+  function canon(q) { // one sign for one rotation, 7 decimals as Unity writes them
+    const neg = q.w < 0 || (Math.abs(q.w) < 1e-9 && (q.x < 0 || (Math.abs(q.x) < 1e-9 && (q.y < 0 || (Math.abs(q.y) < 1e-9 && q.z < 0)))));
+    const k = neg ? -1 : 1;
+    return { x: round7(k * q.x), y: round7(k * q.y), z: round7(k * q.z), w: round7(k * q.w) }; }
+  function rotv(q, v) { const tx = 2 * (q.y * v[2] - q.z * v[1]), ty = 2 * (q.z * v[0] - q.x * v[2]), tz = 2 * (q.x * v[1] - q.y * v[0]);
+    return [v[0] + q.w * tx + q.y * tz - q.z * ty, v[1] + q.w * ty + q.z * tx - q.x * tz, v[2] + q.w * tz + q.x * ty - q.y * tx]; }
+  const axesOf = (q) => [rotv(q, [1, 0, 0]), rotv(q, [0, 1, 0]), rotv(q, [0, 0, 1])];
+  function tiltOf(q) { let m = 0; // degrees from the nearest 90 degree pose
+    for (const v of axesOf(q)) m = Math.max(m, Math.acos(Math.min(1, Math.max(...v.map(Math.abs)))) / DEG);
+    return m; }
+  function nearestAxisRot(q) { let best = AXIS_ROTS[0], bd = -1;
+    for (const c of AXIS_ROTS) { const d = Math.abs(q.x * c.x + q.y * c.y + q.z * c.z + q.w * c.w); if (d > bd) { bd = d; best = c; } }
+    return canon(best); }
+  function mul(a, b) { return { x: a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y, y: a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
+    z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w, w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z }; }
+  // Unity's Euler order: q = y * x * z.
+  function eulerOf(q) { const m12 = 2 * (q.y * q.z - q.w * q.x), sx = Math.max(-1, Math.min(1, -m12));
+    if (Math.abs(sx) < 0.99999) return { x: Math.asin(sx), y: Math.atan2(2 * (q.x * q.z + q.w * q.y), 1 - 2 * (q.x * q.x + q.y * q.y)),
+      z: Math.atan2(2 * (q.x * q.y + q.w * q.z), 1 - 2 * (q.x * q.x + q.z * q.z)) };
+    return { x: Math.asin(sx), y: Math.atan2(-2 * (q.x * q.z - q.w * q.y), 1 - 2 * (q.y * q.y + q.z * q.z)), z: 0 }; }
+  function fromEuler(e) { const h = (a) => [Math.sin(a / 2), Math.cos(a / 2)], [sx, cx] = h(e.x), [sy, cy] = h(e.y), [sz, cz] = h(e.z);
+    return mul(mul({ x: 0, y: sy, z: 0, w: cy }, { x: sx, y: 0, z: 0, w: cx }), { x: 0, y: 0, z: sz, w: cz }); }
+  function roundedAngles(q) { const e = eulerOf(q), r = (a) => Math.round(a / DEG / ANGLE_STEP) * ANGLE_STEP * DEG;
+    return fromEuler({ x: r(e.x), y: r(e.y), z: r(e.z) }); }
+
+  /* A tilt that rounds to AXIS_TILT or less goes to the 90 degree pose, so about 7.5 degrees in the raw data:
+     cutting on the raw tilt would let a block rounded to 5 degrees snap on the second run. */
+  function cleanOf(it) {
+    if (it.pinned) return { pos: { x: it.pos.x, y: it.pos.y, z: it.pos.z }, rot: it.rot, tilted: false };
+    const q = unit(it.rot || IDENT), r = roundedAngles(q), tilted = tiltOf(r) > AXIS_TILT, step = tilted ? TILT_GRID : GRID;
+    return { pos: { x: snap(it.pos.x, step), y: snap(it.pos.y, step), z: snap(it.pos.z, step) },
+      rot: tilted ? canon(r) : nearestAxisRot(q), tilted }; }
+  function isClean(it) { if (it.pinned) return true; const c = cleanOf(it);
+    return samePos(c.pos, it.pos) && sameRot(c.rot, it.rot || IDENT); }
+
+  function boxOf(pos, rot, it) { const off = it.off || { x: 0, y: 0, z: 0 }, h = [it.half.x, it.half.y, it.half.z];
+    return { c: [pos.x + off.x, pos.y + off.y, pos.z + off.z], a: axesOf(rot || IDENT), h, r: Math.hypot(h[0], h[1], h[2]) }; }
+  function shifted(b, dx, dy, dz) { return { c: [b.c[0] + dx, b.c[1] + dy, b.c[2] + dz], a: b.a, h: b.h, r: b.r }; }
+  const bottomOf = (b) => b.c[1] - (Math.abs(b.a[0][1]) * b.h[0] + Math.abs(b.a[1][1]) * b.h[1] + Math.abs(b.a[2][1]) * b.h[2]);
+  // Same separating-axis test as obbHit in the main script: faces that only touch are not a hit.
+  function boxHit(A, B) {
+    const dc = [B.c[0] - A.c[0], B.c[1] - A.c[1], B.c[2] - A.c[2]];
+    if (Math.hypot(dc[0], dc[1], dc[2]) >= A.r + B.r) return false;
+    const EPS = 1e-6, dot = (u, v) => u[0] * v[0] + u[1] * v[1] + u[2] * v[2], R = [], Ab = [];
+    for (let i = 0; i < 3; i++) { R.push([]); Ab.push([]);
+      for (let j = 0; j < 3; j++) { const r = dot(A.a[i], B.a[j]); R[i].push(r); Ab[i].push(Math.abs(r) + 1e-9); } }
+    const t = [dot(dc, A.a[0]), dot(dc, A.a[1]), dot(dc, A.a[2])];
+    for (let i = 0; i < 3; i++) if (Math.abs(t[i]) > A.h[i] + B.h[0] * Ab[i][0] + B.h[1] * Ab[i][1] + B.h[2] * Ab[i][2] - EPS) return false;
+    for (let j = 0; j < 3; j++) if (Math.abs(t[0] * R[0][j] + t[1] * R[1][j] + t[2] * R[2][j]) > A.h[0] * Ab[0][j] + A.h[1] * Ab[1][j] + A.h[2] * Ab[2][j] + B.h[j] - EPS) return false;
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
+      const u = A.a[i], v = B.a[j], cx = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+      if (Math.hypot(cx[0], cx[1], cx[2]) < 1e-6) continue; // parallel edges: not a separating axis
+      const i1 = (i + 1) % 3, i2 = (i + 2) % 3, j1 = (j + 1) % 3, j2 = (j + 2) % 3;
+      if (Math.abs(t[i2] * R[i1][j] - t[i1] * R[i2][j]) > A.h[i1] * Ab[i2][j] + A.h[i2] * Ab[i1][j] + B.h[j1] * Ab[i][j2] + B.h[j2] * Ab[i][j1] - EPS) return false; }
+    return true; }
+
+  // How far a pair must move to separate, 0 when it does not hit. Only ever compared, so it may use the slower true axes.
+  function depthOf(A, B) { if (!boxHit(A, B)) return 0;
+    const d = [B.c[0] - A.c[0], B.c[1] - A.c[1], B.c[2] - A.c[2]], axes = [...A.a, ...B.a];
+    const dot = (u, v) => u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
+    for (const u of A.a) for (const v of B.a) { const c = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]], n = Math.hypot(c[0], c[1], c[2]);
+      if (n > 1e-6) axes.push([c[0] / n, c[1] / n, c[2] / n]); }
+    let min = Infinity;
+    for (const n of axes) { const reach = (X) => X.h[0] * Math.abs(dot(X.a[0], n)) + X.h[1] * Math.abs(dot(X.a[1], n)) + X.h[2] * Math.abs(dot(X.a[2], n));
+      min = Math.min(min, reach(A) + reach(B) - Math.abs(dot(d, n))); }
+    return Math.max(0, min); }
+
+  function hitPairs(boxes, exempt) { const out = [];
+    for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++)
+      if (!(exempt && exempt(i, j)) && boxHit(boxes[i], boxes[j])) out.push([i, j]);
+    return out; }
+  function countHits(items, opts) { return hitPairs(items.map((it) => boxOf(it.pos, it.rot, it)), opts && opts.exempt).length; }
+
+  function fixTable(items, opts) {
+    const exempt = (opts && opts.exempt) || null, skip = (i, j) => i === j || (exempt && exempt(Math.min(i, j), Math.max(i, j)));
+    const cur = items.map(cleanOf), boxes = cur.map((c, i) => boxOf(c.pos, c.rot, items[i]));
+    const hitsAny = (b, i, set) => { for (const j of set) if (!skip(i, j) && boxHit(b, boxes[j])) return true; return false; };
+    const all = items.map((_, i) => i), stays = (i) => items[i].pinned || cur[i].tilted;
+    const placed = all.filter(stays);
+    const grid = all.filter((i) => !stays(i)).sort((a, b) => cur[a].pos.y - cur[b].pos.y || a - b);
+    const moved = new Map();
+    for (const i of grid) {
+      if (hitsAny(boxes[i], i, placed)) for (const m of MOVES) {
+        const b = shifted(boxes[i], m.x, m.y, m.z);
+        if (hitsAny(b, i, all)) continue;
+        if (bottomOf(b) > REST_GAP && !hitsAny(shifted(b, 0, -REST_GAP, 0), i, all)) continue; // nothing underneath
+        boxes[i] = b; moved.set(i, m.d);
+        const p = cur[i].pos; cur[i].pos = { x: p.x + m.x, y: p.y + m.y, z: p.z + m.z };
+        break; }
+      placed.push(i); }
+    /* Tilted blocks often rest on each other (Carnival levels were saved after physics ran), so rounding one can push it in.
+       A fix never makes a block worse: if its first pose goes less deep, it keeps that pose, un-rounded. */
+    const kept = new Set(), deepest = (b, i) => { let m = 0; for (const j of all) if (!skip(i, j)) m = Math.max(m, depthOf(b, boxes[j])); return m; };
+    for (const i of all) { if (!cur[i].tilted) continue;
+      const now = deepest(boxes[i], i); if (!now) continue;
+      const first = boxOf(items[i].pos, items[i].rot, items[i]);
+      if (deepest(first, i) < now) { boxes[i] = first; cur[i] = { pos: items[i].pos, rot: items[i].rot, tilted: true }; kept.add(i); } }
+    const flagged = new Set();
+    for (const [i, j] of hitPairs(boxes, exempt)) { flagged.add(i); flagged.add(j); }
+    let rounded = 0;
+    const out = items.map((it, i) => { const c = cur[i], d = moved.get(i) || 0, was = it.rot || IDENT;
+      if (!it.pinned && !kept.has(i) && !isClean(it)) rounded++;
+      return { pos: c.pos, rot: c.rot, half: it.half, off: it.off, moved: moved.has(i), dist: d, changed: !samePos(c.pos, it.pos) || !sameRot(c.rot || IDENT, was) }; });
+    return { items: out, rounded, kept: kept.size, moved: moved.size, far: [...moved.values()].filter((d) => d > GRID).length, flagged: [...flagged].sort((a, b) => a - b) }; }
+
+  root.VSAutoFix = { fixTable, countHits, isClean };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
 
 <script>
 "use strict";
@@ -2578,8 +2716,8 @@ function updateStats(){const c={};let mass=0,nPlank=0,n=0;
     if(st && st.offsetWidth!==_statsW){ _statsW=st.offsetWidth; fitStgDock(); } }
   // Dòng "chồng nhau" giờ nằm ở ổ cảnh báo góc trái dưới, cạnh nút bật/tắt viền.
   { const ln=$('ovLine'), tx=$('ovTxt');
-    if(ln&&tx){ ln.style.display=ov?'flex':'none';
-      tx.textContent='⚠ '+ov+' khối ĐÂM NHAU (viền cam nét đứt)'; } }
+    if(ln&&tx){ const un=autoFixUnrounded(); ln.style.display=(ov||un)?'flex':'none';
+      tx.textContent='⚠ '+[ov?ov+' khối ĐÂM NHAU (viền cam nét đứt)':'',un?un+' khối chưa làm tròn số':''].filter(Boolean).join(' · '); } }
   // 🚨 ĐANG KÉO/VẼ thì DỪNG ở đây: 2 việc dưới đụng vào DOM của panel phải (đổi ô nhập, dựng
   // lại thẻ <select>) — trình duyệt phải tính lại layout GIỮA CÚ KÉO, khung vẽ nhúc nhích một
   // hàng thanh công cụ là cụm khối nhảy ~1,25 ô rồi bật về. Buông chuột mới chạy lại đầy đủ
@@ -5351,6 +5489,33 @@ $('impLayoutIn').onchange=e=>{ const f=e.target.files[0]; e.target.value=''; if(
     hint(ovShow?'Đã BẬT viền cam đánh dấu khối đâm nhau.'
                :'Đã TẮT viền cam — khối vẫn đâm nhau, chỉ là không tô nữa.');
     draw(); sync3D(); };
+})();
+/* Auto-fix button: rounds the data, separates jammed blocks, selects what stays jammed for a hand fix.
+   The rules live in VSAutoFix (<script id="autofix">); this only connects them to the board. Runs on the whole level. */
+function afItem(o){ const t=TYPES[o.type];
+  return {pos:{x:o.px,y:o.py,z:o.pz}, rot:getRot(o), half:{x:fS(o,'x')/2,y:fS(o,'y')/2,z:fS(o,'z')/2},
+    off:(t&&t.off)?{x:t.off[0],y:t.off[1],z:t.off[2]}:undefined, pinned:isCrate(o)||isPlank(o)||o.inC!=null}; }
+function afLevelTables(){ const out=[]; stages.forEach((st,si)=>{ for(const t of (si===curStage?tables:st.tables)) out.push({t,si}); }); return out; }
+function autoFixUnrounded(){ let n=0; for(const {t} of afLevelTables()) for(const o of t.objs) if(!VSAutoFix.isClean(afItem(o)))n++; return n; }
+function autoFixPlan(){ return afLevelTables().map(({t,si})=>{ const objs=t.objs;
+  return {objs,si,r:VSAutoFix.fixTable(objs.map(afItem),{exempt:(i,j)=>crPair(objs[i],objs[j])})}; }); }
+(function(){ const b=$('ovFix'); if(!b)return;
+  b.onclick=()=>{ const plan=autoFixPlan(), sum=k=>plan.reduce((s,p)=>s+p.r[k],0);
+    const changed=plan.some(p=>p.r.items.some(it=>it.changed));
+    if(changed){ pushHistory();
+      for(const p of plan) p.r.items.forEach((it,i)=>{ if(!it.changed)return; const o=p.objs[i];
+        o.px=it.pos.x; o.py=it.pos.y; o.pz=it.pos.z; o.rot=it.rot; }); }
+    const here=[]; let elsewhere=0;
+    for(const p of plan) for(const i of p.r.flagged){ if(p.si===curStage)here.push(p.objs[i]); else elsewhere++; }
+    if(here.length)setSel(here); else clearSel();
+    draw(); updateStats(); sync3D();
+    // The hint bar holds one line: keep it short, the still-jammed count early.
+    const stuck=here.length+elsewhere, parts=[];
+    parts.push(changed?'🧹 Đã làm tròn '+sum('rounded')+', dời '+sum('moved')+(sum('far')?' ('+sum('far')+' dời xa, nên xem lại)':'')+'.':'Không còn gì để tự sửa.');
+    if(stuck) parts.push('Còn '+stuck+' khối kẹt'+(elsewhere?' ('+elsewhere+' ở stage khác)':'')+(here.length?', đã chọn sẵn.':'.'));
+    if(sum('kept')) parts.push(sum('kept')+' khối nghiêng giữ số cũ.');
+    if(changed) parts.push('Ctrl+Z để hoàn tác.');
+    hint(parts.join(' ')); };
 })();
 $('btnPrevLv').onclick=()=>folderStep(-1);
 $('btnNextLv').onclick=()=>folderStep(1);
