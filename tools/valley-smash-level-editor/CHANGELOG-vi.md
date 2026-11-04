@@ -3,6 +3,16 @@
 Bản tiếng Việt của `CHANGELOG.md`. Hộp chào của `index.html` hiện nội dung file này. Quy tắc đánh số phiên bản nằm ở đầu
 `CHANGELOG.md`.
 
+## v1.7.0 · 2026-11-04
+
+### Tính năng
+
+- Thêm nút Tự sửa khối kẹt: làm tròn vị trí và góc xoay, tách khối đâm nhau, chọn sẵn khối còn kẹt để sửa tay `4c86925`
+
+### Thay đổi
+
+- Sửa lỗi dán sang tab khác: giờ luôn dán bản chép mới nhất, kể cả khi tab đó đã chép trước đó `133f699`
+
 ## v1.6.1 · 2026-11-04
 
 ### Thay đổi

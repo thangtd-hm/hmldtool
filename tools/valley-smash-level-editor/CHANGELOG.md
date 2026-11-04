@@ -16,6 +16,16 @@ on this tool:
 
 Versions up to v1.5.1 were backfilled on 2026-11-04 from the commits, one per day. Earlier history is in the brain's git.
 
+## v1.7.0 · 2026-11-04
+
+### Features
+
+- Add auto-fix button for jammed blocks `4c86925`
+
+### Fixes
+
+- Paste across tabs takes the newest copy `133f699`
+
 ## v1.6.1 · 2026-11-04
 
 ### Fixes
