@@ -3,6 +3,12 @@
 Bản tiếng Việt của `CHANGELOG.md`. Hộp chào của `index.html` hiện nội dung file này. Quy tắc đánh số phiên bản nằm ở đầu
 `CHANGELOG.md`.
 
+## v1.7.1 · 2026-11-04
+
+### Thay đổi
+
+- Tự sửa khối kẹt: đẩy nhẹ khối nghiêng ra khỏi nhau, khối KHÔNG RÕ không còn tính là đâm nhau `bd2ef31`
+
 ## v1.7.0 · 2026-11-04
 
 ### Tính năng
