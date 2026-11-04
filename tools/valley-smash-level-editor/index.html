@@ -7053,6 +7053,17 @@ function deckDragMove(e){
   hint((n>1?n+' bè':'Bàn '+t.id)+' → X='+fmt(t.pos.x)+' · Z='+fmt(t.pos.z)+' · cao '+fmt(t.pos.y)+' (KHOÁ)'
      +' — thả chuột để chốt · Ctrl+Z hoàn tác');
 }
+/* A flat 3D drag of a group: lp = pointer in the grabbed table's axes, hit = pointer in the view's world.
+   Tables of one yaw share their axes, so it snaps in table axes, as the 2D board does; snapping a world delta and converting
+   it back wrote numbers like 0.866 on any yawed table. Different yaws need world axes, where no single grid fits. */
+const sameYaw=tis=>tis.every(i=>((tables[i]&&tables[i].yaw)||0)===((tables[tis[0]]&&tables[tis[0]].yaw)||0));
+function moveGroupFlat(st,g,lp,hit){
+  if(sameYaw([...new Set(st.map(s=>s.ti))])){ const dl={x:snapV(lp.x-g.px),z:snapV(lp.z-g.pz)};
+    for(const s of st){ s.o.px=R4(s.px+dl.x); s.o.pz=R4(s.pz+dl.z); } return; }
+  const w0=l2w(g.ti,g.px,g.pz);
+  const dx=snapV(hit.x-w0.x), dzw=snapV(dz(hit.z)-w0.z);   // hit ở hệ HIỂN THỊ → dz() đổi về hệ DỮ LIỆU
+  for(const s of st){ const w=l2w(s.ti,s.px,s.pz), L=w2l(s.ti,w.x+dx,w.z+dzw);
+    s.o.px=R4(L.px); s.o.pz=R4(L.pz); } }
 function drag3Move(e){
   /* NGƯỠNG 4px phải chặn NGAY ĐẦU HÀM.
      Trước đây nó nằm tận cuối và chỉ dùng để quyết định "có vẽ lại / có ghi undo không",
@@ -7088,12 +7099,7 @@ function drag3Move(e){
       for(const s of st) mb=Math.min(mb,(s.py+dy)-s.o.sy/2);
       if(mb<0)dy-=mb;                                    // cả cụm không được chui xuống dưới mặt bàn
       for(const s of st) s.o.py=R4(s.py+dy);
-    } else {
-      const w0=l2w(g.ti,g.px,g.pz);
-      const dx=snapV(hit.x-w0.x), dzw=snapV(dz(hit.z)-w0.z);   // hit ở hệ HIỂN THỊ → dz() đổi về hệ DỮ LIỆU
-      for(const s of st){ const w=l2w(s.ti,s.px,s.pz), L=w2l(s.ti,w.x+dx,w.z+dzw);
-        s.o.px=R4(L.px); s.o.pz=R4(L.pz); }
-    }
+    } else moveGroupFlat(st,g,lp,hit);
   }
   draw(); updateStats(); sync3D();      // tới đây chắc chắn đang kéo thật (đã lọc ở đầu hàm)
 }
