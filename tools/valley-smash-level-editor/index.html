@@ -446,6 +446,15 @@ canvas{display:block}
 #bootPop .hint.warnl{color:var(--danger)}
 #bootPop .x{position:absolute;top:10px;right:10px;background:none;border:0;color:var(--dim);font-size:18px;cursor:pointer;line-height:1}
 #bootPop .x:hover{color:var(--txt)}
+#bootPop .clog{margin-top:var(--s4);padding-top:var(--s3);border-top:1px solid var(--line2)}
+#bootPop .clog-t{font-size:var(--fs-sm);font-weight:600;margin-bottom:var(--s2)}
+#bootPop .clog-t span{color:var(--dim);font-weight:400}
+#bootPop .clog-body{max-height:168px;overflow-y:auto;padding:var(--s2) var(--s3);background:var(--panel3);border-radius:4px;
+  font-size:var(--fs-sm);line-height:1.45}
+#bootPop .clog-body h3{margin:var(--s3) 0 var(--s1);font-size:var(--fs-sm)}
+#bootPop .clog-body h3:first-child{margin-top:0}
+#bootPop .clog-body .sec{color:var(--dim);margin-top:var(--s1)}
+#bootPop .clog-body ul{margin:0;padding-left:18px}
 /* user 12/08: 2 nút Xem 3D + Preview PHẢI luôn thấy chữ, thu gọn mấy cũng không giấu */
 #app.tbnarrow #topbar .vbtn.keeplbl .lbl,
 #topbar.tbnarrow .vbtn.keeplbl .lbl,
@@ -647,6 +656,7 @@ body[data-ui="xl"] #left,body[data-ui="xl"] #right,body[data-ui="xl"] #topbar,bo
 </style>
 </head>
 <body>
+<!--CHANGELOG:BEGIN--><script type="application/json" id="changelogData">[{"v":"v1.5.1","date":"2026-11-04","sections":[{"title":"Fixes","items":["Creative/Experiment group with every block of the table","Trim the Creative/Experiment group to 12 blocks"]}]},{"v":"v1.5.0","date":"2026-11-03","sections":[{"title":"Features","items":["Creative group with Shark Box (id 260)"]}]},{"v":"v1.4.0","date":"2026-10-28","sections":[{"title":"Features","items":["TNT (id 130) in a new \"Khối đặc biệt (Special Block)\" group","Color blocks 250-259 with real render; TNT faces the cannon"]}]},{"v":"v1.3.0","date":"2026-10-22","sections":[{"title":"Features","items":["Royal Smash levels as a second game"]},{"title":"Fixes","items":["Remember a picked Royal Smash art pack in the browser","Remove Royal Smash mode (revert 910c0cb and 08677e8)"]}]},{"v":"v1.2.0","date":"2026-10-19","sections":[{"title":"Features","items":["Start pop-up to reopen the last folder, as the Pool Sort editor"]},{"title":"Fixes","items":["Remove Ocean Block Shoot, Valley Smash is the only block set"]}]},{"v":"v1.1.0","date":"2026-10-09","sections":[{"title":"Features","items":["Reopen the last folder in one click, as the Pool Sort editor"]}]},{"v":"v1.0.0","date":"2026-09-28","sections":[{"title":"Overhaul","items":["Level editor moves in from the brain (page, art pipeline, README)"]}]}]</script><!--CHANGELOG:END-->
 <!--ART:BEGIN-->
 <script>
 /* Sinh tu dong boi tools/valley-smash-level-editor/inline_art.py — DUNG SUA TAY.
@@ -5231,6 +5241,17 @@ function bootPopShow(){
     document.body.appendChild(bootPopEl); }
   bootPopRender(); bootPopEl.hidden=false;
   const b=bootPopEl.querySelector('.primary'); if(b)b.focus(); }
+// The version history at the bottom of the start pop-up, from CHANGELOG.md (embedded by release.py). No data, no box.
+function changelogBox(mk){ let data=[]; try{ data=JSON.parse($('changelogData').textContent); }catch(e){}
+  if(!data.length)return null;
+  const box=mk('div','clog'), t=mk('div','clog-t','Changelog '), body=mk('div','clog-body');
+  t.appendChild(mk('span',null,data[0].v)); box.appendChild(t);
+  body.tabIndex=0; body.setAttribute('role','region'); body.setAttribute('aria-label','Changelog');   // Tab then arrow keys scroll it
+  for(const v of data){ body.appendChild(mk('h3',null,v.v+' · '+v.date));
+    for(const s of v.sections){ body.appendChild(mk('div','sec',s.title)); const ul=mk('ul');
+      for(const it of s.items)ul.appendChild(mk('li',null,it));
+      body.appendChild(ul); } }
+  box.appendChild(body); return box; }
 function bootPopRender(){
   const w=bootPopEl; if(!w)return;
   const mk=(tag,cls,txt)=>{ const e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e; };
@@ -5268,6 +5289,7 @@ function bootPopRender(){
     if(FS_OK)card.appendChild(mk('p','hint','Chọn thư mục một lần; lần sau mở trang, hộp này hiện nút mở lại ngay.'));
   }
   const wt=$('warn').textContent; if(wt)card.appendChild(mk('p','hint warnl','⚠ '+wt));
+  const clog=changelogBox(mk); if(clog)card.appendChild(clog);
   const hadFocus=w.contains(document.activeElement);
   w.textContent=''; w.appendChild(card);
   if(hadFocus){ const f=card.querySelector('.primary'); if(f)f.focus(); } }
